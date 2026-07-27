@@ -196,7 +196,10 @@ def calc_category_acceptance(
     # pandas 3.0 兼容：groupby().idxmax() 遇到“占比”全NaN的客户组会抛 ValueError
     # （pandas 2.x 是返回NaN，再由链尾 .dropna() 去掉）。先 dropna(subset=["占比"])
     # 让全NaN组提前消失，效果与 2.x 完全一致，不改变任何正常客户的结果。
-    idx_max = category_share_valid.dropna(subset=["占比"]).groupby(cust_col)["占比"].idxmax().dropna()
+    # 重组修复#5：dropna 后“占比”全NaN客户的分类标签变成未观测类别，pandas 2.3+
+    # 对空类别组抛 ValueError(unobserved categories)。加 observed=True 跳过空组，
+    # 与②原版(无dropna,idxmax返NaN后链尾剔除)输出逐值一致，且兼容 pandas 3.x。
+    idx_max = category_share_valid.dropna(subset=["占比"]).groupby(cust_col, observed=True)["占比"].idxmax().dropna()
     dominant = category_share_valid.loc[idx_max].reset_index(drop=True)
     dominant = dominant[[cust_col, category_col, "占比"]].rename(
         columns={category_col: "主导品类", "占比": "主导品类占比"}

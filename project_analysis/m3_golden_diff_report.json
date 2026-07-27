@@ -1,0 +1,735 @@
+{
+ "silver": {
+  ".silver_checksum": {
+   "plat_bytes": 140,
+   "base_bytes": 140,
+   "shape": [
+    [
+     0,
+     3
+    ],
+    [
+     0,
+     3
+    ]
+   ],
+   "status": "COLUMNS_DIFFER",
+   "cols_only_plat": [
+    "{\"checksum\": \"1f3d45017fe3abae8c5601f64b5b1dc22718a87a129d6e80bd4b1b570cbfc4f6\""
+   ],
+   "cols_only_base": [
+    "{\"checksum\": \"910e68c2ba64f71339a55c6585cdf283c7e8944a31aff4f804abba42f91f73d2\""
+   ]
+  },
+  "silver_cleaned_rows.csv": {
+   "plat_bytes": 180789277,
+   "base_bytes": 180789277,
+   "status": "BYTE_IDENTICAL"
+  },
+  "silver_customer_monthly.csv": {
+   "plat_bytes": 1880637,
+   "base_bytes": 1880637,
+   "status": "BYTE_IDENTICAL"
+  },
+  "silver_customer_x_product.csv": {
+   "plat_bytes": 9415539,
+   "base_bytes": 9415539,
+   "status": "BYTE_IDENTICAL"
+  },
+  "silver_product_monthly.csv": {
+   "plat_bytes": 1354373,
+   "base_bytes": 1354373,
+   "status": "BYTE_IDENTICAL"
+  }
+ },
+ "gold": {
+  "KA_AA月度雷达.csv": {
+   "plat_bytes": 112225,
+   "base_bytes": 112225,
+   "status": "BYTE_IDENTICAL"
+  },
+  "SKU生命周期.csv": {
+   "plat_bytes": 20006,
+   "base_bytes": 20006,
+   "status": "BYTE_IDENTICAL"
+  },
+  "cross_customer_portfolio_health.csv": {
+   "plat_bytes": 507838,
+   "base_bytes": 507838,
+   "status": "BYTE_IDENTICAL"
+  },
+  "gold_kpi_daily.csv": {
+   "plat_bytes": 147987,
+   "base_bytes": 147987,
+   "status": "BYTE_IDENTICAL"
+  },
+  "gold_product_portrait.csv": {
+   "plat_bytes": 535352,
+   "base_bytes": 535352,
+   "status": "BYTE_IDENTICAL"
+  },
+  "业务员定价偏离.csv": {
+   "plat_bytes": 7810,
+   "base_bytes": 7810,
+   "status": "BYTE_IDENTICAL"
+  },
+  "交叉销售建议.csv": {
+   "plat_bytes": 870029,
+   "base_bytes": 870029,
+   "shape": [
+    [
+     3143,
+     5
+    ],
+    [
+     3143,
+     5
+    ]
+   ],
+   "diff_cells": 9,
+   "status": "VALUES_DIFFER",
+   "bad_cols": [
+    [
+     "推荐品种",
+     6
+    ],
+    [
+     "推荐理由",
+     3
+    ]
+   ]
+  },
+  "产品关联分析.csv": {
+   "plat_bytes": 1818,
+   "base_bytes": 1818,
+   "status": "BYTE_IDENTICAL"
+  },
+  "产品研发建议.csv": {
+   "plat_bytes": 91989,
+   "base_bytes": 91989,
+   "status": "BYTE_IDENTICAL"
+  },
+  "产品线迁移.csv": {
+   "plat_bytes": 608885,
+   "base_bytes": 608885,
+   "status": "BYTE_IDENTICAL"
+  },
+  "价格离散度.csv": {
+   "plat_bytes": 111078,
+   "base_bytes": 111078,
+   "status": "BYTE_IDENTICAL"
+  },
+  "品类接受度.csv": {
+   "plat_bytes": 223527,
+   "base_bytes": 223527,
+   "status": "BYTE_IDENTICAL"
+  },
+  "品类擅长.csv": {
+   "plat_bytes": 36506,
+   "base_bytes": 36506,
+   "status": "BYTE_IDENTICAL"
+  },
+  "定价合理性分析.csv": {
+   "plat_bytes": 16650,
+   "base_bytes": 17126,
+   "shape": [
+    [
+     50,
+     20
+    ],
+    [
+     50,
+     20
+    ]
+   ],
+   "diff_cells": 50,
+   "status": "NUMERIC_TOL_OK"
+  },
+  "客户产品桥接.csv": {
+   "plat_bytes": 12806376,
+   "base_bytes": 12806376,
+   "status": "BYTE_IDENTICAL"
+  },
+  "客户全景.csv": {
+   "plat_bytes": 3288599,
+   "base_bytes": 3288599,
+   "status": "BYTE_IDENTICAL"
+  },
+  "客户月度趋势.csv": {
+   "plat_bytes": 2189517,
+   "base_bytes": 2189517,
+   "status": "BYTE_IDENTICAL"
+  },
+  "客户组合健康度.csv": {
+   "plat_bytes": 193926,
+   "base_bytes": 193926,
+   "status": "BYTE_IDENTICAL"
+  },
+  "客户预测.csv": {
+   "plat_bytes": 118748,
+   "base_bytes": 118748,
+   "status": "BYTE_IDENTICAL"
+  },
+  "市场细分价格.csv": {
+   "plat_bytes": 1308,
+   "base_bytes": 1308,
+   "status": "BYTE_IDENTICAL"
+  },
+  "异常日志.csv": {
+   "plat_bytes": 251770,
+   "base_bytes": 251770,
+   "status": "BYTE_IDENTICAL"
+  },
+  "提价机会.csv": {
+   "plat_bytes": 174044576,
+   "base_bytes": 174044576,
+   "status": "BYTE_IDENTICAL"
+  },
+  "渠道价格对比.csv": {
+   "plat_bytes": 1291,
+   "base_bytes": 1291,
+   "status": "BYTE_IDENTICAL"
+  },
+  "经营周期总览.csv": {
+   "plat_bytes": 7463,
+   "base_bytes": 7463,
+   "status": "BYTE_IDENTICAL"
+  },
+  "负毛利分析.csv": {
+   "plat_bytes": 362654,
+   "base_bytes": 362654,
+   "status": "BYTE_IDENTICAL"
+  },
+  "跨客户价格差异.csv": {
+   "plat_bytes": 64650,
+   "base_bytes": 64650,
+   "status": "BYTE_IDENTICAL"
+  },
+  "量价拆解.csv": {
+   "plat_bytes": 68003,
+   "base_bytes": 68003,
+   "status": "BYTE_IDENTICAL"
+  },
+  "销售人员周期表现.csv": {
+   "plat_bytes": 78589,
+   "base_bytes": 78589,
+   "status": "BYTE_IDENTICAL"
+  },
+  "销售画像.csv": {
+   "plat_bytes": 4152,
+   "base_bytes": 4152,
+   "status": "BYTE_IDENTICAL"
+  },
+  "降价策略试算.csv": {
+   "plat_bytes": 326309,
+   "base_bytes": 326309,
+   "status": "BYTE_IDENTICAL"
+  }
+ },
+ "excel": {
+  "产品生命周期": {
+   "sheets_plat": [
+    "产品快照表",
+    "预警清单",
+    "画像分布",
+    "数据不足产品清单",
+    "趋势预测汇总",
+    "历史画像追踪",
+    "使用说明"
+   ],
+   "sheets_base": [
+    "产品快照表",
+    "预警清单",
+    "画像分布",
+    "数据不足产品清单",
+    "趋势预测汇总",
+    "历史画像追踪",
+    "使用说明"
+   ],
+   "sheets_match": true,
+   "dims": {
+    "趋势预测汇总": [
+     [
+      793,
+      22
+     ],
+     [
+      793,
+      22
+     ]
+    ],
+    "使用说明": [
+     [
+      154,
+      1
+     ],
+     [
+      154,
+      1
+     ]
+    ],
+    "历史画像追踪": [
+     [
+      793,
+      73
+     ],
+     [
+      793,
+      73
+     ]
+    ],
+    "画像分布": [
+     [
+      12,
+      2
+     ],
+     [
+      12,
+      2
+     ]
+    ],
+    "预警清单": [
+     [
+      236,
+      61
+     ],
+     [
+      236,
+      61
+     ]
+    ],
+    "产品快照表": [
+     [
+      793,
+      61
+     ],
+     [
+      793,
+      61
+     ]
+    ],
+    "数据不足产品清单": [
+     [
+      27,
+      8
+     ],
+     [
+      27,
+      8
+     ]
+    ]
+   }
+  },
+  "客户分析": {
+   "sheets_plat": [
+    "负毛利分析",
+    "客户产品桥接",
+    "客户组合健康度",
+    "客户全景",
+    "价格离散度",
+    "SKU生命周期",
+    "品类接受度",
+    "提价机会",
+    "降价策略试算",
+    "跨客户价格差异",
+    "定价合理性分析",
+    "销售画像",
+    "品类擅长",
+    "经营周期总览",
+    "量价拆解",
+    "KA_AA月度雷达",
+    "销售人员周期表现",
+    "产品研发建议",
+    "渠道价格对比",
+    "业务员定价偏离",
+    "市场细分价格",
+    "产品关联分析",
+    "客户月度趋势",
+    "产品线迁移",
+    "客户预测",
+    "预警清单",
+    "异常日志",
+    "交叉销售建议"
+   ],
+   "sheets_base": [
+    "负毛利分析",
+    "客户产品桥接",
+    "客户组合健康度",
+    "客户全景",
+    "价格离散度",
+    "SKU生命周期",
+    "品类接受度",
+    "提价机会",
+    "降价策略试算",
+    "跨客户价格差异",
+    "定价合理性分析",
+    "销售画像",
+    "品类擅长",
+    "经营周期总览",
+    "量价拆解",
+    "KA_AA月度雷达",
+    "销售人员周期表现",
+    "产品研发建议",
+    "渠道价格对比",
+    "业务员定价偏离",
+    "市场细分价格",
+    "产品关联分析",
+    "客户月度趋势",
+    "产品线迁移",
+    "客户预测",
+    "预警清单",
+    "异常日志",
+    "交叉销售建议"
+   ],
+   "sheets_match": true,
+   "dims": {
+    "异常日志": [
+     [
+      2769,
+      5
+     ],
+     [
+      2769,
+      5
+     ]
+    ],
+    "交叉销售建议": [
+     [
+      3144,
+      5
+     ],
+     [
+      3144,
+      5
+     ]
+    ],
+    "量价拆解": [
+     [
+      419,
+      17
+     ],
+     [
+      419,
+      17
+     ]
+    ],
+    "业务员定价偏离": [
+     [
+      35,
+      13
+     ],
+     [
+      35,
+      13
+     ]
+    ],
+    "提价机会": [
+     [
+      1048576,
+      13
+     ],
+     [
+      1048576,
+      13
+     ]
+    ],
+    "负毛利分析": [
+     [
+      3144,
+      19
+     ],
+     [
+      3144,
+      19
+     ]
+    ],
+    "客户组合健康度": [
+     [
+      3144,
+      11
+     ],
+     [
+      3144,
+      11
+     ]
+    ],
+    "SKU生命周期": [
+     [
+      819,
+      2
+     ],
+     [
+      819,
+      2
+     ]
+    ],
+    "销售人员周期表现": [
+     [
+      889,
+      10
+     ],
+     [
+      889,
+      10
+     ]
+    ],
+    "销售画像": [
+     [
+      35,
+      17
+     ],
+     [
+      35,
+      17
+     ]
+    ],
+    "客户预测": [
+     [
+      1933,
+      10
+     ],
+     [
+      1933,
+      10
+     ]
+    ],
+    "产品研发建议": [
+     [
+      673,
+      14
+     ],
+     [
+      673,
+      14
+     ]
+    ],
+    "跨客户价格差异": [
+     [
+      627,
+      16
+     ],
+     [
+      627,
+      16
+     ]
+    ],
+    "客户月度趋势": [
+     [
+      21148,
+      13
+     ],
+     [
+      21148,
+      13
+     ]
+    ],
+    "市场细分价格": [
+     [
+      22,
+      7
+     ],
+     [
+      22,
+      7
+     ]
+    ],
+    "品类接受度": [
+     [
+      3142,
+      5
+     ],
+     [
+      3142,
+      5
+     ]
+    ],
+    "产品线迁移": [
+     [
+      9506,
+      9
+     ],
+     [
+      9506,
+      9
+     ]
+    ],
+    "定价合理性分析": [
+     [
+      51,
+      20
+     ],
+     [
+      51,
+      20
+     ]
+    ],
+    "品类擅长": [
+     [
+      282,
+      14
+     ],
+     [
+      283,
+      14
+     ]
+    ],
+    "降价策略试算": [
+     [
+      3273,
+      8
+     ],
+     [
+      3273,
+      8
+     ]
+    ],
+    "KA_AA月度雷达": [
+     [
+      1075,
+      14
+     ],
+     [
+      1075,
+      14
+     ]
+    ],
+    "经营周期总览": [
+     [
+      41,
+      18
+     ],
+     [
+      41,
+      18
+     ]
+    ],
+    "产品关联分析": [
+     [
+      33,
+      8
+     ],
+     [
+      33,
+      8
+     ]
+    ],
+    "渠道价格对比": [
+     [
+      36,
+      7
+     ],
+     [
+      36,
+      7
+     ]
+    ],
+    "客户全景": [
+     [
+      3144,
+      90
+     ],
+     [
+      3144,
+      90
+     ]
+    ],
+    "预警清单": [
+     [
+      2686,
+      6
+     ],
+     [
+      2686,
+      6
+     ]
+    ],
+    "客户产品桥接": [
+     [
+      61462,
+      17
+     ],
+     [
+      61462,
+      17
+     ]
+    ],
+    "价格离散度": [
+     [
+      819,
+      12
+     ],
+     [
+      819,
+      12
+     ]
+    ]
+   }
+  }
+ },
+ "dashboard": {
+  "plat_bytes": 12827090,
+  "base_bytes": 12738640,
+  "vars_plat": 52,
+  "vars_base": 48,
+  "vars_common": 48,
+  "vars_only_plat": [
+   "BSEL",
+   "B_QTY_MODE",
+   "F_DEPT_EXPANDED",
+   "TABS"
+  ],
+  "vars_only_base": [],
+  "vars_equal": [
+   "B_CUSTS",
+   "B_TREND",
+   "CAT_MARGINS",
+   "D_CUST_HEATMAP",
+   "D_HEATMAP",
+   "D_KPI",
+   "D_RANK_SORT",
+   "D_SALES_LIST",
+   "D_SALES_TREND",
+   "D_SEL",
+   "D_TEAM_PROFILE",
+   "D_WATERFALL",
+   "E_CUST_MONTHLY",
+   "E_CUST_TIER",
+   "E_DECOMP",
+   "E_DECOMP_KEY",
+   "E_FIRST_IMPORT",
+   "E_IMPORT_SUMMARY",
+   "E_MONTHLY_KPI",
+   "E_SALES_MONTHLY",
+   "F_CAT_ATTRIBUTION",
+   "F_CAT_H1",
+   "F_CAT_MARGINS",
+   "F_CAT_SORT",
+   "F_DEPT_MARGINS",
+   "F_H1_KPI",
+   "F_ISSUES",
+   "F_KAAA_MARGINS",
+   "F_MARGIN_TAB",
+   "F_NP_ANALYSIS",
+   "F_NP_SUMMARY",
+   "F_PLINE_MARGINS",
+   "F_PROD_FILTER_CAT",
+   "F_PROD_SORT",
+   "KAA_REV",
+   "MARGIN_TAB",
+   "PIE",
+   "PLINE_MARGINS",
+   "PROD_LIST",
+   "SA",
+   "SCAT",
+   "TREND",
+   "TREND_TIERS"
+  ],
+  "vars_differ": [
+   "ALL",
+   "D_DEPT_LIST",
+   "E_SEL_MONTHS",
+   "F_PRODUCT_LIST",
+   "PROD_CHANGE"
+  ]
+ }
+}
