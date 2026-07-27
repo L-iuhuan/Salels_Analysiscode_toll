@@ -36,3 +36,6 @@ nul_
 # â”€â”€ ç³»ç»Ÿ â”€â”€
 Thumbs.db
 .DS_Store
+
+# unified ¶¨°æ¶Ô±ÈÊÕ¸îµÄ´óÐÍCSV(´ÅÅÌÁôÖ¤,²»Èë¿â)
+project_analysis/unified_compare/**/*.csv
