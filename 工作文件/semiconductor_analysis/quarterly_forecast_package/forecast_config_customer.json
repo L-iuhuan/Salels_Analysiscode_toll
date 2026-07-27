@@ -1,0 +1,34 @@
+{
+  "data_path": "E:/3-其他资料/数据分析/semiconductor_analysis/data/财务分析-5月（6.3）.xlsx",
+  "sheet_name": "总表",
+  "output_dir": "E:/3-其他资料/数据分析/semiconductor_analysis/quarterly_forecast_package/output/quarterly_forecast_customer",
+  "field_map": {
+    "发货日期": "发货日期",
+    "型号_产品线（新）": "型号_产品线（新）",
+    "存货名称": "存货名称",
+    "发货数量": "发货数量",
+    "RMB 未税金额小计": "RMB 未税金额小计",
+    "成本": "总成本",
+    "利润": "利润",
+    "未税单价": "未税单价",
+    "单位成本": "单位成本",
+    "代理商/直供名称": "代理商/直供名称",
+    "ERP订单号": "ERP订单号",
+    "产品线": "产品线",
+    "产品系列": "产品系列",
+    "型号": "型号",
+    "存货编码": "存货编码",
+    "实际终端客户": "实际终端客户",
+    "终端名称": "终端名称",
+    "终端客户简称": "终端客户简称",
+    "终端客户名称_客户类别": "终端客户名称_客户类别"
+  },
+  "customer_filter": {
+    "enabled": true,
+    "field": "终端客户名称_客户类别",
+    "pattern": "KA|AA"
+  },
+  "notes": {
+    "customer_filter": "KA/AA客户筛选：按终端客户名称_客户类别字段正则匹配KA|AA，不按采购金额分档。"
+  }
+}

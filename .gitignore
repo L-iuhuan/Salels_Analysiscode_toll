@@ -1,0 +1,38 @@
+# ── 数据与产出(大文件,不入库) ──
+*.xlsx
+*.xls
+*.csv
+*.pkl
+*.db
+*.rar
+*.zip
+*.html
+*.png
+*.svg
+*.pyc
+__pycache__/
+.pytest_cache/
+.codegraph/
+.solomd/
+
+# ── 数据/产出目录 ──
+data/
+output/
+outputs/
+test_output/
+backtest_results/
+figs/
+silver/
+gold/
+report/
+reports/*.xlsx
+
+# ── 范围外 ──
+CoStrict/
+nul_
+*.TAG
+.silver_checksum
+
+# ── 系统 ──
+Thumbs.db
+.DS_Store

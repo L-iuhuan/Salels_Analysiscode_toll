@@ -1,0 +1,2311 @@
+{
+  "groups": {
+    "_debug_f1f.py": [
+      "semiconductor_analysis/_debug_f1f.py"
+    ],
+    "_debug_mw.py": [
+      "semiconductor_analysis/_debug_mw.py"
+    ],
+    "_explore_shipping.py": [
+      "semiconductor_analysis/_explore_shipping.py"
+    ],
+    "_step1_c6_compute.py": [
+      "semiconductor_analysis/_step1_c6_compute.py"
+    ],
+    "_step2_test_c6.py": [
+      "semiconductor_analysis/_step2_test_c6.py"
+    ],
+    "analysis/__init__.py": [
+      "semiconductor_analysis/analysis/__init__.py",
+      "工作文件/semiconductor_analysis/analysis/__init__.py"
+    ],
+    "analysis/b2b_adapters.py": [
+      "semiconductor_analysis/analysis/b2b_adapters.py",
+      "工作文件/semiconductor_analysis/analysis/b2b_adapters.py"
+    ],
+    "analysis/c6_production_mapping.py": [
+      "semiconductor_analysis/analysis/c6_production_mapping.py",
+      "工作文件/semiconductor_analysis/analysis/c6_production_mapping.py"
+    ],
+    "analysis/gold_builders.py": [
+      "semiconductor_analysis/analysis/gold_builders.py",
+      "工作文件/semiconductor_analysis/analysis/gold_builders.py"
+    ],
+    "analysis/pricing/__init__.py": [
+      "semiconductor_analysis/analysis/pricing/__init__.py",
+      "工作文件/semiconductor_analysis/analysis/pricing/__init__.py"
+    ],
+    "analysis/pricing/pricing_actions.py": [
+      "semiconductor_analysis/analysis/pricing/pricing_actions.py",
+      "工作文件/semiconductor_analysis/analysis/pricing/pricing_actions.py"
+    ],
+    "analysis/pricing/pricing_bands.py": [
+      "semiconductor_analysis/analysis/pricing/pricing_bands.py",
+      "工作文件/semiconductor_analysis/analysis/pricing/pricing_bands.py"
+    ],
+    "analysis/pricing/pricing_customer.py": [
+      "semiconductor_analysis/analysis/pricing/pricing_customer.py",
+      "工作文件/semiconductor_analysis/analysis/pricing/pricing_customer.py"
+    ],
+    "analysis/pricing/pricing_insights.py": [
+      "semiconductor_analysis/analysis/pricing/pricing_insights.py",
+      "工作文件/semiconductor_analysis/analysis/pricing/pricing_insights.py"
+    ],
+    "analysis/pricing/pricing_lifecycle.py": [
+      "semiconductor_analysis/analysis/pricing/pricing_lifecycle.py",
+      "工作文件/semiconductor_analysis/analysis/pricing/pricing_lifecycle.py"
+    ],
+    "analysis/pricing/pricing_trends.py": [
+      "semiconductor_analysis/analysis/pricing/pricing_trends.py",
+      "工作文件/semiconductor_analysis/analysis/pricing/pricing_trends.py"
+    ],
+    "analysis/rfm_pi.py": [
+      "semiconductor_analysis/analysis/rfm_pi.py",
+      "工作文件/semiconductor_analysis/analysis/rfm_pi.py"
+    ],
+    "analysis/scoring.py": [
+      "semiconductor_analysis/analysis/scoring.py",
+      "工作文件/semiconductor_analysis/analysis/scoring.py"
+    ],
+    "b2b_v2/__init__.py": [
+      "semiconductor_analysis/b2b_v2/__init__.py",
+      "工作文件/semiconductor_analysis/b2b_v2/__init__.py"
+    ],
+    "b2b_v2/actions/__init__.py": [
+      "semiconductor_analysis/b2b_v2/actions/__init__.py",
+      "工作文件/semiconductor_analysis/b2b_v2/actions/__init__.py"
+    ],
+    "b2b_v2/actions/cross_sell.py": [
+      "semiconductor_analysis/b2b_v2/actions/cross_sell.py",
+      "工作文件/semiconductor_analysis/b2b_v2/actions/cross_sell.py"
+    ],
+    "b2b_v2/actions/rules_engine.py": [
+      "semiconductor_analysis/b2b_v2/actions/rules_engine.py",
+      "工作文件/semiconductor_analysis/b2b_v2/actions/rules_engine.py"
+    ],
+    "b2b_v2/actions/run.py": [
+      "semiconductor_analysis/b2b_v2/actions/run.py",
+      "工作文件/semiconductor_analysis/b2b_v2/actions/run.py"
+    ],
+    "b2b_v2/anomaly/__init__.py": [
+      "semiconductor_analysis/b2b_v2/anomaly/__init__.py",
+      "工作文件/semiconductor_analysis/b2b_v2/anomaly/__init__.py"
+    ],
+    "b2b_v2/anomaly/inventory.py": [
+      "semiconductor_analysis/b2b_v2/anomaly/inventory.py",
+      "工作文件/semiconductor_analysis/b2b_v2/anomaly/inventory.py"
+    ],
+    "b2b_v2/anomaly/isolation_forest.py": [
+      "semiconductor_analysis/b2b_v2/anomaly/isolation_forest.py",
+      "工作文件/semiconductor_analysis/b2b_v2/anomaly/isolation_forest.py"
+    ],
+    "b2b_v2/anomaly/rules.py": [
+      "semiconductor_analysis/b2b_v2/anomaly/rules.py",
+      "工作文件/semiconductor_analysis/b2b_v2/anomaly/rules.py"
+    ],
+    "b2b_v2/anomaly/run.py": [
+      "semiconductor_analysis/b2b_v2/anomaly/run.py",
+      "工作文件/semiconductor_analysis/b2b_v2/anomaly/run.py"
+    ],
+    "b2b_v2/behavior/__init__.py": [
+      "semiconductor_analysis/b2b_v2/behavior/__init__.py",
+      "工作文件/semiconductor_analysis/b2b_v2/behavior/__init__.py"
+    ],
+    "b2b_v2/behavior/volatility.py": [
+      "semiconductor_analysis/b2b_v2/behavior/volatility.py",
+      "工作文件/semiconductor_analysis/b2b_v2/behavior/volatility.py"
+    ],
+    "b2b_v2/journey/__init__.py": [
+      "semiconductor_analysis/b2b_v2/journey/__init__.py",
+      "工作文件/semiconductor_analysis/b2b_v2/journey/__init__.py"
+    ],
+    "b2b_v2/journey/stage_classifier.py": [
+      "semiconductor_analysis/b2b_v2/journey/stage_classifier.py",
+      "工作文件/semiconductor_analysis/b2b_v2/journey/stage_classifier.py"
+    ],
+    "b2b_v2/profitability/__init__.py": [
+      "semiconductor_analysis/b2b_v2/profitability/__init__.py",
+      "工作文件/semiconductor_analysis/b2b_v2/profitability/__init__.py"
+    ],
+    "b2b_v2/profitability/true_profit_estimator.py": [
+      "semiconductor_analysis/b2b_v2/profitability/true_profit_estimator.py",
+      "工作文件/semiconductor_analysis/b2b_v2/profitability/true_profit_estimator.py"
+    ],
+    "config/__init__.py": [
+      "semiconductor_analysis/config/__init__.py",
+      "semiconductor_analysis_before/config/__init__.py",
+      "工作文件/semiconductor_analysis/config/__init__.py"
+    ],
+    "config/settings.py": [
+      "semiconductor_analysis/config/settings.py",
+      "semiconductor_analysis_before/config/settings.py",
+      "工作文件/semiconductor_analysis/config/settings.py"
+    ],
+    "config/settings_customer.py": [
+      "semiconductor_analysis/config/settings_customer.py",
+      "工作文件/semiconductor_analysis/config/settings_customer.py"
+    ],
+    "config/settings_product.py": [
+      "semiconductor_analysis/config/settings_product.py",
+      "工作文件/semiconductor_analysis/config/settings_product.py"
+    ],
+    "conftest.py": [
+      "semiconductor_analysis/conftest.py"
+    ],
+    "core/__init__.py": [
+      "semiconductor_analysis/core/__init__.py",
+      "工作文件/semiconductor_analysis/core/__init__.py"
+    ],
+    "core/config.py": [
+      "semiconductor_analysis/core/config.py",
+      "工作文件/semiconductor_analysis/core/config.py"
+    ],
+    "core/interfaces.py": [
+      "semiconductor_analysis/core/interfaces.py",
+      "工作文件/semiconductor_analysis/core/interfaces.py"
+    ],
+    "core/pipeline.py": [
+      "semiconductor_analysis/core/pipeline.py",
+      "工作文件/semiconductor_analysis/core/pipeline.py"
+    ],
+    "cross_reference/__init__.py": [
+      "semiconductor_analysis/cross_reference/__init__.py",
+      "semiconductor_analysis_before/cross_reference/__init__.py",
+      "工作文件/semiconductor_analysis/cross_reference/__init__.py"
+    ],
+    "cross_reference/run_cross_ref.py": [
+      "semiconductor_analysis/cross_reference/run_cross_ref.py",
+      "semiconductor_analysis_before/cross_reference/run_cross_ref.py",
+      "工作文件/semiconductor_analysis/cross_reference/run_cross_ref.py"
+    ],
+    "customer_analysis/__init__.py": [
+      "semiconductor_analysis/customer_analysis/__init__.py",
+      "semiconductor_analysis_before/customer_analysis/__init__.py",
+      "工作文件/semiconductor_analysis/customer_analysis/__init__.py"
+    ],
+    "customer_analysis/customer_master.py": [
+      "semiconductor_analysis/customer_analysis/customer_master.py",
+      "工作文件/semiconductor_analysis/customer_analysis/customer_master.py"
+    ],
+    "customer_analysis/dimensions.py": [
+      "semiconductor_analysis/customer_analysis/dimensions.py",
+      "工作文件/semiconductor_analysis/customer_analysis/dimensions.py"
+    ],
+    "customer_analysis/gold.py": [
+      "semiconductor_analysis/customer_analysis/gold.py",
+      "工作文件/semiconductor_analysis/customer_analysis/gold.py"
+    ],
+    "customer_analysis/group_aggregation.py": [
+      "semiconductor_analysis/customer_analysis/group_aggregation.py",
+      "工作文件/semiconductor_analysis/customer_analysis/group_aggregation.py"
+    ],
+    "customer_analysis/models.py": [
+      "semiconductor_analysis/customer_analysis/models.py",
+      "semiconductor_analysis_before/customer_analysis/models.py",
+      "工作文件/semiconductor_analysis/customer_analysis/models.py"
+    ],
+    "customer_analysis/portrait.py": [
+      "semiconductor_analysis/customer_analysis/portrait.py",
+      "工作文件/semiconductor_analysis/customer_analysis/portrait.py"
+    ],
+    "customer_analysis/price_deep_dive.py": [
+      "semiconductor_analysis/customer_analysis/price_deep_dive.py",
+      "工作文件/semiconductor_analysis/customer_analysis/price_deep_dive.py"
+    ],
+    "customer_analysis/report.py": [
+      "semiconductor_analysis/customer_analysis/report.py",
+      "工作文件/semiconductor_analysis/customer_analysis/report.py"
+    ],
+    "customer_analysis/run_kpi_daily.py": [
+      "semiconductor_analysis/customer_analysis/run_kpi_daily.py",
+      "semiconductor_analysis_before/customer_analysis/run_kpi_daily.py",
+      "工作文件/semiconductor_analysis/customer_analysis/run_kpi_daily.py"
+    ],
+    "customer_analysis/run_pipeline.py": [
+      "semiconductor_analysis/customer_analysis/run_pipeline.py",
+      "semiconductor_analysis_before/customer_analysis/run_pipeline.py",
+      "工作文件/semiconductor_analysis/customer_analysis/run_pipeline.py"
+    ],
+    "customer_analysis/scoring.py": [
+      "semiconductor_analysis/customer_analysis/scoring.py",
+      "工作文件/semiconductor_analysis/customer_analysis/scoring.py"
+    ],
+    "customer_analysis/silver.py": [
+      "semiconductor_analysis/customer_analysis/silver.py",
+      "工作文件/semiconductor_analysis/customer_analysis/silver.py"
+    ],
+    "customer_analysis/trend_analysis.py": [
+      "semiconductor_analysis/customer_analysis/trend_analysis.py",
+      "工作文件/semiconductor_analysis/customer_analysis/trend_analysis.py"
+    ],
+    "data/decrypt_excel.py": [
+      "semiconductor_analysis/data/decrypt_excel.py"
+    ],
+    "data_pipeline/__init__.py": [
+      "semiconductor_analysis/data_pipeline/__init__.py",
+      "工作文件/semiconductor_analysis/data_pipeline/__init__.py"
+    ],
+    "data_pipeline/aggregator.py": [
+      "semiconductor_analysis/data_pipeline/aggregator.py",
+      "工作文件/semiconductor_analysis/data_pipeline/aggregator.py"
+    ],
+    "data_pipeline/cleaner.py": [
+      "semiconductor_analysis/data_pipeline/cleaner.py",
+      "工作文件/semiconductor_analysis/data_pipeline/cleaner.py"
+    ],
+    "data_pipeline/loader.py": [
+      "semiconductor_analysis/data_pipeline/loader.py",
+      "工作文件/semiconductor_analysis/data_pipeline/loader.py"
+    ],
+    "data_pipeline/validator.py": [
+      "semiconductor_analysis/data_pipeline/validator.py",
+      "工作文件/semiconductor_analysis/data_pipeline/validator.py"
+    ],
+    "detailed_excel_analysis.py": [
+      "semiconductor_analysis/detailed_excel_analysis.py"
+    ],
+    "experiment_log/00_master/field_check_20260612.py": [
+      "semiconductor_analysis/experiment_log/00_master/field_check_20260612.py"
+    ],
+    "experiment_log/00_master/field_check_period_20260612.py": [
+      "semiconductor_analysis/experiment_log/00_master/field_check_period_20260612.py"
+    ],
+    "experiment_log/00_master/run_phase1_correction.py": [
+      "semiconductor_analysis/experiment_log/00_master/run_phase1_correction.py"
+    ],
+    "experiment_log/00_master/summarize_corrected_runs_20260612.py": [
+      "semiconductor_analysis/experiment_log/00_master/summarize_corrected_runs_20260612.py"
+    ],
+    "experiment_log/01_exp_0.0_trivial_baselines/run_0.0_trivial_baselines.py": [
+      "semiconductor_analysis/experiment_log/01_exp_0.0_trivial_baselines/run_0.0_trivial_baselines.py"
+    ],
+    "experiment_log/02_exp_0.0.5_coverage_diagnosis/run_0.0.5_v2.py": [
+      "semiconductor_analysis/experiment_log/02_exp_0.0.5_coverage_diagnosis/run_0.0.5_v2.py"
+    ],
+    "experiment_log/04_exp_0.1.5_method_filter/run_0.1.5_v2.py": [
+      "semiconductor_analysis/experiment_log/04_exp_0.1.5_method_filter/run_0.1.5_v2.py"
+    ],
+    "experiment_log/05_exp_0.2_baseline_lock/run_0.2_baseline_lock.py": [
+      "semiconductor_analysis/experiment_log/05_exp_0.2_baseline_lock/run_0.2_baseline_lock.py"
+    ],
+    "experiment_log/07_exp_0.3_lifecycle_alignment/run_0.3_v3.py": [
+      "semiconductor_analysis/experiment_log/07_exp_0.3_lifecycle_alignment/run_0.3_v3.py"
+    ],
+    "experiment_log/08_exp_0.0.6_hierarchy_eligibility/run_0.0.6.py": [
+      "semiconductor_analysis/experiment_log/08_exp_0.0.6_hierarchy_eligibility/run_0.0.6.py"
+    ],
+    "experiment_log/09_exp_1.0_hierarchy_granularity/run_1.0_hierarchy_granularity.py": [
+      "semiconductor_analysis/experiment_log/09_exp_1.0_hierarchy_granularity/run_1.0_hierarchy_granularity.py"
+    ],
+    "experiment_log/10_exp_0.0.7_corrected_hierarchy_eligibility/run_0.0.7_corrected_hierarchy_eligibility.py": [
+      "semiconductor_analysis/experiment_log/10_exp_0.0.7_corrected_hierarchy_eligibility/run_0.0.7_corrected_hierarchy_eligibility.py"
+    ],
+    "experiment_log/11_exp_1.1_intermittent_demand/run_1.1_corrected.py": [
+      "semiconductor_analysis/experiment_log/11_exp_1.1_intermittent_demand/run_1.1_corrected.py"
+    ],
+    "experiment_log/11_exp_1.1_intermittent_demand/run_1.1_full_corrected.py": [
+      "semiconductor_analysis/experiment_log/11_exp_1.1_intermittent_demand/run_1.1_full_corrected.py"
+    ],
+    "experiment_log/11_exp_1.1_intermittent_demand/run_1.1_intermittent_demand.py": [
+      "semiconductor_analysis/experiment_log/11_exp_1.1_intermittent_demand/run_1.1_intermittent_demand.py"
+    ],
+    "experiment_log/13_exp_1.2_window_optimization/run_1.2_window_optimization.py": [
+      "semiconductor_analysis/experiment_log/13_exp_1.2_window_optimization/run_1.2_window_optimization.py"
+    ],
+    "experiment_log/14_exp_1.3_lifecycle_calibration/run_1.3_lifecycle_calibration.py": [
+      "semiconductor_analysis/experiment_log/14_exp_1.3_lifecycle_calibration/run_1.3_lifecycle_calibration.py"
+    ],
+    "experiment_log/15_exp_1.4_new_product_layering/run_1.4_new_product_layering.py": [
+      "semiconductor_analysis/experiment_log/15_exp_1.4_new_product_layering/run_1.4_new_product_layering.py"
+    ],
+    "experiment_log/20_exp_2.1_hierarchical_reconciliation/run_2.1_hierarchical_reconciliation.py": [
+      "semiconductor_analysis/experiment_log/20_exp_2.1_hierarchical_reconciliation/run_2.1_hierarchical_reconciliation.py"
+    ],
+    "experiment_log/21_exp_2.2_hierarchical_all_plines/run_2.2_hierarchical_all_plines.py": [
+      "semiconductor_analysis/experiment_log/21_exp_2.2_hierarchical_all_plines/run_2.2_hierarchical_all_plines.py"
+    ],
+    "experiment_log/22_exp_2.3_pit_factor_deepening/run_2.3_pit_factor_deepening.py": [
+      "semiconductor_analysis/experiment_log/22_exp_2.3_pit_factor_deepening/run_2.3_pit_factor_deepening.py"
+    ],
+    "experiment_log/23_phase2_redesign/run_phase2_redesign.py": [
+      "semiconductor_analysis/experiment_log/23_phase2_redesign/run_phase2_redesign.py"
+    ],
+    "experiment_log/24_phase2_final_validation/run_phase2_final_validation.py": [
+      "semiconductor_analysis/experiment_log/24_phase2_final_validation/run_phase2_final_validation.py"
+    ],
+    "experiment_log/25_phase3_ensemble/run_phase3_ensemble.py": [
+      "semiconductor_analysis/experiment_log/25_phase3_ensemble/run_phase3_ensemble.py"
+    ],
+    "experiment_log/26_phase4_final/run_phase4_final.py": [
+      "semiconductor_analysis/experiment_log/26_phase4_final/run_phase4_final.py"
+    ],
+    "experiment_log/experiment_log_extra_quantile_prediction/run_1.2_quantile_forecasting.py": [
+      "semiconductor_analysis/experiment_log/experiment_log_extra_quantile_prediction/run_1.2_quantile_forecasting.py"
+    ],
+    "linked_list_cycle.py": [
+      "semiconductor_analysis/linked_list_cycle.py"
+    ],
+    "lru_cache_decorator.py": [
+      "semiconductor_analysis/lru_cache_decorator.py"
+    ],
+    "majority_element.py": [
+      "semiconductor_analysis/majority_element.py"
+    ],
+    "optimize_duplicates.py": [
+      "semiconductor_analysis/optimize_duplicates.py"
+    ],
+    "optimizer/__init__.py": [
+      "semiconductor_analysis/optimizer/__init__.py",
+      "工作文件/semiconductor_analysis/optimizer/__init__.py"
+    ],
+    "optimizer/blindspot_analysis_rest.py": [
+      "semiconductor_analysis/optimizer/blindspot_analysis_rest.py",
+      "工作文件/semiconductor_analysis/optimizer/blindspot_analysis_rest.py"
+    ],
+    "optimizer/blindspot_diagnosis.py": [
+      "semiconductor_analysis/optimizer/blindspot_diagnosis.py",
+      "工作文件/semiconductor_analysis/optimizer/blindspot_diagnosis.py"
+    ],
+    "optimizer/comprehensive_eval.py": [
+      "semiconductor_analysis/optimizer/comprehensive_eval.py",
+      "工作文件/semiconductor_analysis/optimizer/comprehensive_eval.py"
+    ],
+    "optimizer/comprehensive_eval_part2.py": [
+      "semiconductor_analysis/optimizer/comprehensive_eval_part2.py",
+      "工作文件/semiconductor_analysis/optimizer/comprehensive_eval_part2.py"
+    ],
+    "optimizer/config.py": [
+      "semiconductor_analysis/optimizer/config.py",
+      "工作文件/semiconductor_analysis/optimizer/config.py"
+    ],
+    "optimizer/crossval.py": [
+      "semiconductor_analysis/optimizer/crossval.py",
+      "工作文件/semiconductor_analysis/optimizer/crossval.py"
+    ],
+    "optimizer/data_loader.py": [
+      "semiconductor_analysis/optimizer/data_loader.py",
+      "工作文件/semiconductor_analysis/optimizer/data_loader.py"
+    ],
+    "optimizer/evaluate_solutions_2024.py": [
+      "semiconductor_analysis/optimizer/evaluate_solutions_2024.py",
+      "工作文件/semiconductor_analysis/optimizer/evaluate_solutions_2024.py"
+    ],
+    "optimizer/metrics.py": [
+      "semiconductor_analysis/optimizer/metrics.py",
+      "工作文件/semiconductor_analysis/optimizer/metrics.py"
+    ],
+    "optimizer/recent_eval_and_solutions.py": [
+      "semiconductor_analysis/optimizer/recent_eval_and_solutions.py",
+      "工作文件/semiconductor_analysis/optimizer/recent_eval_and_solutions.py"
+    ],
+    "optimizer/reporter.py": [
+      "semiconductor_analysis/optimizer/reporter.py",
+      "工作文件/semiconductor_analysis/optimizer/reporter.py"
+    ],
+    "optimizer/run_pipeline.py": [
+      "semiconductor_analysis/optimizer/run_pipeline.py",
+      "工作文件/semiconductor_analysis/optimizer/run_pipeline.py"
+    ],
+    "optimizer/scoring_v2.py": [
+      "semiconductor_analysis/optimizer/scoring_v2.py",
+      "工作文件/semiconductor_analysis/optimizer/scoring_v2.py"
+    ],
+    "optimizer/threshold_search.py": [
+      "semiconductor_analysis/optimizer/threshold_search.py",
+      "工作文件/semiconductor_analysis/optimizer/threshold_search.py"
+    ],
+    "optimizer/weight_search.py": [
+      "semiconductor_analysis/optimizer/weight_search.py",
+      "工作文件/semiconductor_analysis/optimizer/weight_search.py"
+    ],
+    "parse_excel_file.py": [
+      "semiconductor_analysis/parse_excel_file.py"
+    ],
+    "product_lifecycle/__init__.py": [
+      "semiconductor_analysis/product_lifecycle/__init__.py",
+      "semiconductor_analysis_before/product_lifecycle/__init__.py",
+      "工作文件/semiconductor_analysis/product_lifecycle/__init__.py"
+    ],
+    "product_lifecycle/nine_grid.py": [
+      "semiconductor_analysis/product_lifecycle/nine_grid.py",
+      "semiconductor_analysis_before/product_lifecycle/nine_grid.py",
+      "工作文件/semiconductor_analysis/product_lifecycle/nine_grid.py"
+    ],
+    "product_lifecycle/notes.py": [
+      "semiconductor_analysis/product_lifecycle/notes.py",
+      "semiconductor_analysis_before/product_lifecycle/notes.py",
+      "工作文件/semiconductor_analysis/product_lifecycle/notes.py"
+    ],
+    "product_lifecycle/profiling.py": [
+      "semiconductor_analysis/product_lifecycle/profiling.py",
+      "semiconductor_analysis_before/product_lifecycle/profiling.py",
+      "工作文件/semiconductor_analysis/product_lifecycle/profiling.py"
+    ],
+    "product_lifecycle/report.py": [
+      "semiconductor_analysis/product_lifecycle/report.py",
+      "工作文件/semiconductor_analysis/product_lifecycle/report.py"
+    ],
+    "product_lifecycle/run.py": [
+      "semiconductor_analysis/product_lifecycle/run.py",
+      "semiconductor_analysis_before/product_lifecycle/run.py",
+      "工作文件/semiconductor_analysis/product_lifecycle/run.py"
+    ],
+    "quarterly_forecast_package/run_customer_forecast.py": [
+      "semiconductor_analysis/quarterly_forecast_package/run_customer_forecast.py",
+      "工作文件/semiconductor_analysis/quarterly_forecast_package/run_customer_forecast.py"
+    ],
+    "quarterly_forecast_package/run_quarterly_forecast.py": [
+      "semiconductor_analysis/quarterly_forecast_package/run_quarterly_forecast.py",
+      "工作文件/semiconductor_analysis/quarterly_forecast_package/run_quarterly_forecast.py"
+    ],
+    "race_condition_clear_demo.py": [
+      "semiconductor_analysis/race_condition_clear_demo.py"
+    ],
+    "recession_risk_opt/archive/analysis/analyze_results.py": [
+      "semiconductor_analysis/recession_risk_opt/archive/analysis/analyze_results.py",
+      "工作文件/semiconductor_analysis/recession_risk_opt/archive/analysis/analyze_results.py"
+    ],
+    "recession_risk_opt/archive/analysis/factor_exploration.py": [
+      "semiconductor_analysis/recession_risk_opt/archive/analysis/factor_exploration.py",
+      "工作文件/semiconductor_analysis/recession_risk_opt/archive/analysis/factor_exploration.py"
+    ],
+    "recession_risk_opt/archive/analysis/orthogonal_check.py": [
+      "semiconductor_analysis/recession_risk_opt/archive/analysis/orthogonal_check.py",
+      "工作文件/semiconductor_analysis/recession_risk_opt/archive/analysis/orthogonal_check.py"
+    ],
+    "recession_risk_opt/archive/demo/demo_tiered_risk.py": [
+      "semiconductor_analysis/recession_risk_opt/archive/demo/demo_tiered_risk.py",
+      "工作文件/semiconductor_analysis/recession_risk_opt/archive/demo/demo_tiered_risk.py"
+    ],
+    "recession_risk_opt/archive/runners/run_stage5.py": [
+      "semiconductor_analysis/recession_risk_opt/archive/runners/run_stage5.py",
+      "工作文件/semiconductor_analysis/recession_risk_opt/archive/runners/run_stage5.py"
+    ],
+    "recession_risk_opt/archive/runners/stage5_final.py": [
+      "semiconductor_analysis/recession_risk_opt/archive/runners/stage5_final.py",
+      "工作文件/semiconductor_analysis/recession_risk_opt/archive/runners/stage5_final.py"
+    ],
+    "recession_risk_opt/archive/tests/test_consec_decline.py": [
+      "semiconductor_analysis/recession_risk_opt/archive/tests/test_consec_decline.py",
+      "工作文件/semiconductor_analysis/recession_risk_opt/archive/tests/test_consec_decline.py"
+    ],
+    "recession_risk_opt/backtest_framework.py": [
+      "semiconductor_analysis/recession_risk_opt/backtest_framework.py",
+      "工作文件/semiconductor_analysis/recession_risk_opt/backtest_framework.py"
+    ],
+    "recession_risk_opt/generate_snapshot.py": [
+      "semiconductor_analysis/recession_risk_opt/generate_snapshot.py",
+      "工作文件/semiconductor_analysis/recession_risk_opt/generate_snapshot.py"
+    ],
+    "recession_risk_opt/models/risk_scorer.py": [
+      "semiconductor_analysis/recession_risk_opt/models/risk_scorer.py",
+      "工作文件/semiconductor_analysis/recession_risk_opt/models/risk_scorer.py"
+    ],
+    "recession_risk_opt/phase1_customer_factors.py": [
+      "semiconductor_analysis/recession_risk_opt/phase1_customer_factors.py",
+      "工作文件/semiconductor_analysis/recession_risk_opt/phase1_customer_factors.py"
+    ],
+    "recession_risk_opt/phase2_f1_repair.py": [
+      "semiconductor_analysis/recession_risk_opt/phase2_f1_repair.py",
+      "工作文件/semiconductor_analysis/recession_risk_opt/phase2_f1_repair.py"
+    ],
+    "recession_risk_opt/phase3_model_comparison.py": [
+      "semiconductor_analysis/recession_risk_opt/phase3_model_comparison.py",
+      "工作文件/semiconductor_analysis/recession_risk_opt/phase3_model_comparison.py"
+    ],
+    "recession_risk_opt/phase4_case_review.py": [
+      "semiconductor_analysis/recession_risk_opt/phase4_case_review.py",
+      "工作文件/semiconductor_analysis/recession_risk_opt/phase4_case_review.py"
+    ],
+    "recession_risk_opt/phase5_action_baseline.py": [
+      "semiconductor_analysis/recession_risk_opt/phase5_action_baseline.py",
+      "工作文件/semiconductor_analysis/recession_risk_opt/phase5_action_baseline.py"
+    ],
+    "recession_risk_opt/phaseA_check_cross_validation.py": [
+      "semiconductor_analysis/recession_risk_opt/phaseA_check_cross_validation.py",
+      "工作文件/semiconductor_analysis/recession_risk_opt/phaseA_check_cross_validation.py"
+    ],
+    "recession_risk_opt/phaseA_data_check.py": [
+      "semiconductor_analysis/recession_risk_opt/phaseA_data_check.py",
+      "工作文件/semiconductor_analysis/recession_risk_opt/phaseA_data_check.py"
+    ],
+    "recession_risk_opt/phaseA_severity_distribution.py": [
+      "semiconductor_analysis/recession_risk_opt/phaseA_severity_distribution.py",
+      "工作文件/semiconductor_analysis/recession_risk_opt/phaseA_severity_distribution.py"
+    ],
+    "recession_risk_opt/phaseB1a_severity_regression.py": [
+      "semiconductor_analysis/recession_risk_opt/phaseB1a_severity_regression.py",
+      "工作文件/semiconductor_analysis/recession_risk_opt/phaseB1a_severity_regression.py"
+    ],
+    "recession_risk_opt/pipeline.py": [
+      "semiconductor_analysis/recession_risk_opt/pipeline.py",
+      "工作文件/semiconductor_analysis/recession_risk_opt/pipeline.py"
+    ],
+    "recession_risk_opt/v31_calibration.py": [
+      "semiconductor_analysis/recession_risk_opt/v31_calibration.py",
+      "工作文件/semiconductor_analysis/recession_risk_opt/v31_calibration.py"
+    ],
+    "recession_risk_opt/v31_final_optimization.py": [
+      "semiconductor_analysis/recession_risk_opt/v31_final_optimization.py",
+      "工作文件/semiconductor_analysis/recession_risk_opt/v31_final_optimization.py"
+    ],
+    "reports/__init__.py": [
+      "semiconductor_analysis/reports/__init__.py",
+      "工作文件/semiconductor_analysis/reports/__init__.py"
+    ],
+    "reports/gold_exporter.py": [
+      "semiconductor_analysis/reports/gold_exporter.py",
+      "工作文件/semiconductor_analysis/reports/gold_exporter.py"
+    ],
+    "run_all.py": [
+      "semiconductor_analysis/run_all.py",
+      "semiconductor_analysis_before/run_all.py",
+      "工作文件/semiconductor_analysis/run_all.py"
+    ],
+    "run_customer.py": [
+      "semiconductor_analysis/run_customer.py",
+      "semiconductor_analysis_before/run_customer.py",
+      "工作文件/semiconductor_analysis/run_customer.py"
+    ],
+    "run_product.py": [
+      "semiconductor_analysis/run_product.py",
+      "semiconductor_analysis_before/run_product.py",
+      "工作文件/semiconductor_analysis/run_product.py"
+    ],
+    "safe_divide.py": [
+      "semiconductor_analysis/safe_divide.py"
+    ],
+    "scripts/chart_data.py": [
+      "semiconductor_analysis/scripts/chart_data.py",
+      "工作文件/semiconductor_analysis/scripts/chart_data.py"
+    ],
+    "scripts/final_forecast.py": [
+      "semiconductor_analysis/scripts/final_forecast.py",
+      "工作文件/semiconductor_analysis/scripts/final_forecast.py"
+    ],
+    "scripts/generate_chart_html.py": [
+      "semiconductor_analysis/scripts/generate_chart_html.py",
+      "工作文件/semiconductor_analysis/scripts/generate_chart_html.py"
+    ],
+    "shared/__init__.py": [
+      "semiconductor_analysis/shared/__init__.py",
+      "semiconductor_analysis_before/shared/__init__.py",
+      "工作文件/semiconductor_analysis/shared/__init__.py"
+    ],
+    "shared/calc_utils.py": [
+      "semiconductor_analysis/shared/calc_utils.py",
+      "semiconductor_analysis_before/shared/calc_utils.py",
+      "工作文件/semiconductor_analysis/shared/calc_utils.py"
+    ],
+    "shared/classifiers.py": [
+      "semiconductor_analysis/shared/classifiers.py",
+      "semiconductor_analysis_before/shared/classifiers.py",
+      "工作文件/semiconductor_analysis/shared/classifiers.py"
+    ],
+    "shared/customer_analysis.py": [
+      "semiconductor_analysis/shared/customer_analysis.py",
+      "semiconductor_analysis_before/shared/customer_analysis.py",
+      "工作文件/semiconductor_analysis/shared/customer_analysis.py"
+    ],
+    "shared/data_cleaning.py": [
+      "semiconductor_analysis/shared/data_cleaning.py",
+      "semiconductor_analysis_before/shared/data_cleaning.py",
+      "工作文件/semiconductor_analysis/shared/data_cleaning.py"
+    ],
+    "shared/forecasting.py": [
+      "semiconductor_analysis/shared/forecasting.py",
+      "semiconductor_analysis_before/shared/forecasting.py",
+      "工作文件/semiconductor_analysis/shared/forecasting.py"
+    ],
+    "shared/pricing.py": [
+      "semiconductor_analysis/shared/pricing.py",
+      "semiconductor_analysis_before/shared/pricing.py",
+      "工作文件/semiconductor_analysis/shared/pricing.py"
+    ],
+    "shared/risk_scoring.py": [
+      "semiconductor_analysis/shared/risk_scoring.py",
+      "semiconductor_analysis_before/shared/risk_scoring.py",
+      "工作文件/semiconductor_analysis/shared/risk_scoring.py"
+    ],
+    "shared/timing.py": [
+      "semiconductor_analysis/shared/timing.py",
+      "工作文件/semiconductor_analysis/shared/timing.py"
+    ],
+    "test/__init__.py": [
+      "semiconductor_analysis/test/__init__.py",
+      "semiconductor_analysis_before/test/__init__.py",
+      "工作文件/semiconductor_analysis/test/__init__.py"
+    ],
+    "test/batch_a_test.py": [
+      "semiconductor_analysis/test/batch_a_test.py",
+      "semiconductor_analysis_before/test/batch_a_test.py",
+      "工作文件/semiconductor_analysis/test/batch_a_test.py"
+    ],
+    "test/conftest.py": [
+      "semiconductor_analysis/test/conftest.py",
+      "semiconductor_analysis_before/test/conftest.py",
+      "工作文件/semiconductor_analysis/test/conftest.py"
+    ],
+    "test/fallback.py": [
+      "semiconductor_analysis/test/fallback.py",
+      "semiconductor_analysis_before/test/fallback.py",
+      "工作文件/semiconductor_analysis/test/fallback.py"
+    ],
+    "test/phase1_load.py": [
+      "semiconductor_analysis/test/phase1_load.py",
+      "semiconductor_analysis_before/test/phase1_load.py",
+      "工作文件/semiconductor_analysis/test/phase1_load.py"
+    ],
+    "test/phase2_validate.py": [
+      "semiconductor_analysis/test/phase2_validate.py",
+      "semiconductor_analysis_before/test/phase2_validate.py",
+      "工作文件/semiconductor_analysis/test/phase2_validate.py"
+    ],
+    "test/phase3_visualize.py": [
+      "semiconductor_analysis/test/phase3_visualize.py",
+      "semiconductor_analysis_before/test/phase3_visualize.py",
+      "工作文件/semiconductor_analysis/test/phase3_visualize.py"
+    ],
+    "test/run_all_tests.py": [
+      "semiconductor_analysis/test/run_all_tests.py",
+      "semiconductor_analysis_before/test/run_all_tests.py",
+      "工作文件/semiconductor_analysis/test/run_all_tests.py"
+    ],
+    "test/test_analysis_scoring.py": [
+      "semiconductor_analysis/test/test_analysis_scoring.py",
+      "工作文件/semiconductor_analysis/test/test_analysis_scoring.py"
+    ],
+    "test/test_gold_builders.py": [
+      "semiconductor_analysis/test/test_gold_builders.py",
+      "工作文件/semiconductor_analysis/test/test_gold_builders.py"
+    ],
+    "test/test_gold_exporter.py": [
+      "semiconductor_analysis/test/test_gold_exporter.py",
+      "工作文件/semiconductor_analysis/test/test_gold_exporter.py"
+    ],
+    "test/test_pipeline.py": [
+      "semiconductor_analysis/test/test_pipeline.py",
+      "工作文件/semiconductor_analysis/test/test_pipeline.py"
+    ],
+    "test/test_validator.py": [
+      "semiconductor_analysis/test/test_validator.py",
+      "工作文件/semiconductor_analysis/test/test_validator.py"
+    ],
+    "test/test_week1_modules.py": [
+      "semiconductor_analysis/test/test_week1_modules.py",
+      "semiconductor_analysis_before/test/test_week1_modules.py",
+      "工作文件/semiconductor_analysis/test/test_week1_modules.py"
+    ],
+    "test/validation_suite.py": [
+      "semiconductor_analysis/test/validation_suite.py",
+      "工作文件/semiconductor_analysis/test/validation_suite.py"
+    ],
+    "thread_race_condition_demo.py": [
+      "semiconductor_analysis/thread_race_condition_demo.py"
+    ],
+    "unified_forecast_system.py": [
+      "semiconductor_analysis/unified_forecast_system.py"
+    ],
+    "unified_forecast_system_backup_v1.py": [
+      "semiconductor_analysis/unified_forecast_system_backup_v1.py"
+    ],
+    "unified_forecast_system_backup_v2.py": [
+      "semiconductor_analysis/unified_forecast_system_backup_v2.py"
+    ],
+    "unified_forecast_system_backup_v3.py": [
+      "semiconductor_analysis/unified_forecast_system_backup_v3.py"
+    ],
+    "unified_forecast_v3.py": [
+      "semiconductor_analysis/unified_forecast_v3.py"
+    ],
+    "src/__init__.py": [
+      "semiconductor_analysis_before/src/__init__.py"
+    ],
+    "src/actions/__init__.py": [
+      "semiconductor_analysis_before/src/actions/__init__.py"
+    ],
+    "src/anomaly/__init__.py": [
+      "semiconductor_analysis_before/src/anomaly/__init__.py"
+    ],
+    "src/behavior/__init__.py": [
+      "semiconductor_analysis_before/src/behavior/__init__.py"
+    ],
+    "src/behavior/volatility.py": [
+      "semiconductor_analysis_before/src/behavior/volatility.py"
+    ],
+    "src/journey/__init__.py": [
+      "semiconductor_analysis_before/src/journey/__init__.py"
+    ],
+    "src/journey/stage_classifier.py": [
+      "semiconductor_analysis_before/src/journey/stage_classifier.py"
+    ],
+    "src/profitability/__init__.py": [
+      "semiconductor_analysis_before/src/profitability/__init__.py"
+    ],
+    "src/profitability/true_profit_estimator.py": [
+      "semiconductor_analysis_before/src/profitability/true_profit_estimator.py"
+    ],
+    "test/templates/__init__.py": [
+      "semiconductor_analysis_before/test/templates/__init__.py"
+    ],
+    "test/templates/test_case_template.py": [
+      "semiconductor_analysis_before/test/templates/test_case_template.py"
+    ],
+    "产品生命周期评估/backup/build_config.py": [
+      "产品生命周期评估/backup/build_config.py"
+    ],
+    "产品生命周期评估/backup/build_html.py": [
+      "产品生命周期评估/backup/build_html.py"
+    ],
+    "产品生命周期评估/backup/excel_helper.py": [
+      "产品生命周期评估/backup/excel_helper.py"
+    ],
+    "产品生命周期评估/backup/generate_dashboard_v4.py": [
+      "产品生命周期评估/backup/generate_dashboard_v4.py"
+    ],
+    "产品生命周期评估/backup/run.py": [
+      "产品生命周期评估/backup/run.py"
+    ],
+    "产品生命周期评估/backup/run_v2.7_增强版_20260510_before_fix.py": [
+      "产品生命周期评估/backup/run_v2.7_增强版_20260510_before_fix.py"
+    ],
+    "产品生命周期评估/backup/run_v2.7_增强版_backup_20260510.py": [
+      "产品生命周期评估/backup/run_v2.7_增强版_backup_20260510.py"
+    ],
+    "产品生命周期评估/backup/run_v2.7_增强版_before_20260510_141955.py": [
+      "产品生命周期评估/backup/run_v2.7_增强版_before_20260510_141955.py"
+    ],
+    "产品生命周期评估/backup/run_v2.8.py": [
+      "产品生命周期评估/backup/run_v2.8.py"
+    ],
+    "产品生命周期评估/backup/模型测试.py": [
+      "产品生命周期评估/backup/模型测试.py"
+    ],
+    "产品生命周期评估/run_v2.8.py": [
+      "产品生命周期评估/run_v2.8.py"
+    ],
+    "产品生命周期评估/产品生命周期量化评估方案_v2.9/generate_v4.py": [
+      "产品生命周期评估/产品生命周期量化评估方案_v2.9/generate_v4.py"
+    ],
+    "产品生命周期评估/产品生命周期量化评估方案_v2.9/run_v2.8.py": [
+      "产品生命周期评估/产品生命周期量化评估方案_v2.9/run_v2.8.py"
+    ],
+    "工作文件/eda_analysis.py": [
+      "工作文件/eda_analysis.py"
+    ],
+    "工作文件/eda_analysis_v2.py": [
+      "工作文件/eda_analysis_v2.py"
+    ],
+    "工作文件/eda_analysis_v3.py": [
+      "工作文件/eda_analysis_v3.py"
+    ],
+    "工作文件/longtail_forecast/generate_report.py": [
+      "工作文件/longtail_forecast/generate_report.py"
+    ],
+    "工作文件/longtail_forecast/run_longtail_forecast.py": [
+      "工作文件/longtail_forecast/run_longtail_forecast.py"
+    ],
+    "工作文件/longtail_forecast/v2/gen_dashboard.py": [
+      "工作文件/longtail_forecast/v2/gen_dashboard.py"
+    ],
+    "工作文件/longtail_forecast/v2/run_full_forecast_v2.py": [
+      "工作文件/longtail_forecast/v2/run_full_forecast_v2.py"
+    ],
+    "工作文件/longtail_forecast/v3/generate_report.py": [
+      "工作文件/longtail_forecast/v3/generate_report.py"
+    ],
+    "工作文件/longtail_forecast/v3/run_full_forecast_v3.py": [
+      "工作文件/longtail_forecast/v3/run_full_forecast_v3.py"
+    ],
+    "analysis1.py": [
+      "工作文件/semiconductor_analysis/analysis1.py"
+    ],
+    "analysis2.py": [
+      "工作文件/semiconductor_analysis/analysis2.py"
+    ],
+    "analysis3.py": [
+      "工作文件/semiconductor_analysis/analysis3.py"
+    ],
+    "analysis4.py": [
+      "工作文件/semiconductor_analysis/analysis4.py"
+    ],
+    "append_word_appendix.py": [
+      "工作文件/semiconductor_analysis/append_word_appendix.py"
+    ],
+    "asp_check.py": [
+      "工作文件/semiconductor_analysis/asp_check.py"
+    ],
+    "audit.py": [
+      "工作文件/semiconductor_analysis/audit.py"
+    ],
+    "audit_pline.py": [
+      "工作文件/semiconductor_analysis/audit_pline.py"
+    ],
+    "b2b_v2/actions/category_aptitude.py": [
+      "工作文件/semiconductor_analysis/b2b_v2/actions/category_aptitude.py"
+    ],
+    "b2b_v2/actions/negative_margin.py": [
+      "工作文件/semiconductor_analysis/b2b_v2/actions/negative_margin.py"
+    ],
+    "b2b_v2/actions/product_insights.py": [
+      "工作文件/semiconductor_analysis/b2b_v2/actions/product_insights.py"
+    ],
+    "b2b_v2/actions/sales_profiling.py": [
+      "工作文件/semiconductor_analysis/b2b_v2/actions/sales_profiling.py"
+    ],
+    "bridge2.py": [
+      "工作文件/semiconductor_analysis/bridge2.py"
+    ],
+    "bridge3.py": [
+      "工作文件/semiconductor_analysis/bridge3.py"
+    ],
+    "customer_analysis/period_analysis.py": [
+      "工作文件/semiconductor_analysis/customer_analysis/period_analysis.py"
+    ],
+    "customer_analysis/rd_recommendation.py": [
+      "工作文件/semiconductor_analysis/customer_analysis/rd_recommendation.py"
+    ],
+    "dashboard/_patch_dashboard.py": [
+      "工作文件/semiconductor_analysis/dashboard/_patch_dashboard.py"
+    ],
+    "dashboard/audit_alerts.py": [
+      "工作文件/semiconductor_analysis/dashboard/audit_alerts.py"
+    ],
+    "dashboard/audit_cats.py": [
+      "工作文件/semiconductor_analysis/dashboard/audit_cats.py"
+    ],
+    "dashboard/audit_cats2.py": [
+      "工作文件/semiconductor_analysis/dashboard/audit_cats2.py"
+    ],
+    "dashboard/audit_data.py": [
+      "工作文件/semiconductor_analysis/dashboard/audit_data.py"
+    ],
+    "dashboard/audit_deep.py": [
+      "工作文件/semiconductor_analysis/dashboard/audit_deep.py"
+    ],
+    "dashboard/audit_final.py": [
+      "工作文件/semiconductor_analysis/dashboard/audit_final.py"
+    ],
+    "dashboard/audit_html.py": [
+      "工作文件/semiconductor_analysis/dashboard/audit_html.py"
+    ],
+    "dashboard/audit_new.py": [
+      "工作文件/semiconductor_analysis/dashboard/audit_new.py"
+    ],
+    "dashboard/audit_rhythm.py": [
+      "工作文件/semiconductor_analysis/dashboard/audit_rhythm.py"
+    ],
+    "dashboard/audit_small.py": [
+      "工作文件/semiconductor_analysis/dashboard/audit_small.py"
+    ],
+    "dashboard/build_data.py": [
+      "工作文件/semiconductor_analysis/dashboard/build_data.py"
+    ],
+    "dashboard/check_col.py": [
+      "工作文件/semiconductor_analysis/dashboard/check_col.py"
+    ],
+    "dashboard/check_cust.py": [
+      "工作文件/semiconductor_analysis/dashboard/check_cust.py"
+    ],
+    "dashboard/check_data.py": [
+      "工作文件/semiconductor_analysis/dashboard/check_data.py"
+    ],
+    "dashboard/check_kpi.py": [
+      "工作文件/semiconductor_analysis/dashboard/check_kpi.py"
+    ],
+    "dashboard/check_kpi2.py": [
+      "工作文件/semiconductor_analysis/dashboard/check_kpi2.py"
+    ],
+    "dashboard/check_names.py": [
+      "工作文件/semiconductor_analysis/dashboard/check_names.py"
+    ],
+    "dashboard/data_inventory.py": [
+      "工作文件/semiconductor_analysis/dashboard/data_inventory.py"
+    ],
+    "dashboard/final_audit.py": [
+      "工作文件/semiconductor_analysis/dashboard/final_audit.py"
+    ],
+    "dashboard/final_check.py": [
+      "工作文件/semiconductor_analysis/dashboard/final_check.py"
+    ],
+    "dashboard/find_col.py": [
+      "工作文件/semiconductor_analysis/dashboard/find_col.py"
+    ],
+    "dashboard/find_col2.py": [
+      "工作文件/semiconductor_analysis/dashboard/find_col2.py"
+    ],
+    "dashboard/find_col3.py": [
+      "工作文件/semiconductor_analysis/dashboard/find_col3.py"
+    ],
+    "dashboard/find_col4.py": [
+      "工作文件/semiconductor_analysis/dashboard/find_col4.py"
+    ],
+    "dashboard/find_col5.py": [
+      "工作文件/semiconductor_analysis/dashboard/find_col5.py"
+    ],
+    "dashboard/generate_dashboard.py": [
+      "工作文件/semiconductor_analysis/dashboard/generate_dashboard.py"
+    ],
+    "dashboard/verify_raw.py": [
+      "工作文件/semiconductor_analysis/dashboard/verify_raw.py"
+    ],
+    "dashboard/verify_syntax.py": [
+      "工作文件/semiconductor_analysis/dashboard/verify_syntax.py"
+    ],
+    "dashboard/verify_ytd.py": [
+      "工作文件/semiconductor_analysis/dashboard/verify_ytd.py"
+    ],
+    "deep_action.py": [
+      "工作文件/semiconductor_analysis/deep_action.py"
+    ],
+    "deep_all.py": [
+      "工作文件/semiconductor_analysis/deep_all.py"
+    ],
+    "deep_sales_products.py": [
+      "工作文件/semiconductor_analysis/deep_sales_products.py"
+    ],
+    "deep_zxkx.py": [
+      "工作文件/semiconductor_analysis/deep_zxkx.py"
+    ],
+    "diag.py": [
+      "工作文件/semiconductor_analysis/diag.py"
+    ],
+    "experiment_log/phase_0_baseline/exp_0.0.5_coverage_diagnosis/run_0.0.5_v2.py": [
+      "工作文件/semiconductor_analysis/experiment_log/phase_0_baseline/exp_0.0.5_coverage_diagnosis/run_0.0.5_v2.py"
+    ],
+    "experiment_log/phase_0_baseline/exp_0.0_trivial_baselines/run_0.0_trivial_baselines.py": [
+      "工作文件/semiconductor_analysis/experiment_log/phase_0_baseline/exp_0.0_trivial_baselines/run_0.0_trivial_baselines.py"
+    ],
+    "experiment_log/phase_0_baseline/exp_0.1.5_method_filter/run_0.1.5_v2.py": [
+      "工作文件/semiconductor_analysis/experiment_log/phase_0_baseline/exp_0.1.5_method_filter/run_0.1.5_v2.py"
+    ],
+    "experiment_log/phase_0_baseline/exp_0.2_baseline_lock/run_0.2_baseline_lock.py": [
+      "工作文件/semiconductor_analysis/experiment_log/phase_0_baseline/exp_0.2_baseline_lock/run_0.2_baseline_lock.py"
+    ],
+    "experiment_log/phase_0_baseline/exp_0.3_lifecycle_alignment/run_0.3_v3.py": [
+      "工作文件/semiconductor_analysis/experiment_log/phase_0_baseline/exp_0.3_lifecycle_alignment/run_0.3_v3.py"
+    ],
+    "fix_fonts.py": [
+      "工作文件/semiconductor_analysis/fix_fonts.py"
+    ],
+    "fix_header_repeat.py": [
+      "工作文件/semiconductor_analysis/fix_header_repeat.py"
+    ],
+    "fix_price.py": [
+      "工作文件/semiconductor_analysis/fix_price.py"
+    ],
+    "fix_valign.py": [
+      "工作文件/semiconductor_analysis/fix_valign.py"
+    ],
+    "fix_word_24.py": [
+      "工作文件/semiconductor_analysis/fix_word_24.py"
+    ],
+    "fix_word_75.py": [
+      "工作文件/semiconductor_analysis/fix_word_75.py"
+    ],
+    "fix_word_bridge.py": [
+      "工作文件/semiconductor_analysis/fix_word_bridge.py"
+    ],
+    "fix_word_ch9.py": [
+      "工作文件/semiconductor_analysis/fix_word_ch9.py"
+    ],
+    "fix_word_zxkx.py": [
+      "工作文件/semiconductor_analysis/fix_word_zxkx.py"
+    ],
+    "generate_v4.py": [
+      "工作文件/semiconductor_analysis/generate_v4.py"
+    ],
+    "ka_list.py": [
+      "工作文件/semiconductor_analysis/ka_list.py"
+    ],
+    "make_word.py": [
+      "工作文件/semiconductor_analysis/make_word.py"
+    ],
+    "output/test/run_0.0.5_coverage_diagnosis.py": [
+      "工作文件/semiconductor_analysis/output/test/run_0.0.5_coverage_diagnosis.py"
+    ],
+    "output/test/run_0.0.5_v2.py": [
+      "工作文件/semiconductor_analysis/output/test/run_0.0.5_v2.py"
+    ],
+    "output/test/run_0.0_trivial_baselines.py": [
+      "工作文件/semiconductor_analysis/output/test/run_0.0_trivial_baselines.py"
+    ],
+    "output/test/run_0.1.5_method_filter.py": [
+      "工作文件/semiconductor_analysis/output/test/run_0.1.5_method_filter.py"
+    ],
+    "output/test/run_0.1.5_v2.py": [
+      "工作文件/semiconductor_analysis/output/test/run_0.1.5_v2.py"
+    ],
+    "output/test/run_0.2_baseline_lock.py": [
+      "工作文件/semiconductor_analysis/output/test/run_0.2_baseline_lock.py"
+    ],
+    "output/test/run_0.3_lifecycle.py": [
+      "工作文件/semiconductor_analysis/output/test/run_0.3_lifecycle.py"
+    ],
+    "output/test/run_0.3_v2.py": [
+      "工作文件/semiconductor_analysis/output/test/run_0.3_v2.py"
+    ],
+    "output/test/run_0.3_v3.py": [
+      "工作文件/semiconductor_analysis/output/test/run_0.3_v3.py"
+    ],
+    "peek.py": [
+      "工作文件/semiconductor_analysis/peek.py"
+    ],
+    "recompute_asp.py": [
+      "工作文件/semiconductor_analysis/recompute_asp.py"
+    ],
+    "run2.py": [
+      "工作文件/semiconductor_analysis/run2.py"
+    ],
+    "run3.py": [
+      "工作文件/semiconductor_analysis/run3.py"
+    ],
+    "run4.py": [
+      "工作文件/semiconductor_analysis/run4.py"
+    ],
+    "run_action.py": [
+      "工作文件/semiconductor_analysis/run_action.py"
+    ],
+    "run_audit.py": [
+      "工作文件/semiconductor_analysis/run_audit.py"
+    ],
+    "run_deep.py": [
+      "工作文件/semiconductor_analysis/run_deep.py"
+    ],
+    "run_sp.py": [
+      "工作文件/semiconductor_analysis/run_sp.py"
+    ],
+    "run_zxkx.py": [
+      "工作文件/semiconductor_analysis/run_zxkx.py"
+    ],
+    "runall.py": [
+      "工作文件/semiconductor_analysis/runall.py"
+    ],
+    "scout.py": [
+      "工作文件/semiconductor_analysis/scout.py"
+    ],
+    "test.py": [
+      "工作文件/semiconductor_analysis/test.py"
+    ],
+    "test_output/check_data.py": [
+      "工作文件/semiconductor_analysis/test_output/check_data.py"
+    ],
+    "verify.py": [
+      "工作文件/semiconductor_analysis/verify.py"
+    ],
+    "verify_word.py": [
+      "工作文件/semiconductor_analysis/verify_word.py"
+    ],
+    "看板流水线/dashboard/generate_dashboard.py": [
+      "看板流水线/dashboard/generate_dashboard.py"
+    ],
+    "看板流水线/processing/analysis/__init__.py": [
+      "看板流水线/processing/analysis/__init__.py"
+    ],
+    "看板流水线/processing/analysis/b2b_adapters.py": [
+      "看板流水线/processing/analysis/b2b_adapters.py"
+    ],
+    "看板流水线/processing/analysis/c6_production_mapping.py": [
+      "看板流水线/processing/analysis/c6_production_mapping.py"
+    ],
+    "看板流水线/processing/analysis/gold_builders.py": [
+      "看板流水线/processing/analysis/gold_builders.py"
+    ],
+    "看板流水线/processing/analysis/pricing/__init__.py": [
+      "看板流水线/processing/analysis/pricing/__init__.py"
+    ],
+    "看板流水线/processing/analysis/pricing/pricing_actions.py": [
+      "看板流水线/processing/analysis/pricing/pricing_actions.py"
+    ],
+    "看板流水线/processing/analysis/pricing/pricing_bands.py": [
+      "看板流水线/processing/analysis/pricing/pricing_bands.py"
+    ],
+    "看板流水线/processing/analysis/pricing/pricing_customer.py": [
+      "看板流水线/processing/analysis/pricing/pricing_customer.py"
+    ],
+    "看板流水线/processing/analysis/pricing/pricing_insights.py": [
+      "看板流水线/processing/analysis/pricing/pricing_insights.py"
+    ],
+    "看板流水线/processing/analysis/pricing/pricing_lifecycle.py": [
+      "看板流水线/processing/analysis/pricing/pricing_lifecycle.py"
+    ],
+    "看板流水线/processing/analysis/pricing/pricing_trends.py": [
+      "看板流水线/processing/analysis/pricing/pricing_trends.py"
+    ],
+    "看板流水线/processing/analysis/rfm_pi.py": [
+      "看板流水线/processing/analysis/rfm_pi.py"
+    ],
+    "看板流水线/processing/analysis/scoring.py": [
+      "看板流水线/processing/analysis/scoring.py"
+    ],
+    "看板流水线/processing/b2b_v2/__init__.py": [
+      "看板流水线/processing/b2b_v2/__init__.py"
+    ],
+    "看板流水线/processing/b2b_v2/actions/__init__.py": [
+      "看板流水线/processing/b2b_v2/actions/__init__.py"
+    ],
+    "看板流水线/processing/b2b_v2/actions/category_aptitude.py": [
+      "看板流水线/processing/b2b_v2/actions/category_aptitude.py"
+    ],
+    "看板流水线/processing/b2b_v2/actions/cross_sell.py": [
+      "看板流水线/processing/b2b_v2/actions/cross_sell.py"
+    ],
+    "看板流水线/processing/b2b_v2/actions/negative_margin.py": [
+      "看板流水线/processing/b2b_v2/actions/negative_margin.py"
+    ],
+    "看板流水线/processing/b2b_v2/actions/product_insights.py": [
+      "看板流水线/processing/b2b_v2/actions/product_insights.py"
+    ],
+    "看板流水线/processing/b2b_v2/actions/rules_engine.py": [
+      "看板流水线/processing/b2b_v2/actions/rules_engine.py"
+    ],
+    "看板流水线/processing/b2b_v2/actions/run.py": [
+      "看板流水线/processing/b2b_v2/actions/run.py"
+    ],
+    "看板流水线/processing/b2b_v2/actions/sales_profiling.py": [
+      "看板流水线/processing/b2b_v2/actions/sales_profiling.py"
+    ],
+    "看板流水线/processing/b2b_v2/anomaly/__init__.py": [
+      "看板流水线/processing/b2b_v2/anomaly/__init__.py"
+    ],
+    "看板流水线/processing/b2b_v2/anomaly/inventory.py": [
+      "看板流水线/processing/b2b_v2/anomaly/inventory.py"
+    ],
+    "看板流水线/processing/b2b_v2/anomaly/isolation_forest.py": [
+      "看板流水线/processing/b2b_v2/anomaly/isolation_forest.py"
+    ],
+    "看板流水线/processing/b2b_v2/anomaly/rules.py": [
+      "看板流水线/processing/b2b_v2/anomaly/rules.py"
+    ],
+    "看板流水线/processing/b2b_v2/anomaly/run.py": [
+      "看板流水线/processing/b2b_v2/anomaly/run.py"
+    ],
+    "看板流水线/processing/b2b_v2/behavior/__init__.py": [
+      "看板流水线/processing/b2b_v2/behavior/__init__.py"
+    ],
+    "看板流水线/processing/b2b_v2/behavior/volatility.py": [
+      "看板流水线/processing/b2b_v2/behavior/volatility.py"
+    ],
+    "看板流水线/processing/b2b_v2/journey/__init__.py": [
+      "看板流水线/processing/b2b_v2/journey/__init__.py"
+    ],
+    "看板流水线/processing/b2b_v2/journey/stage_classifier.py": [
+      "看板流水线/processing/b2b_v2/journey/stage_classifier.py"
+    ],
+    "看板流水线/processing/b2b_v2/profitability/__init__.py": [
+      "看板流水线/processing/b2b_v2/profitability/__init__.py"
+    ],
+    "看板流水线/processing/b2b_v2/profitability/true_profit_estimator.py": [
+      "看板流水线/processing/b2b_v2/profitability/true_profit_estimator.py"
+    ],
+    "看板流水线/processing/config/__init__.py": [
+      "看板流水线/processing/config/__init__.py"
+    ],
+    "看板流水线/processing/config/settings.py": [
+      "看板流水线/processing/config/settings.py"
+    ],
+    "看板流水线/processing/config/settings_customer.py": [
+      "看板流水线/processing/config/settings_customer.py"
+    ],
+    "看板流水线/processing/config/settings_product.py": [
+      "看板流水线/processing/config/settings_product.py"
+    ],
+    "看板流水线/processing/core/__init__.py": [
+      "看板流水线/processing/core/__init__.py"
+    ],
+    "看板流水线/processing/core/config.py": [
+      "看板流水线/processing/core/config.py"
+    ],
+    "看板流水线/processing/core/interfaces.py": [
+      "看板流水线/processing/core/interfaces.py"
+    ],
+    "看板流水线/processing/core/pipeline.py": [
+      "看板流水线/processing/core/pipeline.py"
+    ],
+    "看板流水线/processing/cross_reference/__init__.py": [
+      "看板流水线/processing/cross_reference/__init__.py"
+    ],
+    "看板流水线/processing/cross_reference/run_cross_ref.py": [
+      "看板流水线/processing/cross_reference/run_cross_ref.py"
+    ],
+    "看板流水线/processing/customer_analysis/__init__.py": [
+      "看板流水线/processing/customer_analysis/__init__.py"
+    ],
+    "看板流水线/processing/customer_analysis/customer_master.py": [
+      "看板流水线/processing/customer_analysis/customer_master.py"
+    ],
+    "看板流水线/processing/customer_analysis/dimensions.py": [
+      "看板流水线/processing/customer_analysis/dimensions.py"
+    ],
+    "看板流水线/processing/customer_analysis/gold.py": [
+      "看板流水线/processing/customer_analysis/gold.py"
+    ],
+    "看板流水线/processing/customer_analysis/group_aggregation.py": [
+      "看板流水线/processing/customer_analysis/group_aggregation.py"
+    ],
+    "看板流水线/processing/customer_analysis/models.py": [
+      "看板流水线/processing/customer_analysis/models.py"
+    ],
+    "看板流水线/processing/customer_analysis/period_analysis.py": [
+      "看板流水线/processing/customer_analysis/period_analysis.py"
+    ],
+    "看板流水线/processing/customer_analysis/portrait.py": [
+      "看板流水线/processing/customer_analysis/portrait.py"
+    ],
+    "看板流水线/processing/customer_analysis/price_deep_dive.py": [
+      "看板流水线/processing/customer_analysis/price_deep_dive.py"
+    ],
+    "看板流水线/processing/customer_analysis/rd_recommendation.py": [
+      "看板流水线/processing/customer_analysis/rd_recommendation.py"
+    ],
+    "看板流水线/processing/customer_analysis/report.py": [
+      "看板流水线/processing/customer_analysis/report.py"
+    ],
+    "看板流水线/processing/customer_analysis/run_kpi_daily.py": [
+      "看板流水线/processing/customer_analysis/run_kpi_daily.py"
+    ],
+    "看板流水线/processing/customer_analysis/run_pipeline.py": [
+      "看板流水线/processing/customer_analysis/run_pipeline.py"
+    ],
+    "看板流水线/processing/customer_analysis/scoring.py": [
+      "看板流水线/processing/customer_analysis/scoring.py"
+    ],
+    "看板流水线/processing/customer_analysis/silver.py": [
+      "看板流水线/processing/customer_analysis/silver.py"
+    ],
+    "看板流水线/processing/customer_analysis/trend_analysis.py": [
+      "看板流水线/processing/customer_analysis/trend_analysis.py"
+    ],
+    "看板流水线/processing/data_pipeline/__init__.py": [
+      "看板流水线/processing/data_pipeline/__init__.py"
+    ],
+    "看板流水线/processing/data_pipeline/aggregator.py": [
+      "看板流水线/processing/data_pipeline/aggregator.py"
+    ],
+    "看板流水线/processing/data_pipeline/cleaner.py": [
+      "看板流水线/processing/data_pipeline/cleaner.py"
+    ],
+    "看板流水线/processing/data_pipeline/loader.py": [
+      "看板流水线/processing/data_pipeline/loader.py"
+    ],
+    "看板流水线/processing/data_pipeline/validator.py": [
+      "看板流水线/processing/data_pipeline/validator.py"
+    ],
+    "看板流水线/processing/product_lifecycle/__init__.py": [
+      "看板流水线/processing/product_lifecycle/__init__.py"
+    ],
+    "看板流水线/processing/product_lifecycle/nine_grid.py": [
+      "看板流水线/processing/product_lifecycle/nine_grid.py"
+    ],
+    "看板流水线/processing/product_lifecycle/notes.py": [
+      "看板流水线/processing/product_lifecycle/notes.py"
+    ],
+    "看板流水线/processing/product_lifecycle/profiling.py": [
+      "看板流水线/processing/product_lifecycle/profiling.py"
+    ],
+    "看板流水线/processing/product_lifecycle/report.py": [
+      "看板流水线/processing/product_lifecycle/report.py"
+    ],
+    "看板流水线/processing/product_lifecycle/run.py": [
+      "看板流水线/processing/product_lifecycle/run.py"
+    ],
+    "看板流水线/processing/reports/__init__.py": [
+      "看板流水线/processing/reports/__init__.py"
+    ],
+    "看板流水线/processing/reports/gold_exporter.py": [
+      "看板流水线/processing/reports/gold_exporter.py"
+    ],
+    "看板流水线/processing/run_all.py": [
+      "看板流水线/processing/run_all.py"
+    ],
+    "看板流水线/processing/shared/__init__.py": [
+      "看板流水线/processing/shared/__init__.py"
+    ],
+    "看板流水线/processing/shared/calc_utils.py": [
+      "看板流水线/processing/shared/calc_utils.py"
+    ],
+    "看板流水线/processing/shared/classifiers.py": [
+      "看板流水线/processing/shared/classifiers.py"
+    ],
+    "看板流水线/processing/shared/customer_analysis.py": [
+      "看板流水线/processing/shared/customer_analysis.py"
+    ],
+    "看板流水线/processing/shared/data_cleaning.py": [
+      "看板流水线/processing/shared/data_cleaning.py"
+    ],
+    "看板流水线/processing/shared/forecasting.py": [
+      "看板流水线/processing/shared/forecasting.py"
+    ],
+    "看板流水线/processing/shared/pricing.py": [
+      "看板流水线/processing/shared/pricing.py"
+    ],
+    "看板流水线/processing/shared/risk_scoring.py": [
+      "看板流水线/processing/shared/risk_scoring.py"
+    ],
+    "看板流水线/processing/shared/timing.py": [
+      "看板流水线/processing/shared/timing.py"
+    ],
+    "看板流水线/run_chain.py": [
+      "看板流水线/run_chain.py"
+    ]
+  },
+  "recommended": {
+    "analysis/pricing/pricing_bands.py": "工作文件/semiconductor_analysis/analysis/pricing/pricing_bands.py",
+    "analysis/pricing/pricing_customer.py": "工作文件/semiconductor_analysis/analysis/pricing/pricing_customer.py",
+    "analysis/pricing/pricing_lifecycle.py": "工作文件/semiconductor_analysis/analysis/pricing/pricing_lifecycle.py",
+    "analysis/scoring.py": "工作文件/semiconductor_analysis/analysis/scoring.py",
+    "b2b_v2/actions/rules_engine.py": "工作文件/semiconductor_analysis/b2b_v2/actions/rules_engine.py",
+    "b2b_v2/actions/run.py": "工作文件/semiconductor_analysis/b2b_v2/actions/run.py",
+    "b2b_v2/anomaly/rules.py": "工作文件/semiconductor_analysis/b2b_v2/anomaly/rules.py",
+    "b2b_v2/behavior/volatility.py": "工作文件/semiconductor_analysis/b2b_v2/behavior/volatility.py",
+    "b2b_v2/profitability/true_profit_estimator.py": "工作文件/semiconductor_analysis/b2b_v2/profitability/true_profit_estimator.py",
+    "config/__init__.py": "工作文件/semiconductor_analysis/config/__init__.py",
+    "config/settings.py": "工作文件/semiconductor_analysis/config/settings.py",
+    "config/settings_customer.py": "工作文件/semiconductor_analysis/config/settings_customer.py",
+    "cross_reference/__init__.py": "工作文件/semiconductor_analysis/cross_reference/__init__.py",
+    "cross_reference/run_cross_ref.py": "工作文件/semiconductor_analysis/cross_reference/run_cross_ref.py",
+    "customer_analysis/__init__.py": "工作文件/semiconductor_analysis/customer_analysis/__init__.py",
+    "customer_analysis/gold.py": "工作文件/semiconductor_analysis/customer_analysis/gold.py",
+    "customer_analysis/models.py": "工作文件/semiconductor_analysis/customer_analysis/models.py",
+    "customer_analysis/portrait.py": "工作文件/semiconductor_analysis/customer_analysis/portrait.py",
+    "customer_analysis/price_deep_dive.py": "工作文件/semiconductor_analysis/customer_analysis/price_deep_dive.py",
+    "customer_analysis/run_kpi_daily.py": "工作文件/semiconductor_analysis/customer_analysis/run_kpi_daily.py",
+    "customer_analysis/run_pipeline.py": "工作文件/semiconductor_analysis/customer_analysis/run_pipeline.py",
+    "customer_analysis/trend_analysis.py": "工作文件/semiconductor_analysis/customer_analysis/trend_analysis.py",
+    "product_lifecycle/nine_grid.py": "工作文件/semiconductor_analysis/product_lifecycle/nine_grid.py",
+    "product_lifecycle/notes.py": "工作文件/semiconductor_analysis/product_lifecycle/notes.py",
+    "product_lifecycle/profiling.py": "工作文件/semiconductor_analysis/product_lifecycle/profiling.py",
+    "product_lifecycle/run.py": "工作文件/semiconductor_analysis/product_lifecycle/run.py",
+    "quarterly_forecast_package/run_customer_forecast.py": "semiconductor_analysis/quarterly_forecast_package/run_customer_forecast.py",
+    "quarterly_forecast_package/run_quarterly_forecast.py": "semiconductor_analysis/quarterly_forecast_package/run_quarterly_forecast.py",
+    "reports/gold_exporter.py": "工作文件/semiconductor_analysis/reports/gold_exporter.py",
+    "run_all.py": "工作文件/semiconductor_analysis/run_all.py",
+    "run_customer.py": "工作文件/semiconductor_analysis/run_customer.py",
+    "run_product.py": "工作文件/semiconductor_analysis/run_product.py",
+    "shared/__init__.py": "工作文件/semiconductor_analysis/shared/__init__.py",
+    "shared/calc_utils.py": "工作文件/semiconductor_analysis/shared/calc_utils.py",
+    "shared/customer_analysis.py": "工作文件/semiconductor_analysis/shared/customer_analysis.py",
+    "shared/data_cleaning.py": "工作文件/semiconductor_analysis/shared/data_cleaning.py",
+    "shared/forecasting.py": "工作文件/semiconductor_analysis/shared/forecasting.py",
+    "shared/pricing.py": "工作文件/semiconductor_analysis/shared/pricing.py",
+    "shared/risk_scoring.py": "工作文件/semiconductor_analysis/shared/risk_scoring.py",
+    "test/batch_a_test.py": "工作文件/semiconductor_analysis/test/batch_a_test.py",
+    "test/conftest.py": "工作文件/semiconductor_analysis/test/conftest.py",
+    "test/fallback.py": "工作文件/semiconductor_analysis/test/fallback.py",
+    "test/phase1_load.py": "工作文件/semiconductor_analysis/test/phase1_load.py",
+    "test/phase2_validate.py": "工作文件/semiconductor_analysis/test/phase2_validate.py",
+    "test/phase3_visualize.py": "工作文件/semiconductor_analysis/test/phase3_visualize.py",
+    "test/run_all_tests.py": "工作文件/semiconductor_analysis/test/run_all_tests.py",
+    "test/test_week1_modules.py": "工作文件/semiconductor_analysis/test/test_week1_modules.py",
+    "analysis/__init__.py": "semiconductor_analysis/analysis/__init__.py",
+    "analysis/b2b_adapters.py": "semiconductor_analysis/analysis/b2b_adapters.py",
+    "analysis/c6_production_mapping.py": "semiconductor_analysis/analysis/c6_production_mapping.py",
+    "analysis/gold_builders.py": "semiconductor_analysis/analysis/gold_builders.py",
+    "analysis/pricing/__init__.py": "semiconductor_analysis/analysis/pricing/__init__.py",
+    "analysis/pricing/pricing_actions.py": "semiconductor_analysis/analysis/pricing/pricing_actions.py",
+    "analysis/pricing/pricing_insights.py": "semiconductor_analysis/analysis/pricing/pricing_insights.py",
+    "analysis/pricing/pricing_trends.py": "semiconductor_analysis/analysis/pricing/pricing_trends.py",
+    "analysis/rfm_pi.py": "semiconductor_analysis/analysis/rfm_pi.py",
+    "b2b_v2/__init__.py": "semiconductor_analysis/b2b_v2/__init__.py",
+    "b2b_v2/actions/__init__.py": "semiconductor_analysis/b2b_v2/actions/__init__.py",
+    "b2b_v2/actions/cross_sell.py": "semiconductor_analysis/b2b_v2/actions/cross_sell.py",
+    "b2b_v2/anomaly/__init__.py": "semiconductor_analysis/b2b_v2/anomaly/__init__.py",
+    "b2b_v2/anomaly/inventory.py": "semiconductor_analysis/b2b_v2/anomaly/inventory.py",
+    "b2b_v2/anomaly/isolation_forest.py": "semiconductor_analysis/b2b_v2/anomaly/isolation_forest.py",
+    "b2b_v2/anomaly/run.py": "semiconductor_analysis/b2b_v2/anomaly/run.py",
+    "b2b_v2/behavior/__init__.py": "semiconductor_analysis/b2b_v2/behavior/__init__.py",
+    "b2b_v2/journey/__init__.py": "semiconductor_analysis/b2b_v2/journey/__init__.py",
+    "b2b_v2/journey/stage_classifier.py": "semiconductor_analysis/b2b_v2/journey/stage_classifier.py",
+    "b2b_v2/profitability/__init__.py": "semiconductor_analysis/b2b_v2/profitability/__init__.py",
+    "config/settings_product.py": "semiconductor_analysis/config/settings_product.py",
+    "core/__init__.py": "semiconductor_analysis/core/__init__.py",
+    "core/config.py": "semiconductor_analysis/core/config.py",
+    "core/interfaces.py": "semiconductor_analysis/core/interfaces.py",
+    "core/pipeline.py": "semiconductor_analysis/core/pipeline.py",
+    "customer_analysis/customer_master.py": "semiconductor_analysis/customer_analysis/customer_master.py",
+    "customer_analysis/dimensions.py": "semiconductor_analysis/customer_analysis/dimensions.py",
+    "customer_analysis/group_aggregation.py": "semiconductor_analysis/customer_analysis/group_aggregation.py",
+    "customer_analysis/report.py": "semiconductor_analysis/customer_analysis/report.py",
+    "customer_analysis/scoring.py": "semiconductor_analysis/customer_analysis/scoring.py",
+    "customer_analysis/silver.py": "semiconductor_analysis/customer_analysis/silver.py",
+    "data_pipeline/__init__.py": "semiconductor_analysis/data_pipeline/__init__.py",
+    "data_pipeline/aggregator.py": "semiconductor_analysis/data_pipeline/aggregator.py",
+    "data_pipeline/cleaner.py": "semiconductor_analysis/data_pipeline/cleaner.py",
+    "data_pipeline/loader.py": "semiconductor_analysis/data_pipeline/loader.py",
+    "data_pipeline/validator.py": "semiconductor_analysis/data_pipeline/validator.py",
+    "optimizer/__init__.py": "semiconductor_analysis/optimizer/__init__.py",
+    "optimizer/blindspot_analysis_rest.py": "semiconductor_analysis/optimizer/blindspot_analysis_rest.py",
+    "optimizer/blindspot_diagnosis.py": "semiconductor_analysis/optimizer/blindspot_diagnosis.py",
+    "optimizer/comprehensive_eval.py": "semiconductor_analysis/optimizer/comprehensive_eval.py",
+    "optimizer/comprehensive_eval_part2.py": "semiconductor_analysis/optimizer/comprehensive_eval_part2.py",
+    "optimizer/config.py": "semiconductor_analysis/optimizer/config.py",
+    "optimizer/crossval.py": "semiconductor_analysis/optimizer/crossval.py",
+    "optimizer/data_loader.py": "semiconductor_analysis/optimizer/data_loader.py",
+    "optimizer/evaluate_solutions_2024.py": "semiconductor_analysis/optimizer/evaluate_solutions_2024.py",
+    "optimizer/metrics.py": "semiconductor_analysis/optimizer/metrics.py",
+    "optimizer/recent_eval_and_solutions.py": "semiconductor_analysis/optimizer/recent_eval_and_solutions.py",
+    "optimizer/reporter.py": "semiconductor_analysis/optimizer/reporter.py",
+    "optimizer/run_pipeline.py": "semiconductor_analysis/optimizer/run_pipeline.py",
+    "optimizer/scoring_v2.py": "semiconductor_analysis/optimizer/scoring_v2.py",
+    "optimizer/threshold_search.py": "semiconductor_analysis/optimizer/threshold_search.py",
+    "optimizer/weight_search.py": "semiconductor_analysis/optimizer/weight_search.py",
+    "product_lifecycle/__init__.py": "semiconductor_analysis/product_lifecycle/__init__.py",
+    "product_lifecycle/report.py": "semiconductor_analysis/product_lifecycle/report.py",
+    "recession_risk_opt/archive/analysis/analyze_results.py": "semiconductor_analysis/recession_risk_opt/archive/analysis/analyze_results.py",
+    "recession_risk_opt/archive/analysis/factor_exploration.py": "semiconductor_analysis/recession_risk_opt/archive/analysis/factor_exploration.py",
+    "recession_risk_opt/archive/analysis/orthogonal_check.py": "semiconductor_analysis/recession_risk_opt/archive/analysis/orthogonal_check.py",
+    "recession_risk_opt/archive/demo/demo_tiered_risk.py": "semiconductor_analysis/recession_risk_opt/archive/demo/demo_tiered_risk.py",
+    "recession_risk_opt/archive/runners/run_stage5.py": "semiconductor_analysis/recession_risk_opt/archive/runners/run_stage5.py",
+    "recession_risk_opt/archive/runners/stage5_final.py": "semiconductor_analysis/recession_risk_opt/archive/runners/stage5_final.py",
+    "recession_risk_opt/archive/tests/test_consec_decline.py": "semiconductor_analysis/recession_risk_opt/archive/tests/test_consec_decline.py",
+    "recession_risk_opt/backtest_framework.py": "semiconductor_analysis/recession_risk_opt/backtest_framework.py",
+    "recession_risk_opt/generate_snapshot.py": "semiconductor_analysis/recession_risk_opt/generate_snapshot.py",
+    "recession_risk_opt/models/risk_scorer.py": "semiconductor_analysis/recession_risk_opt/models/risk_scorer.py",
+    "recession_risk_opt/phase1_customer_factors.py": "semiconductor_analysis/recession_risk_opt/phase1_customer_factors.py",
+    "recession_risk_opt/phase2_f1_repair.py": "semiconductor_analysis/recession_risk_opt/phase2_f1_repair.py",
+    "recession_risk_opt/phase3_model_comparison.py": "semiconductor_analysis/recession_risk_opt/phase3_model_comparison.py",
+    "recession_risk_opt/phase4_case_review.py": "semiconductor_analysis/recession_risk_opt/phase4_case_review.py",
+    "recession_risk_opt/phase5_action_baseline.py": "semiconductor_analysis/recession_risk_opt/phase5_action_baseline.py",
+    "recession_risk_opt/phaseA_check_cross_validation.py": "semiconductor_analysis/recession_risk_opt/phaseA_check_cross_validation.py",
+    "recession_risk_opt/phaseA_data_check.py": "semiconductor_analysis/recession_risk_opt/phaseA_data_check.py",
+    "recession_risk_opt/phaseA_severity_distribution.py": "semiconductor_analysis/recession_risk_opt/phaseA_severity_distribution.py",
+    "recession_risk_opt/phaseB1a_severity_regression.py": "semiconductor_analysis/recession_risk_opt/phaseB1a_severity_regression.py",
+    "recession_risk_opt/pipeline.py": "semiconductor_analysis/recession_risk_opt/pipeline.py",
+    "recession_risk_opt/v31_calibration.py": "semiconductor_analysis/recession_risk_opt/v31_calibration.py",
+    "recession_risk_opt/v31_final_optimization.py": "semiconductor_analysis/recession_risk_opt/v31_final_optimization.py",
+    "reports/__init__.py": "semiconductor_analysis/reports/__init__.py",
+    "scripts/chart_data.py": "semiconductor_analysis/scripts/chart_data.py",
+    "scripts/final_forecast.py": "semiconductor_analysis/scripts/final_forecast.py",
+    "scripts/generate_chart_html.py": "semiconductor_analysis/scripts/generate_chart_html.py",
+    "shared/classifiers.py": "semiconductor_analysis/shared/classifiers.py",
+    "shared/timing.py": "semiconductor_analysis/shared/timing.py",
+    "test/__init__.py": "semiconductor_analysis/test/__init__.py",
+    "test/test_analysis_scoring.py": "semiconductor_analysis/test/test_analysis_scoring.py",
+    "test/test_gold_builders.py": "semiconductor_analysis/test/test_gold_builders.py",
+    "test/test_gold_exporter.py": "semiconductor_analysis/test/test_gold_exporter.py",
+    "test/test_pipeline.py": "semiconductor_analysis/test/test_pipeline.py",
+    "test/test_validator.py": "semiconductor_analysis/test/test_validator.py",
+    "test/validation_suite.py": "semiconductor_analysis/test/validation_suite.py",
+    "_debug_f1f.py": "semiconductor_analysis/_debug_f1f.py",
+    "_debug_mw.py": "semiconductor_analysis/_debug_mw.py",
+    "_explore_shipping.py": "semiconductor_analysis/_explore_shipping.py",
+    "_step1_c6_compute.py": "semiconductor_analysis/_step1_c6_compute.py",
+    "_step2_test_c6.py": "semiconductor_analysis/_step2_test_c6.py",
+    "conftest.py": "semiconductor_analysis/conftest.py",
+    "data/decrypt_excel.py": "semiconductor_analysis/data/decrypt_excel.py",
+    "detailed_excel_analysis.py": "semiconductor_analysis/detailed_excel_analysis.py",
+    "experiment_log/00_master/field_check_20260612.py": "semiconductor_analysis/experiment_log/00_master/field_check_20260612.py",
+    "experiment_log/00_master/field_check_period_20260612.py": "semiconductor_analysis/experiment_log/00_master/field_check_period_20260612.py",
+    "experiment_log/00_master/run_phase1_correction.py": "semiconductor_analysis/experiment_log/00_master/run_phase1_correction.py",
+    "experiment_log/00_master/summarize_corrected_runs_20260612.py": "semiconductor_analysis/experiment_log/00_master/summarize_corrected_runs_20260612.py",
+    "experiment_log/01_exp_0.0_trivial_baselines/run_0.0_trivial_baselines.py": "semiconductor_analysis/experiment_log/01_exp_0.0_trivial_baselines/run_0.0_trivial_baselines.py",
+    "experiment_log/02_exp_0.0.5_coverage_diagnosis/run_0.0.5_v2.py": "semiconductor_analysis/experiment_log/02_exp_0.0.5_coverage_diagnosis/run_0.0.5_v2.py",
+    "experiment_log/04_exp_0.1.5_method_filter/run_0.1.5_v2.py": "semiconductor_analysis/experiment_log/04_exp_0.1.5_method_filter/run_0.1.5_v2.py",
+    "experiment_log/05_exp_0.2_baseline_lock/run_0.2_baseline_lock.py": "semiconductor_analysis/experiment_log/05_exp_0.2_baseline_lock/run_0.2_baseline_lock.py",
+    "experiment_log/07_exp_0.3_lifecycle_alignment/run_0.3_v3.py": "semiconductor_analysis/experiment_log/07_exp_0.3_lifecycle_alignment/run_0.3_v3.py",
+    "experiment_log/08_exp_0.0.6_hierarchy_eligibility/run_0.0.6.py": "semiconductor_analysis/experiment_log/08_exp_0.0.6_hierarchy_eligibility/run_0.0.6.py",
+    "experiment_log/09_exp_1.0_hierarchy_granularity/run_1.0_hierarchy_granularity.py": "semiconductor_analysis/experiment_log/09_exp_1.0_hierarchy_granularity/run_1.0_hierarchy_granularity.py",
+    "experiment_log/10_exp_0.0.7_corrected_hierarchy_eligibility/run_0.0.7_corrected_hierarchy_eligibility.py": "semiconductor_analysis/experiment_log/10_exp_0.0.7_corrected_hierarchy_eligibility/run_0.0.7_corrected_hierarchy_eligibility.py",
+    "experiment_log/11_exp_1.1_intermittent_demand/run_1.1_corrected.py": "semiconductor_analysis/experiment_log/11_exp_1.1_intermittent_demand/run_1.1_corrected.py",
+    "experiment_log/11_exp_1.1_intermittent_demand/run_1.1_full_corrected.py": "semiconductor_analysis/experiment_log/11_exp_1.1_intermittent_demand/run_1.1_full_corrected.py",
+    "experiment_log/11_exp_1.1_intermittent_demand/run_1.1_intermittent_demand.py": "semiconductor_analysis/experiment_log/11_exp_1.1_intermittent_demand/run_1.1_intermittent_demand.py",
+    "experiment_log/13_exp_1.2_window_optimization/run_1.2_window_optimization.py": "semiconductor_analysis/experiment_log/13_exp_1.2_window_optimization/run_1.2_window_optimization.py",
+    "experiment_log/14_exp_1.3_lifecycle_calibration/run_1.3_lifecycle_calibration.py": "semiconductor_analysis/experiment_log/14_exp_1.3_lifecycle_calibration/run_1.3_lifecycle_calibration.py",
+    "experiment_log/15_exp_1.4_new_product_layering/run_1.4_new_product_layering.py": "semiconductor_analysis/experiment_log/15_exp_1.4_new_product_layering/run_1.4_new_product_layering.py",
+    "experiment_log/20_exp_2.1_hierarchical_reconciliation/run_2.1_hierarchical_reconciliation.py": "semiconductor_analysis/experiment_log/20_exp_2.1_hierarchical_reconciliation/run_2.1_hierarchical_reconciliation.py",
+    "experiment_log/21_exp_2.2_hierarchical_all_plines/run_2.2_hierarchical_all_plines.py": "semiconductor_analysis/experiment_log/21_exp_2.2_hierarchical_all_plines/run_2.2_hierarchical_all_plines.py",
+    "experiment_log/22_exp_2.3_pit_factor_deepening/run_2.3_pit_factor_deepening.py": "semiconductor_analysis/experiment_log/22_exp_2.3_pit_factor_deepening/run_2.3_pit_factor_deepening.py",
+    "experiment_log/23_phase2_redesign/run_phase2_redesign.py": "semiconductor_analysis/experiment_log/23_phase2_redesign/run_phase2_redesign.py",
+    "experiment_log/24_phase2_final_validation/run_phase2_final_validation.py": "semiconductor_analysis/experiment_log/24_phase2_final_validation/run_phase2_final_validation.py",
+    "experiment_log/25_phase3_ensemble/run_phase3_ensemble.py": "semiconductor_analysis/experiment_log/25_phase3_ensemble/run_phase3_ensemble.py",
+    "experiment_log/26_phase4_final/run_phase4_final.py": "semiconductor_analysis/experiment_log/26_phase4_final/run_phase4_final.py",
+    "experiment_log/experiment_log_extra_quantile_prediction/run_1.2_quantile_forecasting.py": "semiconductor_analysis/experiment_log/experiment_log_extra_quantile_prediction/run_1.2_quantile_forecasting.py",
+    "linked_list_cycle.py": "semiconductor_analysis/linked_list_cycle.py",
+    "lru_cache_decorator.py": "semiconductor_analysis/lru_cache_decorator.py",
+    "majority_element.py": "semiconductor_analysis/majority_element.py",
+    "optimize_duplicates.py": "semiconductor_analysis/optimize_duplicates.py",
+    "parse_excel_file.py": "semiconductor_analysis/parse_excel_file.py",
+    "race_condition_clear_demo.py": "semiconductor_analysis/race_condition_clear_demo.py",
+    "safe_divide.py": "semiconductor_analysis/safe_divide.py",
+    "thread_race_condition_demo.py": "semiconductor_analysis/thread_race_condition_demo.py",
+    "unified_forecast_system.py": "semiconductor_analysis/unified_forecast_system.py",
+    "unified_forecast_system_backup_v1.py": "semiconductor_analysis/unified_forecast_system_backup_v1.py",
+    "unified_forecast_system_backup_v2.py": "semiconductor_analysis/unified_forecast_system_backup_v2.py",
+    "unified_forecast_system_backup_v3.py": "semiconductor_analysis/unified_forecast_system_backup_v3.py",
+    "unified_forecast_v3.py": "semiconductor_analysis/unified_forecast_v3.py",
+    "src/__init__.py": "semiconductor_analysis_before/src/__init__.py",
+    "src/actions/__init__.py": "semiconductor_analysis_before/src/actions/__init__.py",
+    "src/anomaly/__init__.py": "semiconductor_analysis_before/src/anomaly/__init__.py",
+    "src/behavior/__init__.py": "semiconductor_analysis_before/src/behavior/__init__.py",
+    "src/behavior/volatility.py": "semiconductor_analysis_before/src/behavior/volatility.py",
+    "src/journey/__init__.py": "semiconductor_analysis_before/src/journey/__init__.py",
+    "src/journey/stage_classifier.py": "semiconductor_analysis_before/src/journey/stage_classifier.py",
+    "src/profitability/__init__.py": "semiconductor_analysis_before/src/profitability/__init__.py",
+    "src/profitability/true_profit_estimator.py": "semiconductor_analysis_before/src/profitability/true_profit_estimator.py",
+    "test/templates/__init__.py": "semiconductor_analysis_before/test/templates/__init__.py",
+    "test/templates/test_case_template.py": "semiconductor_analysis_before/test/templates/test_case_template.py",
+    "产品生命周期评估/backup/build_config.py": "产品生命周期评估/backup/build_config.py",
+    "产品生命周期评估/backup/build_html.py": "产品生命周期评估/backup/build_html.py",
+    "产品生命周期评估/backup/excel_helper.py": "产品生命周期评估/backup/excel_helper.py",
+    "产品生命周期评估/backup/generate_dashboard_v4.py": "产品生命周期评估/backup/generate_dashboard_v4.py",
+    "产品生命周期评估/backup/run.py": "产品生命周期评估/backup/run.py",
+    "产品生命周期评估/backup/run_v2.7_增强版_20260510_before_fix.py": "产品生命周期评估/backup/run_v2.7_增强版_20260510_before_fix.py",
+    "产品生命周期评估/backup/run_v2.7_增强版_backup_20260510.py": "产品生命周期评估/backup/run_v2.7_增强版_backup_20260510.py",
+    "产品生命周期评估/backup/run_v2.7_增强版_before_20260510_141955.py": "产品生命周期评估/backup/run_v2.7_增强版_before_20260510_141955.py",
+    "产品生命周期评估/backup/run_v2.8.py": "产品生命周期评估/backup/run_v2.8.py",
+    "产品生命周期评估/backup/模型测试.py": "产品生命周期评估/backup/模型测试.py",
+    "产品生命周期评估/run_v2.8.py": "产品生命周期评估/run_v2.8.py",
+    "产品生命周期评估/产品生命周期量化评估方案_v2.9/generate_v4.py": "产品生命周期评估/产品生命周期量化评估方案_v2.9/generate_v4.py",
+    "产品生命周期评估/产品生命周期量化评估方案_v2.9/run_v2.8.py": "产品生命周期评估/产品生命周期量化评估方案_v2.9/run_v2.8.py",
+    "工作文件/eda_analysis.py": "工作文件/eda_analysis.py",
+    "工作文件/eda_analysis_v2.py": "工作文件/eda_analysis_v2.py",
+    "工作文件/eda_analysis_v3.py": "工作文件/eda_analysis_v3.py",
+    "工作文件/longtail_forecast/generate_report.py": "工作文件/longtail_forecast/generate_report.py",
+    "工作文件/longtail_forecast/run_longtail_forecast.py": "工作文件/longtail_forecast/run_longtail_forecast.py",
+    "工作文件/longtail_forecast/v2/gen_dashboard.py": "工作文件/longtail_forecast/v2/gen_dashboard.py",
+    "工作文件/longtail_forecast/v2/run_full_forecast_v2.py": "工作文件/longtail_forecast/v2/run_full_forecast_v2.py",
+    "工作文件/longtail_forecast/v3/generate_report.py": "工作文件/longtail_forecast/v3/generate_report.py",
+    "工作文件/longtail_forecast/v3/run_full_forecast_v3.py": "工作文件/longtail_forecast/v3/run_full_forecast_v3.py",
+    "analysis1.py": "工作文件/semiconductor_analysis/analysis1.py",
+    "analysis2.py": "工作文件/semiconductor_analysis/analysis2.py",
+    "analysis3.py": "工作文件/semiconductor_analysis/analysis3.py",
+    "analysis4.py": "工作文件/semiconductor_analysis/analysis4.py",
+    "append_word_appendix.py": "工作文件/semiconductor_analysis/append_word_appendix.py",
+    "asp_check.py": "工作文件/semiconductor_analysis/asp_check.py",
+    "audit.py": "工作文件/semiconductor_analysis/audit.py",
+    "audit_pline.py": "工作文件/semiconductor_analysis/audit_pline.py",
+    "b2b_v2/actions/category_aptitude.py": "工作文件/semiconductor_analysis/b2b_v2/actions/category_aptitude.py",
+    "b2b_v2/actions/negative_margin.py": "工作文件/semiconductor_analysis/b2b_v2/actions/negative_margin.py",
+    "b2b_v2/actions/product_insights.py": "工作文件/semiconductor_analysis/b2b_v2/actions/product_insights.py",
+    "b2b_v2/actions/sales_profiling.py": "工作文件/semiconductor_analysis/b2b_v2/actions/sales_profiling.py",
+    "bridge2.py": "工作文件/semiconductor_analysis/bridge2.py",
+    "bridge3.py": "工作文件/semiconductor_analysis/bridge3.py",
+    "customer_analysis/period_analysis.py": "工作文件/semiconductor_analysis/customer_analysis/period_analysis.py",
+    "customer_analysis/rd_recommendation.py": "工作文件/semiconductor_analysis/customer_analysis/rd_recommendation.py",
+    "dashboard/_patch_dashboard.py": "工作文件/semiconductor_analysis/dashboard/_patch_dashboard.py",
+    "dashboard/audit_alerts.py": "工作文件/semiconductor_analysis/dashboard/audit_alerts.py",
+    "dashboard/audit_cats.py": "工作文件/semiconductor_analysis/dashboard/audit_cats.py",
+    "dashboard/audit_cats2.py": "工作文件/semiconductor_analysis/dashboard/audit_cats2.py",
+    "dashboard/audit_data.py": "工作文件/semiconductor_analysis/dashboard/audit_data.py",
+    "dashboard/audit_deep.py": "工作文件/semiconductor_analysis/dashboard/audit_deep.py",
+    "dashboard/audit_final.py": "工作文件/semiconductor_analysis/dashboard/audit_final.py",
+    "dashboard/audit_html.py": "工作文件/semiconductor_analysis/dashboard/audit_html.py",
+    "dashboard/audit_new.py": "工作文件/semiconductor_analysis/dashboard/audit_new.py",
+    "dashboard/audit_rhythm.py": "工作文件/semiconductor_analysis/dashboard/audit_rhythm.py",
+    "dashboard/audit_small.py": "工作文件/semiconductor_analysis/dashboard/audit_small.py",
+    "dashboard/build_data.py": "工作文件/semiconductor_analysis/dashboard/build_data.py",
+    "dashboard/check_col.py": "工作文件/semiconductor_analysis/dashboard/check_col.py",
+    "dashboard/check_cust.py": "工作文件/semiconductor_analysis/dashboard/check_cust.py",
+    "dashboard/check_data.py": "工作文件/semiconductor_analysis/dashboard/check_data.py",
+    "dashboard/check_kpi.py": "工作文件/semiconductor_analysis/dashboard/check_kpi.py",
+    "dashboard/check_kpi2.py": "工作文件/semiconductor_analysis/dashboard/check_kpi2.py",
+    "dashboard/check_names.py": "工作文件/semiconductor_analysis/dashboard/check_names.py",
+    "dashboard/data_inventory.py": "工作文件/semiconductor_analysis/dashboard/data_inventory.py",
+    "dashboard/final_audit.py": "工作文件/semiconductor_analysis/dashboard/final_audit.py",
+    "dashboard/final_check.py": "工作文件/semiconductor_analysis/dashboard/final_check.py",
+    "dashboard/find_col.py": "工作文件/semiconductor_analysis/dashboard/find_col.py",
+    "dashboard/find_col2.py": "工作文件/semiconductor_analysis/dashboard/find_col2.py",
+    "dashboard/find_col3.py": "工作文件/semiconductor_analysis/dashboard/find_col3.py",
+    "dashboard/find_col4.py": "工作文件/semiconductor_analysis/dashboard/find_col4.py",
+    "dashboard/find_col5.py": "工作文件/semiconductor_analysis/dashboard/find_col5.py",
+    "dashboard/generate_dashboard.py": "工作文件/semiconductor_analysis/dashboard/generate_dashboard.py",
+    "dashboard/verify_raw.py": "工作文件/semiconductor_analysis/dashboard/verify_raw.py",
+    "dashboard/verify_syntax.py": "工作文件/semiconductor_analysis/dashboard/verify_syntax.py",
+    "dashboard/verify_ytd.py": "工作文件/semiconductor_analysis/dashboard/verify_ytd.py",
+    "deep_action.py": "工作文件/semiconductor_analysis/deep_action.py",
+    "deep_all.py": "工作文件/semiconductor_analysis/deep_all.py",
+    "deep_sales_products.py": "工作文件/semiconductor_analysis/deep_sales_products.py",
+    "deep_zxkx.py": "工作文件/semiconductor_analysis/deep_zxkx.py",
+    "diag.py": "工作文件/semiconductor_analysis/diag.py",
+    "experiment_log/phase_0_baseline/exp_0.0.5_coverage_diagnosis/run_0.0.5_v2.py": "工作文件/semiconductor_analysis/experiment_log/phase_0_baseline/exp_0.0.5_coverage_diagnosis/run_0.0.5_v2.py",
+    "experiment_log/phase_0_baseline/exp_0.0_trivial_baselines/run_0.0_trivial_baselines.py": "工作文件/semiconductor_analysis/experiment_log/phase_0_baseline/exp_0.0_trivial_baselines/run_0.0_trivial_baselines.py",
+    "experiment_log/phase_0_baseline/exp_0.1.5_method_filter/run_0.1.5_v2.py": "工作文件/semiconductor_analysis/experiment_log/phase_0_baseline/exp_0.1.5_method_filter/run_0.1.5_v2.py",
+    "experiment_log/phase_0_baseline/exp_0.2_baseline_lock/run_0.2_baseline_lock.py": "工作文件/semiconductor_analysis/experiment_log/phase_0_baseline/exp_0.2_baseline_lock/run_0.2_baseline_lock.py",
+    "experiment_log/phase_0_baseline/exp_0.3_lifecycle_alignment/run_0.3_v3.py": "工作文件/semiconductor_analysis/experiment_log/phase_0_baseline/exp_0.3_lifecycle_alignment/run_0.3_v3.py",
+    "fix_fonts.py": "工作文件/semiconductor_analysis/fix_fonts.py",
+    "fix_header_repeat.py": "工作文件/semiconductor_analysis/fix_header_repeat.py",
+    "fix_price.py": "工作文件/semiconductor_analysis/fix_price.py",
+    "fix_valign.py": "工作文件/semiconductor_analysis/fix_valign.py",
+    "fix_word_24.py": "工作文件/semiconductor_analysis/fix_word_24.py",
+    "fix_word_75.py": "工作文件/semiconductor_analysis/fix_word_75.py",
+    "fix_word_bridge.py": "工作文件/semiconductor_analysis/fix_word_bridge.py",
+    "fix_word_ch9.py": "工作文件/semiconductor_analysis/fix_word_ch9.py",
+    "fix_word_zxkx.py": "工作文件/semiconductor_analysis/fix_word_zxkx.py",
+    "generate_v4.py": "工作文件/semiconductor_analysis/generate_v4.py",
+    "ka_list.py": "工作文件/semiconductor_analysis/ka_list.py",
+    "make_word.py": "工作文件/semiconductor_analysis/make_word.py",
+    "output/test/run_0.0.5_coverage_diagnosis.py": "工作文件/semiconductor_analysis/output/test/run_0.0.5_coverage_diagnosis.py",
+    "output/test/run_0.0.5_v2.py": "工作文件/semiconductor_analysis/output/test/run_0.0.5_v2.py",
+    "output/test/run_0.0_trivial_baselines.py": "工作文件/semiconductor_analysis/output/test/run_0.0_trivial_baselines.py",
+    "output/test/run_0.1.5_method_filter.py": "工作文件/semiconductor_analysis/output/test/run_0.1.5_method_filter.py",
+    "output/test/run_0.1.5_v2.py": "工作文件/semiconductor_analysis/output/test/run_0.1.5_v2.py",
+    "output/test/run_0.2_baseline_lock.py": "工作文件/semiconductor_analysis/output/test/run_0.2_baseline_lock.py",
+    "output/test/run_0.3_lifecycle.py": "工作文件/semiconductor_analysis/output/test/run_0.3_lifecycle.py",
+    "output/test/run_0.3_v2.py": "工作文件/semiconductor_analysis/output/test/run_0.3_v2.py",
+    "output/test/run_0.3_v3.py": "工作文件/semiconductor_analysis/output/test/run_0.3_v3.py",
+    "peek.py": "工作文件/semiconductor_analysis/peek.py",
+    "recompute_asp.py": "工作文件/semiconductor_analysis/recompute_asp.py",
+    "run2.py": "工作文件/semiconductor_analysis/run2.py",
+    "run3.py": "工作文件/semiconductor_analysis/run3.py",
+    "run4.py": "工作文件/semiconductor_analysis/run4.py",
+    "run_action.py": "工作文件/semiconductor_analysis/run_action.py",
+    "run_audit.py": "工作文件/semiconductor_analysis/run_audit.py",
+    "run_deep.py": "工作文件/semiconductor_analysis/run_deep.py",
+    "run_sp.py": "工作文件/semiconductor_analysis/run_sp.py",
+    "run_zxkx.py": "工作文件/semiconductor_analysis/run_zxkx.py",
+    "runall.py": "工作文件/semiconductor_analysis/runall.py",
+    "scout.py": "工作文件/semiconductor_analysis/scout.py",
+    "test.py": "工作文件/semiconductor_analysis/test.py",
+    "test_output/check_data.py": "工作文件/semiconductor_analysis/test_output/check_data.py",
+    "verify.py": "工作文件/semiconductor_analysis/verify.py",
+    "verify_word.py": "工作文件/semiconductor_analysis/verify_word.py",
+    "看板流水线/dashboard/generate_dashboard.py": "看板流水线/dashboard/generate_dashboard.py",
+    "看板流水线/processing/analysis/__init__.py": "看板流水线/processing/analysis/__init__.py",
+    "看板流水线/processing/analysis/b2b_adapters.py": "看板流水线/processing/analysis/b2b_adapters.py",
+    "看板流水线/processing/analysis/c6_production_mapping.py": "看板流水线/processing/analysis/c6_production_mapping.py",
+    "看板流水线/processing/analysis/gold_builders.py": "看板流水线/processing/analysis/gold_builders.py",
+    "看板流水线/processing/analysis/pricing/__init__.py": "看板流水线/processing/analysis/pricing/__init__.py",
+    "看板流水线/processing/analysis/pricing/pricing_actions.py": "看板流水线/processing/analysis/pricing/pricing_actions.py",
+    "看板流水线/processing/analysis/pricing/pricing_bands.py": "看板流水线/processing/analysis/pricing/pricing_bands.py",
+    "看板流水线/processing/analysis/pricing/pricing_customer.py": "看板流水线/processing/analysis/pricing/pricing_customer.py",
+    "看板流水线/processing/analysis/pricing/pricing_insights.py": "看板流水线/processing/analysis/pricing/pricing_insights.py",
+    "看板流水线/processing/analysis/pricing/pricing_lifecycle.py": "看板流水线/processing/analysis/pricing/pricing_lifecycle.py",
+    "看板流水线/processing/analysis/pricing/pricing_trends.py": "看板流水线/processing/analysis/pricing/pricing_trends.py",
+    "看板流水线/processing/analysis/rfm_pi.py": "看板流水线/processing/analysis/rfm_pi.py",
+    "看板流水线/processing/analysis/scoring.py": "看板流水线/processing/analysis/scoring.py",
+    "看板流水线/processing/b2b_v2/__init__.py": "看板流水线/processing/b2b_v2/__init__.py",
+    "看板流水线/processing/b2b_v2/actions/__init__.py": "看板流水线/processing/b2b_v2/actions/__init__.py",
+    "看板流水线/processing/b2b_v2/actions/category_aptitude.py": "看板流水线/processing/b2b_v2/actions/category_aptitude.py",
+    "看板流水线/processing/b2b_v2/actions/cross_sell.py": "看板流水线/processing/b2b_v2/actions/cross_sell.py",
+    "看板流水线/processing/b2b_v2/actions/negative_margin.py": "看板流水线/processing/b2b_v2/actions/negative_margin.py",
+    "看板流水线/processing/b2b_v2/actions/product_insights.py": "看板流水线/processing/b2b_v2/actions/product_insights.py",
+    "看板流水线/processing/b2b_v2/actions/rules_engine.py": "看板流水线/processing/b2b_v2/actions/rules_engine.py",
+    "看板流水线/processing/b2b_v2/actions/run.py": "看板流水线/processing/b2b_v2/actions/run.py",
+    "看板流水线/processing/b2b_v2/actions/sales_profiling.py": "看板流水线/processing/b2b_v2/actions/sales_profiling.py",
+    "看板流水线/processing/b2b_v2/anomaly/__init__.py": "看板流水线/processing/b2b_v2/anomaly/__init__.py",
+    "看板流水线/processing/b2b_v2/anomaly/inventory.py": "看板流水线/processing/b2b_v2/anomaly/inventory.py",
+    "看板流水线/processing/b2b_v2/anomaly/isolation_forest.py": "看板流水线/processing/b2b_v2/anomaly/isolation_forest.py",
+    "看板流水线/processing/b2b_v2/anomaly/rules.py": "看板流水线/processing/b2b_v2/anomaly/rules.py",
+    "看板流水线/processing/b2b_v2/anomaly/run.py": "看板流水线/processing/b2b_v2/anomaly/run.py",
+    "看板流水线/processing/b2b_v2/behavior/__init__.py": "看板流水线/processing/b2b_v2/behavior/__init__.py",
+    "看板流水线/processing/b2b_v2/behavior/volatility.py": "看板流水线/processing/b2b_v2/behavior/volatility.py",
+    "看板流水线/processing/b2b_v2/journey/__init__.py": "看板流水线/processing/b2b_v2/journey/__init__.py",
+    "看板流水线/processing/b2b_v2/journey/stage_classifier.py": "看板流水线/processing/b2b_v2/journey/stage_classifier.py",
+    "看板流水线/processing/b2b_v2/profitability/__init__.py": "看板流水线/processing/b2b_v2/profitability/__init__.py",
+    "看板流水线/processing/b2b_v2/profitability/true_profit_estimator.py": "看板流水线/processing/b2b_v2/profitability/true_profit_estimator.py",
+    "看板流水线/processing/config/__init__.py": "看板流水线/processing/config/__init__.py",
+    "看板流水线/processing/config/settings.py": "看板流水线/processing/config/settings.py",
+    "看板流水线/processing/config/settings_customer.py": "看板流水线/processing/config/settings_customer.py",
+    "看板流水线/processing/config/settings_product.py": "看板流水线/processing/config/settings_product.py",
+    "看板流水线/processing/core/__init__.py": "看板流水线/processing/core/__init__.py",
+    "看板流水线/processing/core/config.py": "看板流水线/processing/core/config.py",
+    "看板流水线/processing/core/interfaces.py": "看板流水线/processing/core/interfaces.py",
+    "看板流水线/processing/core/pipeline.py": "看板流水线/processing/core/pipeline.py",
+    "看板流水线/processing/cross_reference/__init__.py": "看板流水线/processing/cross_reference/__init__.py",
+    "看板流水线/processing/cross_reference/run_cross_ref.py": "看板流水线/processing/cross_reference/run_cross_ref.py",
+    "看板流水线/processing/customer_analysis/__init__.py": "看板流水线/processing/customer_analysis/__init__.py",
+    "看板流水线/processing/customer_analysis/customer_master.py": "看板流水线/processing/customer_analysis/customer_master.py",
+    "看板流水线/processing/customer_analysis/dimensions.py": "看板流水线/processing/customer_analysis/dimensions.py",
+    "看板流水线/processing/customer_analysis/gold.py": "看板流水线/processing/customer_analysis/gold.py",
+    "看板流水线/processing/customer_analysis/group_aggregation.py": "看板流水线/processing/customer_analysis/group_aggregation.py",
+    "看板流水线/processing/customer_analysis/models.py": "看板流水线/processing/customer_analysis/models.py",
+    "看板流水线/processing/customer_analysis/period_analysis.py": "看板流水线/processing/customer_analysis/period_analysis.py",
+    "看板流水线/processing/customer_analysis/portrait.py": "看板流水线/processing/customer_analysis/portrait.py",
+    "看板流水线/processing/customer_analysis/price_deep_dive.py": "看板流水线/processing/customer_analysis/price_deep_dive.py",
+    "看板流水线/processing/customer_analysis/rd_recommendation.py": "看板流水线/processing/customer_analysis/rd_recommendation.py",
+    "看板流水线/processing/customer_analysis/report.py": "看板流水线/processing/customer_analysis/report.py",
+    "看板流水线/processing/customer_analysis/run_kpi_daily.py": "看板流水线/processing/customer_analysis/run_kpi_daily.py",
+    "看板流水线/processing/customer_analysis/run_pipeline.py": "看板流水线/processing/customer_analysis/run_pipeline.py",
+    "看板流水线/processing/customer_analysis/scoring.py": "看板流水线/processing/customer_analysis/scoring.py",
+    "看板流水线/processing/customer_analysis/silver.py": "看板流水线/processing/customer_analysis/silver.py",
+    "看板流水线/processing/customer_analysis/trend_analysis.py": "看板流水线/processing/customer_analysis/trend_analysis.py",
+    "看板流水线/processing/data_pipeline/__init__.py": "看板流水线/processing/data_pipeline/__init__.py",
+    "看板流水线/processing/data_pipeline/aggregator.py": "看板流水线/processing/data_pipeline/aggregator.py",
+    "看板流水线/processing/data_pipeline/cleaner.py": "看板流水线/processing/data_pipeline/cleaner.py",
+    "看板流水线/processing/data_pipeline/loader.py": "看板流水线/processing/data_pipeline/loader.py",
+    "看板流水线/processing/data_pipeline/validator.py": "看板流水线/processing/data_pipeline/validator.py",
+    "看板流水线/processing/product_lifecycle/__init__.py": "看板流水线/processing/product_lifecycle/__init__.py",
+    "看板流水线/processing/product_lifecycle/nine_grid.py": "看板流水线/processing/product_lifecycle/nine_grid.py",
+    "看板流水线/processing/product_lifecycle/notes.py": "看板流水线/processing/product_lifecycle/notes.py",
+    "看板流水线/processing/product_lifecycle/profiling.py": "看板流水线/processing/product_lifecycle/profiling.py",
+    "看板流水线/processing/product_lifecycle/report.py": "看板流水线/processing/product_lifecycle/report.py",
+    "看板流水线/processing/product_lifecycle/run.py": "看板流水线/processing/product_lifecycle/run.py",
+    "看板流水线/processing/reports/__init__.py": "看板流水线/processing/reports/__init__.py",
+    "看板流水线/processing/reports/gold_exporter.py": "看板流水线/processing/reports/gold_exporter.py",
+    "看板流水线/processing/run_all.py": "看板流水线/processing/run_all.py",
+    "看板流水线/processing/shared/__init__.py": "看板流水线/processing/shared/__init__.py",
+    "看板流水线/processing/shared/calc_utils.py": "看板流水线/processing/shared/calc_utils.py",
+    "看板流水线/processing/shared/classifiers.py": "看板流水线/processing/shared/classifiers.py",
+    "看板流水线/processing/shared/customer_analysis.py": "看板流水线/processing/shared/customer_analysis.py",
+    "看板流水线/processing/shared/data_cleaning.py": "看板流水线/processing/shared/data_cleaning.py",
+    "看板流水线/processing/shared/forecasting.py": "看板流水线/processing/shared/forecasting.py",
+    "看板流水线/processing/shared/pricing.py": "看板流水线/processing/shared/pricing.py",
+    "看板流水线/processing/shared/risk_scoring.py": "看板流水线/processing/shared/risk_scoring.py",
+    "看板流水线/processing/shared/timing.py": "看板流水线/processing/shared/timing.py",
+    "看板流水线/run_chain.py": "看板流水线/run_chain.py"
+  },
+  "tags": {
+    "semiconductor_analysis/_debug_f1f.py": "normal",
+    "semiconductor_analysis/_debug_mw.py": "normal",
+    "semiconductor_analysis/_explore_shipping.py": "normal",
+    "semiconductor_analysis/_step1_c6_compute.py": "normal",
+    "semiconductor_analysis/_step2_test_c6.py": "normal",
+    "semiconductor_analysis/analysis/__init__.py": "normal",
+    "semiconductor_analysis/analysis/b2b_adapters.py": "normal",
+    "semiconductor_analysis/analysis/c6_production_mapping.py": "normal",
+    "semiconductor_analysis/analysis/gold_builders.py": "normal",
+    "semiconductor_analysis/analysis/pricing/__init__.py": "normal",
+    "semiconductor_analysis/analysis/pricing/pricing_actions.py": "normal",
+    "semiconductor_analysis/analysis/pricing/pricing_bands.py": "normal",
+    "semiconductor_analysis/analysis/pricing/pricing_customer.py": "normal",
+    "semiconductor_analysis/analysis/pricing/pricing_insights.py": "normal",
+    "semiconductor_analysis/analysis/pricing/pricing_lifecycle.py": "normal",
+    "semiconductor_analysis/analysis/pricing/pricing_trends.py": "normal",
+    "semiconductor_analysis/analysis/rfm_pi.py": "normal",
+    "semiconductor_analysis/analysis/scoring.py": "normal",
+    "semiconductor_analysis/b2b_v2/__init__.py": "normal",
+    "semiconductor_analysis/b2b_v2/actions/__init__.py": "normal",
+    "semiconductor_analysis/b2b_v2/actions/cross_sell.py": "normal",
+    "semiconductor_analysis/b2b_v2/actions/rules_engine.py": "normal",
+    "semiconductor_analysis/b2b_v2/actions/run.py": "normal",
+    "semiconductor_analysis/b2b_v2/anomaly/__init__.py": "normal",
+    "semiconductor_analysis/b2b_v2/anomaly/inventory.py": "normal",
+    "semiconductor_analysis/b2b_v2/anomaly/isolation_forest.py": "normal",
+    "semiconductor_analysis/b2b_v2/anomaly/rules.py": "normal",
+    "semiconductor_analysis/b2b_v2/anomaly/run.py": "normal",
+    "semiconductor_analysis/b2b_v2/behavior/__init__.py": "normal",
+    "semiconductor_analysis/b2b_v2/behavior/volatility.py": "normal",
+    "semiconductor_analysis/b2b_v2/journey/__init__.py": "normal",
+    "semiconductor_analysis/b2b_v2/journey/stage_classifier.py": "normal",
+    "semiconductor_analysis/b2b_v2/profitability/__init__.py": "normal",
+    "semiconductor_analysis/b2b_v2/profitability/true_profit_estimator.py": "normal",
+    "semiconductor_analysis/config/__init__.py": "normal",
+    "semiconductor_analysis/config/settings.py": "normal",
+    "semiconductor_analysis/config/settings_customer.py": "normal",
+    "semiconductor_analysis/config/settings_product.py": "normal",
+    "semiconductor_analysis/conftest.py": "normal",
+    "semiconductor_analysis/core/__init__.py": "normal",
+    "semiconductor_analysis/core/config.py": "normal",
+    "semiconductor_analysis/core/interfaces.py": "normal",
+    "semiconductor_analysis/core/pipeline.py": "normal",
+    "semiconductor_analysis/cross_reference/__init__.py": "normal",
+    "semiconductor_analysis/cross_reference/run_cross_ref.py": "normal",
+    "semiconductor_analysis/customer_analysis/__init__.py": "normal",
+    "semiconductor_analysis/customer_analysis/customer_master.py": "normal",
+    "semiconductor_analysis/customer_analysis/dimensions.py": "normal",
+    "semiconductor_analysis/customer_analysis/gold.py": "normal",
+    "semiconductor_analysis/customer_analysis/group_aggregation.py": "normal",
+    "semiconductor_analysis/customer_analysis/models.py": "normal",
+    "semiconductor_analysis/customer_analysis/portrait.py": "normal",
+    "semiconductor_analysis/customer_analysis/price_deep_dive.py": "normal",
+    "semiconductor_analysis/customer_analysis/report.py": "normal",
+    "semiconductor_analysis/customer_analysis/run_kpi_daily.py": "normal",
+    "semiconductor_analysis/customer_analysis/run_pipeline.py": "normal",
+    "semiconductor_analysis/customer_analysis/scoring.py": "normal",
+    "semiconductor_analysis/customer_analysis/silver.py": "normal",
+    "semiconductor_analysis/customer_analysis/trend_analysis.py": "normal",
+    "semiconductor_analysis/data/decrypt_excel.py": "normal",
+    "semiconductor_analysis/data_pipeline/__init__.py": "normal",
+    "semiconductor_analysis/data_pipeline/aggregator.py": "normal",
+    "semiconductor_analysis/data_pipeline/cleaner.py": "normal",
+    "semiconductor_analysis/data_pipeline/loader.py": "normal",
+    "semiconductor_analysis/data_pipeline/validator.py": "normal",
+    "semiconductor_analysis/detailed_excel_analysis.py": "normal",
+    "semiconductor_analysis/experiment_log/00_master/field_check_20260612.py": "normal",
+    "semiconductor_analysis/experiment_log/00_master/field_check_period_20260612.py": "normal",
+    "semiconductor_analysis/experiment_log/00_master/run_phase1_correction.py": "normal",
+    "semiconductor_analysis/experiment_log/00_master/summarize_corrected_runs_20260612.py": "normal",
+    "semiconductor_analysis/experiment_log/01_exp_0.0_trivial_baselines/run_0.0_trivial_baselines.py": "normal",
+    "semiconductor_analysis/experiment_log/02_exp_0.0.5_coverage_diagnosis/run_0.0.5_v2.py": "normal",
+    "semiconductor_analysis/experiment_log/04_exp_0.1.5_method_filter/run_0.1.5_v2.py": "normal",
+    "semiconductor_analysis/experiment_log/05_exp_0.2_baseline_lock/run_0.2_baseline_lock.py": "normal",
+    "semiconductor_analysis/experiment_log/07_exp_0.3_lifecycle_alignment/run_0.3_v3.py": "normal",
+    "semiconductor_analysis/experiment_log/08_exp_0.0.6_hierarchy_eligibility/run_0.0.6.py": "normal",
+    "semiconductor_analysis/experiment_log/09_exp_1.0_hierarchy_granularity/run_1.0_hierarchy_granularity.py": "normal",
+    "semiconductor_analysis/experiment_log/10_exp_0.0.7_corrected_hierarchy_eligibility/run_0.0.7_corrected_hierarchy_eligibility.py": "normal",
+    "semiconductor_analysis/experiment_log/11_exp_1.1_intermittent_demand/run_1.1_corrected.py": "normal",
+    "semiconductor_analysis/experiment_log/11_exp_1.1_intermittent_demand/run_1.1_full_corrected.py": "normal",
+    "semiconductor_analysis/experiment_log/11_exp_1.1_intermittent_demand/run_1.1_intermittent_demand.py": "normal",
+    "semiconductor_analysis/experiment_log/13_exp_1.2_window_optimization/run_1.2_window_optimization.py": "normal",
+    "semiconductor_analysis/experiment_log/14_exp_1.3_lifecycle_calibration/run_1.3_lifecycle_calibration.py": "normal",
+    "semiconductor_analysis/experiment_log/15_exp_1.4_new_product_layering/run_1.4_new_product_layering.py": "normal",
+    "semiconductor_analysis/experiment_log/20_exp_2.1_hierarchical_reconciliation/run_2.1_hierarchical_reconciliation.py": "normal",
+    "semiconductor_analysis/experiment_log/21_exp_2.2_hierarchical_all_plines/run_2.2_hierarchical_all_plines.py": "normal",
+    "semiconductor_analysis/experiment_log/22_exp_2.3_pit_factor_deepening/run_2.3_pit_factor_deepening.py": "normal",
+    "semiconductor_analysis/experiment_log/23_phase2_redesign/run_phase2_redesign.py": "normal",
+    "semiconductor_analysis/experiment_log/24_phase2_final_validation/run_phase2_final_validation.py": "normal",
+    "semiconductor_analysis/experiment_log/25_phase3_ensemble/run_phase3_ensemble.py": "normal",
+    "semiconductor_analysis/experiment_log/26_phase4_final/run_phase4_final.py": "normal",
+    "semiconductor_analysis/experiment_log/experiment_log_extra_quantile_prediction/run_1.2_quantile_forecasting.py": "normal",
+    "semiconductor_analysis/linked_list_cycle.py": "junk",
+    "semiconductor_analysis/lru_cache_decorator.py": "junk",
+    "semiconductor_analysis/majority_element.py": "junk",
+    "semiconductor_analysis/optimize_duplicates.py": "junk",
+    "semiconductor_analysis/optimizer/__init__.py": "normal",
+    "semiconductor_analysis/optimizer/blindspot_analysis_rest.py": "normal",
+    "semiconductor_analysis/optimizer/blindspot_diagnosis.py": "normal",
+    "semiconductor_analysis/optimizer/comprehensive_eval.py": "normal",
+    "semiconductor_analysis/optimizer/comprehensive_eval_part2.py": "normal",
+    "semiconductor_analysis/optimizer/config.py": "normal",
+    "semiconductor_analysis/optimizer/crossval.py": "normal",
+    "semiconductor_analysis/optimizer/data_loader.py": "normal",
+    "semiconductor_analysis/optimizer/evaluate_solutions_2024.py": "normal",
+    "semiconductor_analysis/optimizer/metrics.py": "normal",
+    "semiconductor_analysis/optimizer/recent_eval_and_solutions.py": "normal",
+    "semiconductor_analysis/optimizer/reporter.py": "normal",
+    "semiconductor_analysis/optimizer/run_pipeline.py": "normal",
+    "semiconductor_analysis/optimizer/scoring_v2.py": "normal",
+    "semiconductor_analysis/optimizer/threshold_search.py": "normal",
+    "semiconductor_analysis/optimizer/weight_search.py": "normal",
+    "semiconductor_analysis/parse_excel_file.py": "normal",
+    "semiconductor_analysis/product_lifecycle/__init__.py": "normal",
+    "semiconductor_analysis/product_lifecycle/nine_grid.py": "normal",
+    "semiconductor_analysis/product_lifecycle/notes.py": "normal",
+    "semiconductor_analysis/product_lifecycle/profiling.py": "normal",
+    "semiconductor_analysis/product_lifecycle/report.py": "normal",
+    "semiconductor_analysis/product_lifecycle/run.py": "normal",
+    "semiconductor_analysis/quarterly_forecast_package/run_customer_forecast.py": "normal",
+    "semiconductor_analysis/quarterly_forecast_package/run_quarterly_forecast.py": "normal",
+    "semiconductor_analysis/race_condition_clear_demo.py": "junk",
+    "semiconductor_analysis/recession_risk_opt/archive/analysis/analyze_results.py": "normal",
+    "semiconductor_analysis/recession_risk_opt/archive/analysis/factor_exploration.py": "normal",
+    "semiconductor_analysis/recession_risk_opt/archive/analysis/orthogonal_check.py": "normal",
+    "semiconductor_analysis/recession_risk_opt/archive/demo/demo_tiered_risk.py": "normal",
+    "semiconductor_analysis/recession_risk_opt/archive/runners/run_stage5.py": "normal",
+    "semiconductor_analysis/recession_risk_opt/archive/runners/stage5_final.py": "normal",
+    "semiconductor_analysis/recession_risk_opt/archive/tests/test_consec_decline.py": "normal",
+    "semiconductor_analysis/recession_risk_opt/backtest_framework.py": "normal",
+    "semiconductor_analysis/recession_risk_opt/generate_snapshot.py": "normal",
+    "semiconductor_analysis/recession_risk_opt/models/risk_scorer.py": "normal",
+    "semiconductor_analysis/recession_risk_opt/phase1_customer_factors.py": "normal",
+    "semiconductor_analysis/recession_risk_opt/phase2_f1_repair.py": "normal",
+    "semiconductor_analysis/recession_risk_opt/phase3_model_comparison.py": "normal",
+    "semiconductor_analysis/recession_risk_opt/phase4_case_review.py": "normal",
+    "semiconductor_analysis/recession_risk_opt/phase5_action_baseline.py": "normal",
+    "semiconductor_analysis/recession_risk_opt/phaseA_check_cross_validation.py": "normal",
+    "semiconductor_analysis/recession_risk_opt/phaseA_data_check.py": "normal",
+    "semiconductor_analysis/recession_risk_opt/phaseA_severity_distribution.py": "normal",
+    "semiconductor_analysis/recession_risk_opt/phaseB1a_severity_regression.py": "normal",
+    "semiconductor_analysis/recession_risk_opt/pipeline.py": "normal",
+    "semiconductor_analysis/recession_risk_opt/v31_calibration.py": "normal",
+    "semiconductor_analysis/recession_risk_opt/v31_final_optimization.py": "normal",
+    "semiconductor_analysis/reports/__init__.py": "normal",
+    "semiconductor_analysis/reports/gold_exporter.py": "normal",
+    "semiconductor_analysis/run_all.py": "normal",
+    "semiconductor_analysis/run_customer.py": "normal",
+    "semiconductor_analysis/run_product.py": "normal",
+    "semiconductor_analysis/safe_divide.py": "normal",
+    "semiconductor_analysis/scripts/chart_data.py": "normal",
+    "semiconductor_analysis/scripts/final_forecast.py": "normal",
+    "semiconductor_analysis/scripts/generate_chart_html.py": "normal",
+    "semiconductor_analysis/shared/__init__.py": "normal",
+    "semiconductor_analysis/shared/calc_utils.py": "normal",
+    "semiconductor_analysis/shared/classifiers.py": "normal",
+    "semiconductor_analysis/shared/customer_analysis.py": "normal",
+    "semiconductor_analysis/shared/data_cleaning.py": "normal",
+    "semiconductor_analysis/shared/forecasting.py": "normal",
+    "semiconductor_analysis/shared/pricing.py": "normal",
+    "semiconductor_analysis/shared/risk_scoring.py": "normal",
+    "semiconductor_analysis/shared/timing.py": "normal",
+    "semiconductor_analysis/test/__init__.py": "normal",
+    "semiconductor_analysis/test/batch_a_test.py": "normal",
+    "semiconductor_analysis/test/conftest.py": "normal",
+    "semiconductor_analysis/test/fallback.py": "normal",
+    "semiconductor_analysis/test/phase1_load.py": "normal",
+    "semiconductor_analysis/test/phase2_validate.py": "normal",
+    "semiconductor_analysis/test/phase3_visualize.py": "normal",
+    "semiconductor_analysis/test/run_all_tests.py": "normal",
+    "semiconductor_analysis/test/test_analysis_scoring.py": "normal",
+    "semiconductor_analysis/test/test_gold_builders.py": "normal",
+    "semiconductor_analysis/test/test_gold_exporter.py": "normal",
+    "semiconductor_analysis/test/test_pipeline.py": "normal",
+    "semiconductor_analysis/test/test_validator.py": "normal",
+    "semiconductor_analysis/test/test_week1_modules.py": "normal",
+    "semiconductor_analysis/test/validation_suite.py": "normal",
+    "semiconductor_analysis/thread_race_condition_demo.py": "junk",
+    "semiconductor_analysis/unified_forecast_system.py": "normal",
+    "semiconductor_analysis/unified_forecast_system_backup_v1.py": "normal",
+    "semiconductor_analysis/unified_forecast_system_backup_v2.py": "normal",
+    "semiconductor_analysis/unified_forecast_system_backup_v3.py": "normal",
+    "semiconductor_analysis/unified_forecast_v3.py": "normal",
+    "semiconductor_analysis_before/config/__init__.py": "normal",
+    "semiconductor_analysis_before/config/settings.py": "normal",
+    "semiconductor_analysis_before/cross_reference/__init__.py": "normal",
+    "semiconductor_analysis_before/cross_reference/run_cross_ref.py": "normal",
+    "semiconductor_analysis_before/customer_analysis/__init__.py": "normal",
+    "semiconductor_analysis_before/customer_analysis/models.py": "normal",
+    "semiconductor_analysis_before/customer_analysis/run_kpi_daily.py": "normal",
+    "semiconductor_analysis_before/customer_analysis/run_pipeline.py": "normal",
+    "semiconductor_analysis_before/product_lifecycle/__init__.py": "normal",
+    "semiconductor_analysis_before/product_lifecycle/nine_grid.py": "normal",
+    "semiconductor_analysis_before/product_lifecycle/notes.py": "normal",
+    "semiconductor_analysis_before/product_lifecycle/profiling.py": "normal",
+    "semiconductor_analysis_before/product_lifecycle/run.py": "normal",
+    "semiconductor_analysis_before/run_all.py": "normal",
+    "semiconductor_analysis_before/run_customer.py": "normal",
+    "semiconductor_analysis_before/run_product.py": "normal",
+    "semiconductor_analysis_before/shared/__init__.py": "normal",
+    "semiconductor_analysis_before/shared/calc_utils.py": "normal",
+    "semiconductor_analysis_before/shared/classifiers.py": "normal",
+    "semiconductor_analysis_before/shared/customer_analysis.py": "normal",
+    "semiconductor_analysis_before/shared/data_cleaning.py": "normal",
+    "semiconductor_analysis_before/shared/forecasting.py": "normal",
+    "semiconductor_analysis_before/shared/pricing.py": "normal",
+    "semiconductor_analysis_before/shared/risk_scoring.py": "normal",
+    "semiconductor_analysis_before/src/__init__.py": "normal",
+    "semiconductor_analysis_before/src/actions/__init__.py": "normal",
+    "semiconductor_analysis_before/src/anomaly/__init__.py": "normal",
+    "semiconductor_analysis_before/src/behavior/__init__.py": "normal",
+    "semiconductor_analysis_before/src/behavior/volatility.py": "normal",
+    "semiconductor_analysis_before/src/journey/__init__.py": "normal",
+    "semiconductor_analysis_before/src/journey/stage_classifier.py": "normal",
+    "semiconductor_analysis_before/src/profitability/__init__.py": "normal",
+    "semiconductor_analysis_before/src/profitability/true_profit_estimator.py": "normal",
+    "semiconductor_analysis_before/test/__init__.py": "normal",
+    "semiconductor_analysis_before/test/batch_a_test.py": "normal",
+    "semiconductor_analysis_before/test/conftest.py": "normal",
+    "semiconductor_analysis_before/test/fallback.py": "normal",
+    "semiconductor_analysis_before/test/phase1_load.py": "normal",
+    "semiconductor_analysis_before/test/phase2_validate.py": "normal",
+    "semiconductor_analysis_before/test/phase3_visualize.py": "normal",
+    "semiconductor_analysis_before/test/run_all_tests.py": "normal",
+    "semiconductor_analysis_before/test/templates/__init__.py": "normal",
+    "semiconductor_analysis_before/test/templates/test_case_template.py": "normal",
+    "semiconductor_analysis_before/test/test_week1_modules.py": "normal",
+    "产品生命周期评估/backup/build_config.py": "normal",
+    "产品生命周期评估/backup/build_html.py": "normal",
+    "产品生命周期评估/backup/excel_helper.py": "normal",
+    "产品生命周期评估/backup/generate_dashboard_v4.py": "normal",
+    "产品生命周期评估/backup/run.py": "normal",
+    "产品生命周期评估/backup/run_v2.7_增强版_20260510_before_fix.py": "normal",
+    "产品生命周期评估/backup/run_v2.7_增强版_backup_20260510.py": "normal",
+    "产品生命周期评估/backup/run_v2.7_增强版_before_20260510_141955.py": "normal",
+    "产品生命周期评估/backup/run_v2.8.py": "normal",
+    "产品生命周期评估/backup/模型测试.py": "normal",
+    "产品生命周期评估/run_v2.8.py": "normal",
+    "产品生命周期评估/产品生命周期量化评估方案_v2.9/generate_v4.py": "normal",
+    "产品生命周期评估/产品生命周期量化评估方案_v2.9/run_v2.8.py": "normal",
+    "工作文件/eda_analysis.py": "normal",
+    "工作文件/eda_analysis_v2.py": "normal",
+    "工作文件/eda_analysis_v3.py": "normal",
+    "工作文件/longtail_forecast/generate_report.py": "normal",
+    "工作文件/longtail_forecast/run_longtail_forecast.py": "normal",
+    "工作文件/longtail_forecast/v2/gen_dashboard.py": "normal",
+    "工作文件/longtail_forecast/v2/run_full_forecast_v2.py": "normal",
+    "工作文件/longtail_forecast/v3/generate_report.py": "normal",
+    "工作文件/longtail_forecast/v3/run_full_forecast_v3.py": "normal",
+    "工作文件/semiconductor_analysis/analysis1.py": "normal",
+    "工作文件/semiconductor_analysis/analysis2.py": "normal",
+    "工作文件/semiconductor_analysis/analysis3.py": "normal",
+    "工作文件/semiconductor_analysis/analysis4.py": "normal",
+    "工作文件/semiconductor_analysis/analysis/__init__.py": "normal",
+    "工作文件/semiconductor_analysis/analysis/b2b_adapters.py": "normal",
+    "工作文件/semiconductor_analysis/analysis/c6_production_mapping.py": "normal",
+    "工作文件/semiconductor_analysis/analysis/gold_builders.py": "normal",
+    "工作文件/semiconductor_analysis/analysis/pricing/__init__.py": "normal",
+    "工作文件/semiconductor_analysis/analysis/pricing/pricing_actions.py": "normal",
+    "工作文件/semiconductor_analysis/analysis/pricing/pricing_bands.py": "normal",
+    "工作文件/semiconductor_analysis/analysis/pricing/pricing_customer.py": "normal",
+    "工作文件/semiconductor_analysis/analysis/pricing/pricing_insights.py": "normal",
+    "工作文件/semiconductor_analysis/analysis/pricing/pricing_lifecycle.py": "normal",
+    "工作文件/semiconductor_analysis/analysis/pricing/pricing_trends.py": "normal",
+    "工作文件/semiconductor_analysis/analysis/rfm_pi.py": "normal",
+    "工作文件/semiconductor_analysis/analysis/scoring.py": "normal",
+    "工作文件/semiconductor_analysis/append_word_appendix.py": "normal",
+    "工作文件/semiconductor_analysis/asp_check.py": "normal",
+    "工作文件/semiconductor_analysis/audit.py": "normal",
+    "工作文件/semiconductor_analysis/audit_pline.py": "normal",
+    "工作文件/semiconductor_analysis/b2b_v2/__init__.py": "normal",
+    "工作文件/semiconductor_analysis/b2b_v2/actions/__init__.py": "normal",
+    "工作文件/semiconductor_analysis/b2b_v2/actions/category_aptitude.py": "normal",
+    "工作文件/semiconductor_analysis/b2b_v2/actions/cross_sell.py": "normal",
+    "工作文件/semiconductor_analysis/b2b_v2/actions/negative_margin.py": "normal",
+    "工作文件/semiconductor_analysis/b2b_v2/actions/product_insights.py": "normal",
+    "工作文件/semiconductor_analysis/b2b_v2/actions/rules_engine.py": "normal",
+    "工作文件/semiconductor_analysis/b2b_v2/actions/run.py": "normal",
+    "工作文件/semiconductor_analysis/b2b_v2/actions/sales_profiling.py": "normal",
+    "工作文件/semiconductor_analysis/b2b_v2/anomaly/__init__.py": "normal",
+    "工作文件/semiconductor_analysis/b2b_v2/anomaly/inventory.py": "normal",
+    "工作文件/semiconductor_analysis/b2b_v2/anomaly/isolation_forest.py": "normal",
+    "工作文件/semiconductor_analysis/b2b_v2/anomaly/rules.py": "normal",
+    "工作文件/semiconductor_analysis/b2b_v2/anomaly/run.py": "normal",
+    "工作文件/semiconductor_analysis/b2b_v2/behavior/__init__.py": "normal",
+    "工作文件/semiconductor_analysis/b2b_v2/behavior/volatility.py": "normal",
+    "工作文件/semiconductor_analysis/b2b_v2/journey/__init__.py": "normal",
+    "工作文件/semiconductor_analysis/b2b_v2/journey/stage_classifier.py": "normal",
+    "工作文件/semiconductor_analysis/b2b_v2/profitability/__init__.py": "normal",
+    "工作文件/semiconductor_analysis/b2b_v2/profitability/true_profit_estimator.py": "normal",
+    "工作文件/semiconductor_analysis/bridge2.py": "normal",
+    "工作文件/semiconductor_analysis/bridge3.py": "normal",
+    "工作文件/semiconductor_analysis/config/__init__.py": "normal",
+    "工作文件/semiconductor_analysis/config/settings.py": "normal",
+    "工作文件/semiconductor_analysis/config/settings_customer.py": "normal",
+    "工作文件/semiconductor_analysis/config/settings_product.py": "normal",
+    "工作文件/semiconductor_analysis/core/__init__.py": "normal",
+    "工作文件/semiconductor_analysis/core/config.py": "normal",
+    "工作文件/semiconductor_analysis/core/interfaces.py": "normal",
+    "工作文件/semiconductor_analysis/core/pipeline.py": "normal",
+    "工作文件/semiconductor_analysis/cross_reference/__init__.py": "normal",
+    "工作文件/semiconductor_analysis/cross_reference/run_cross_ref.py": "normal",
+    "工作文件/semiconductor_analysis/customer_analysis/__init__.py": "normal",
+    "工作文件/semiconductor_analysis/customer_analysis/customer_master.py": "normal",
+    "工作文件/semiconductor_analysis/customer_analysis/dimensions.py": "normal",
+    "工作文件/semiconductor_analysis/customer_analysis/gold.py": "normal",
+    "工作文件/semiconductor_analysis/customer_analysis/group_aggregation.py": "normal",
+    "工作文件/semiconductor_analysis/customer_analysis/models.py": "normal",
+    "工作文件/semiconductor_analysis/customer_analysis/period_analysis.py": "normal",
+    "工作文件/semiconductor_analysis/customer_analysis/portrait.py": "normal",
+    "工作文件/semiconductor_analysis/customer_analysis/price_deep_dive.py": "normal",
+    "工作文件/semiconductor_analysis/customer_analysis/rd_recommendation.py": "normal",
+    "工作文件/semiconductor_analysis/customer_analysis/report.py": "normal",
+    "工作文件/semiconductor_analysis/customer_analysis/run_kpi_daily.py": "normal",
+    "工作文件/semiconductor_analysis/customer_analysis/run_pipeline.py": "normal",
+    "工作文件/semiconductor_analysis/customer_analysis/scoring.py": "normal",
+    "工作文件/semiconductor_analysis/customer_analysis/silver.py": "normal",
+    "工作文件/semiconductor_analysis/customer_analysis/trend_analysis.py": "normal",
+    "工作文件/semiconductor_analysis/dashboard/_patch_dashboard.py": "normal",
+    "工作文件/semiconductor_analysis/dashboard/audit_alerts.py": "normal",
+    "工作文件/semiconductor_analysis/dashboard/audit_cats.py": "temp",
+    "工作文件/semiconductor_analysis/dashboard/audit_cats2.py": "temp",
+    "工作文件/semiconductor_analysis/dashboard/audit_data.py": "normal",
+    "工作文件/semiconductor_analysis/dashboard/audit_deep.py": "temp",
+    "工作文件/semiconductor_analysis/dashboard/audit_final.py": "normal",
+    "工作文件/semiconductor_analysis/dashboard/audit_html.py": "normal",
+    "工作文件/semiconductor_analysis/dashboard/audit_new.py": "normal",
+    "工作文件/semiconductor_analysis/dashboard/audit_rhythm.py": "temp",
+    "工作文件/semiconductor_analysis/dashboard/audit_small.py": "temp",
+    "工作文件/semiconductor_analysis/dashboard/build_data.py": "normal",
+    "工作文件/semiconductor_analysis/dashboard/check_col.py": "normal",
+    "工作文件/semiconductor_analysis/dashboard/check_cust.py": "temp",
+    "工作文件/semiconductor_analysis/dashboard/check_data.py": "temp",
+    "工作文件/semiconductor_analysis/dashboard/check_kpi.py": "normal",
+    "工作文件/semiconductor_analysis/dashboard/check_kpi2.py": "normal",
+    "工作文件/semiconductor_analysis/dashboard/check_names.py": "temp",
+    "工作文件/semiconductor_analysis/dashboard/data_inventory.py": "normal",
+    "工作文件/semiconductor_analysis/dashboard/final_audit.py": "normal",
+    "工作文件/semiconductor_analysis/dashboard/final_check.py": "temp",
+    "工作文件/semiconductor_analysis/dashboard/find_col.py": "normal",
+    "工作文件/semiconductor_analysis/dashboard/find_col2.py": "temp",
+    "工作文件/semiconductor_analysis/dashboard/find_col3.py": "normal",
+    "工作文件/semiconductor_analysis/dashboard/find_col4.py": "normal",
+    "工作文件/semiconductor_analysis/dashboard/find_col5.py": "temp",
+    "工作文件/semiconductor_analysis/dashboard/generate_dashboard.py": "normal",
+    "工作文件/semiconductor_analysis/dashboard/verify_raw.py": "normal",
+    "工作文件/semiconductor_analysis/dashboard/verify_syntax.py": "normal",
+    "工作文件/semiconductor_analysis/dashboard/verify_ytd.py": "temp",
+    "工作文件/semiconductor_analysis/data_pipeline/__init__.py": "normal",
+    "工作文件/semiconductor_analysis/data_pipeline/aggregator.py": "normal",
+    "工作文件/semiconductor_analysis/data_pipeline/cleaner.py": "normal",
+    "工作文件/semiconductor_analysis/data_pipeline/loader.py": "normal",
+    "工作文件/semiconductor_analysis/data_pipeline/validator.py": "normal",
+    "工作文件/semiconductor_analysis/deep_action.py": "normal",
+    "工作文件/semiconductor_analysis/deep_all.py": "normal",
+    "工作文件/semiconductor_analysis/deep_sales_products.py": "normal",
+    "工作文件/semiconductor_analysis/deep_zxkx.py": "normal",
+    "工作文件/semiconductor_analysis/diag.py": "normal",
+    "工作文件/semiconductor_analysis/experiment_log/phase_0_baseline/exp_0.0.5_coverage_diagnosis/run_0.0.5_v2.py": "normal",
+    "工作文件/semiconductor_analysis/experiment_log/phase_0_baseline/exp_0.0_trivial_baselines/run_0.0_trivial_baselines.py": "normal",
+    "工作文件/semiconductor_analysis/experiment_log/phase_0_baseline/exp_0.1.5_method_filter/run_0.1.5_v2.py": "normal",
+    "工作文件/semiconductor_analysis/experiment_log/phase_0_baseline/exp_0.2_baseline_lock/run_0.2_baseline_lock.py": "normal",
+    "工作文件/semiconductor_analysis/experiment_log/phase_0_baseline/exp_0.3_lifecycle_alignment/run_0.3_v3.py": "normal",
+    "工作文件/semiconductor_analysis/fix_fonts.py": "normal",
+    "工作文件/semiconductor_analysis/fix_header_repeat.py": "normal",
+    "工作文件/semiconductor_analysis/fix_price.py": "normal",
+    "工作文件/semiconductor_analysis/fix_valign.py": "normal",
+    "工作文件/semiconductor_analysis/fix_word_24.py": "normal",
+    "工作文件/semiconductor_analysis/fix_word_75.py": "normal",
+    "工作文件/semiconductor_analysis/fix_word_bridge.py": "normal",
+    "工作文件/semiconductor_analysis/fix_word_ch9.py": "normal",
+    "工作文件/semiconductor_analysis/fix_word_zxkx.py": "normal",
+    "工作文件/semiconductor_analysis/generate_v4.py": "normal",
+    "工作文件/semiconductor_analysis/ka_list.py": "normal",
+    "工作文件/semiconductor_analysis/make_word.py": "normal",
+    "工作文件/semiconductor_analysis/optimizer/__init__.py": "normal",
+    "工作文件/semiconductor_analysis/optimizer/blindspot_analysis_rest.py": "normal",
+    "工作文件/semiconductor_analysis/optimizer/blindspot_diagnosis.py": "normal",
+    "工作文件/semiconductor_analysis/optimizer/comprehensive_eval.py": "normal",
+    "工作文件/semiconductor_analysis/optimizer/comprehensive_eval_part2.py": "normal",
+    "工作文件/semiconductor_analysis/optimizer/config.py": "normal",
+    "工作文件/semiconductor_analysis/optimizer/crossval.py": "normal",
+    "工作文件/semiconductor_analysis/optimizer/data_loader.py": "normal",
+    "工作文件/semiconductor_analysis/optimizer/evaluate_solutions_2024.py": "normal",
+    "工作文件/semiconductor_analysis/optimizer/metrics.py": "normal",
+    "工作文件/semiconductor_analysis/optimizer/recent_eval_and_solutions.py": "normal",
+    "工作文件/semiconductor_analysis/optimizer/reporter.py": "normal",
+    "工作文件/semiconductor_analysis/optimizer/run_pipeline.py": "normal",
+    "工作文件/semiconductor_analysis/optimizer/scoring_v2.py": "normal",
+    "工作文件/semiconductor_analysis/optimizer/threshold_search.py": "normal",
+    "工作文件/semiconductor_analysis/optimizer/weight_search.py": "normal",
+    "工作文件/semiconductor_analysis/output/test/run_0.0.5_coverage_diagnosis.py": "normal",
+    "工作文件/semiconductor_analysis/output/test/run_0.0.5_v2.py": "normal",
+    "工作文件/semiconductor_analysis/output/test/run_0.0_trivial_baselines.py": "normal",
+    "工作文件/semiconductor_analysis/output/test/run_0.1.5_method_filter.py": "normal",
+    "工作文件/semiconductor_analysis/output/test/run_0.1.5_v2.py": "normal",
+    "工作文件/semiconductor_analysis/output/test/run_0.2_baseline_lock.py": "normal",
+    "工作文件/semiconductor_analysis/output/test/run_0.3_lifecycle.py": "normal",
+    "工作文件/semiconductor_analysis/output/test/run_0.3_v2.py": "normal",
+    "工作文件/semiconductor_analysis/output/test/run_0.3_v3.py": "normal",
+    "工作文件/semiconductor_analysis/peek.py": "temp",
+    "工作文件/semiconductor_analysis/product_lifecycle/__init__.py": "normal",
+    "工作文件/semiconductor_analysis/product_lifecycle/nine_grid.py": "normal",
+    "工作文件/semiconductor_analysis/product_lifecycle/notes.py": "normal",
+    "工作文件/semiconductor_analysis/product_lifecycle/profiling.py": "normal",
+    "工作文件/semiconductor_analysis/product_lifecycle/report.py": "normal",
+    "工作文件/semiconductor_analysis/product_lifecycle/run.py": "normal",
+    "工作文件/semiconductor_analysis/quarterly_forecast_package/run_customer_forecast.py": "normal",
+    "工作文件/semiconductor_analysis/quarterly_forecast_package/run_quarterly_forecast.py": "normal",
+    "工作文件/semiconductor_analysis/recession_risk_opt/archive/analysis/analyze_results.py": "normal",
+    "工作文件/semiconductor_analysis/recession_risk_opt/archive/analysis/factor_exploration.py": "normal",
+    "工作文件/semiconductor_analysis/recession_risk_opt/archive/analysis/orthogonal_check.py": "normal",
+    "工作文件/semiconductor_analysis/recession_risk_opt/archive/demo/demo_tiered_risk.py": "normal",
+    "工作文件/semiconductor_analysis/recession_risk_opt/archive/runners/run_stage5.py": "normal",
+    "工作文件/semiconductor_analysis/recession_risk_opt/archive/runners/stage5_final.py": "normal",
+    "工作文件/semiconductor_analysis/recession_risk_opt/archive/tests/test_consec_decline.py": "normal",
+    "工作文件/semiconductor_analysis/recession_risk_opt/backtest_framework.py": "normal",
+    "工作文件/semiconductor_analysis/recession_risk_opt/generate_snapshot.py": "normal",
+    "工作文件/semiconductor_analysis/recession_risk_opt/models/risk_scorer.py": "normal",
+    "工作文件/semiconductor_analysis/recession_risk_opt/phase1_customer_factors.py": "normal",
+    "工作文件/semiconductor_analysis/recession_risk_opt/phase2_f1_repair.py": "normal",
+    "工作文件/semiconductor_analysis/recession_risk_opt/phase3_model_comparison.py": "normal",
+    "工作文件/semiconductor_analysis/recession_risk_opt/phase4_case_review.py": "normal",
+    "工作文件/semiconductor_analysis/recession_risk_opt/phase5_action_baseline.py": "normal",
+    "工作文件/semiconductor_analysis/recession_risk_opt/phaseA_check_cross_validation.py": "normal",
+    "工作文件/semiconductor_analysis/recession_risk_opt/phaseA_data_check.py": "normal",
+    "工作文件/semiconductor_analysis/recession_risk_opt/phaseA_severity_distribution.py": "normal",
+    "工作文件/semiconductor_analysis/recession_risk_opt/phaseB1a_severity_regression.py": "normal",
+    "工作文件/semiconductor_analysis/recession_risk_opt/pipeline.py": "normal",
+    "工作文件/semiconductor_analysis/recession_risk_opt/v31_calibration.py": "normal",
+    "工作文件/semiconductor_analysis/recession_risk_opt/v31_final_optimization.py": "normal",
+    "工作文件/semiconductor_analysis/recompute_asp.py": "normal",
+    "工作文件/semiconductor_analysis/reports/__init__.py": "normal",
+    "工作文件/semiconductor_analysis/reports/gold_exporter.py": "normal",
+    "工作文件/semiconductor_analysis/run2.py": "normal",
+    "工作文件/semiconductor_analysis/run3.py": "normal",
+    "工作文件/semiconductor_analysis/run4.py": "normal",
+    "工作文件/semiconductor_analysis/run_action.py": "temp",
+    "工作文件/semiconductor_analysis/run_all.py": "normal",
+    "工作文件/semiconductor_analysis/run_audit.py": "temp",
+    "工作文件/semiconductor_analysis/run_customer.py": "normal",
+    "工作文件/semiconductor_analysis/run_deep.py": "temp",
+    "工作文件/semiconductor_analysis/run_product.py": "normal",
+    "工作文件/semiconductor_analysis/run_sp.py": "temp",
+    "工作文件/semiconductor_analysis/run_zxkx.py": "temp",
+    "工作文件/semiconductor_analysis/runall.py": "normal",
+    "工作文件/semiconductor_analysis/scout.py": "normal",
+    "工作文件/semiconductor_analysis/scripts/chart_data.py": "normal",
+    "工作文件/semiconductor_analysis/scripts/final_forecast.py": "normal",
+    "工作文件/semiconductor_analysis/scripts/generate_chart_html.py": "normal",
+    "工作文件/semiconductor_analysis/shared/__init__.py": "normal",
+    "工作文件/semiconductor_analysis/shared/calc_utils.py": "normal",
+    "工作文件/semiconductor_analysis/shared/classifiers.py": "normal",
+    "工作文件/semiconductor_analysis/shared/customer_analysis.py": "normal",
+    "工作文件/semiconductor_analysis/shared/data_cleaning.py": "normal",
+    "工作文件/semiconductor_analysis/shared/forecasting.py": "normal",
+    "工作文件/semiconductor_analysis/shared/pricing.py": "normal",
+    "工作文件/semiconductor_analysis/shared/risk_scoring.py": "normal",
+    "工作文件/semiconductor_analysis/shared/timing.py": "normal",
+    "工作文件/semiconductor_analysis/test.py": "normal",
+    "工作文件/semiconductor_analysis/test/__init__.py": "normal",
+    "工作文件/semiconductor_analysis/test/batch_a_test.py": "normal",
+    "工作文件/semiconductor_analysis/test/conftest.py": "normal",
+    "工作文件/semiconductor_analysis/test/fallback.py": "normal",
+    "工作文件/semiconductor_analysis/test/phase1_load.py": "normal",
+    "工作文件/semiconductor_analysis/test/phase2_validate.py": "normal",
+    "工作文件/semiconductor_analysis/test/phase3_visualize.py": "normal",
+    "工作文件/semiconductor_analysis/test/run_all_tests.py": "normal",
+    "工作文件/semiconductor_analysis/test/test_analysis_scoring.py": "normal",
+    "工作文件/semiconductor_analysis/test/test_gold_builders.py": "normal",
+    "工作文件/semiconductor_analysis/test/test_gold_exporter.py": "normal",
+    "工作文件/semiconductor_analysis/test/test_pipeline.py": "normal",
+    "工作文件/semiconductor_analysis/test/test_validator.py": "normal",
+    "工作文件/semiconductor_analysis/test/test_week1_modules.py": "normal",
+    "工作文件/semiconductor_analysis/test/validation_suite.py": "normal",
+    "工作文件/semiconductor_analysis/test_output/check_data.py": "normal",
+    "工作文件/semiconductor_analysis/verify.py": "normal",
+    "工作文件/semiconductor_analysis/verify_word.py": "normal",
+    "看板流水线/dashboard/generate_dashboard.py": "normal",
+    "看板流水线/processing/analysis/__init__.py": "normal",
+    "看板流水线/processing/analysis/b2b_adapters.py": "normal",
+    "看板流水线/processing/analysis/c6_production_mapping.py": "normal",
+    "看板流水线/processing/analysis/gold_builders.py": "normal",
+    "看板流水线/processing/analysis/pricing/__init__.py": "normal",
+    "看板流水线/processing/analysis/pricing/pricing_actions.py": "normal",
+    "看板流水线/processing/analysis/pricing/pricing_bands.py": "normal",
+    "看板流水线/processing/analysis/pricing/pricing_customer.py": "normal",
+    "看板流水线/processing/analysis/pricing/pricing_insights.py": "normal",
+    "看板流水线/processing/analysis/pricing/pricing_lifecycle.py": "normal",
+    "看板流水线/processing/analysis/pricing/pricing_trends.py": "normal",
+    "看板流水线/processing/analysis/rfm_pi.py": "normal",
+    "看板流水线/processing/analysis/scoring.py": "normal",
+    "看板流水线/processing/b2b_v2/__init__.py": "normal",
+    "看板流水线/processing/b2b_v2/actions/__init__.py": "normal",
+    "看板流水线/processing/b2b_v2/actions/category_aptitude.py": "normal",
+    "看板流水线/processing/b2b_v2/actions/cross_sell.py": "normal",
+    "看板流水线/processing/b2b_v2/actions/negative_margin.py": "normal",
+    "看板流水线/processing/b2b_v2/actions/product_insights.py": "normal",
+    "看板流水线/processing/b2b_v2/actions/rules_engine.py": "normal",
+    "看板流水线/processing/b2b_v2/actions/run.py": "normal",
+    "看板流水线/processing/b2b_v2/actions/sales_profiling.py": "normal",
+    "看板流水线/processing/b2b_v2/anomaly/__init__.py": "normal",
+    "看板流水线/processing/b2b_v2/anomaly/inventory.py": "normal",
+    "看板流水线/processing/b2b_v2/anomaly/isolation_forest.py": "normal",
+    "看板流水线/processing/b2b_v2/anomaly/rules.py": "normal",
+    "看板流水线/processing/b2b_v2/anomaly/run.py": "normal",
+    "看板流水线/processing/b2b_v2/behavior/__init__.py": "normal",
+    "看板流水线/processing/b2b_v2/behavior/volatility.py": "normal",
+    "看板流水线/processing/b2b_v2/journey/__init__.py": "normal",
+    "看板流水线/processing/b2b_v2/journey/stage_classifier.py": "normal",
+    "看板流水线/processing/b2b_v2/profitability/__init__.py": "normal",
+    "看板流水线/processing/b2b_v2/profitability/true_profit_estimator.py": "normal",
+    "看板流水线/processing/config/__init__.py": "normal",
+    "看板流水线/processing/config/settings.py": "normal",
+    "看板流水线/processing/config/settings_customer.py": "normal",
+    "看板流水线/processing/config/settings_product.py": "normal",
+    "看板流水线/processing/core/__init__.py": "normal",
+    "看板流水线/processing/core/config.py": "normal",
+    "看板流水线/processing/core/interfaces.py": "normal",
+    "看板流水线/processing/core/pipeline.py": "normal",
+    "看板流水线/processing/cross_reference/__init__.py": "normal",
+    "看板流水线/processing/cross_reference/run_cross_ref.py": "normal",
+    "看板流水线/processing/customer_analysis/__init__.py": "normal",
+    "看板流水线/processing/customer_analysis/customer_master.py": "normal",
+    "看板流水线/processing/customer_analysis/dimensions.py": "normal",
+    "看板流水线/processing/customer_analysis/gold.py": "normal",
+    "看板流水线/processing/customer_analysis/group_aggregation.py": "normal",
+    "看板流水线/processing/customer_analysis/models.py": "normal",
+    "看板流水线/processing/customer_analysis/period_analysis.py": "normal",
+    "看板流水线/processing/customer_analysis/portrait.py": "normal",
+    "看板流水线/processing/customer_analysis/price_deep_dive.py": "normal",
+    "看板流水线/processing/customer_analysis/rd_recommendation.py": "normal",
+    "看板流水线/processing/customer_analysis/report.py": "normal",
+    "看板流水线/processing/customer_analysis/run_kpi_daily.py": "normal",
+    "看板流水线/processing/customer_analysis/run_pipeline.py": "normal",
+    "看板流水线/processing/customer_analysis/scoring.py": "normal",
+    "看板流水线/processing/customer_analysis/silver.py": "normal",
+    "看板流水线/processing/customer_analysis/trend_analysis.py": "normal",
+    "看板流水线/processing/data_pipeline/__init__.py": "normal",
+    "看板流水线/processing/data_pipeline/aggregator.py": "normal",
+    "看板流水线/processing/data_pipeline/cleaner.py": "normal",
+    "看板流水线/processing/data_pipeline/loader.py": "normal",
+    "看板流水线/processing/data_pipeline/validator.py": "normal",
+    "看板流水线/processing/product_lifecycle/__init__.py": "normal",
+    "看板流水线/processing/product_lifecycle/nine_grid.py": "normal",
+    "看板流水线/processing/product_lifecycle/notes.py": "normal",
+    "看板流水线/processing/product_lifecycle/profiling.py": "normal",
+    "看板流水线/processing/product_lifecycle/report.py": "normal",
+    "看板流水线/processing/product_lifecycle/run.py": "normal",
+    "看板流水线/processing/reports/__init__.py": "normal",
+    "看板流水线/processing/reports/gold_exporter.py": "normal",
+    "看板流水线/processing/run_all.py": "normal",
+    "看板流水线/processing/shared/__init__.py": "normal",
+    "看板流水线/processing/shared/calc_utils.py": "normal",
+    "看板流水线/processing/shared/classifiers.py": "normal",
+    "看板流水线/processing/shared/customer_analysis.py": "normal",
+    "看板流水线/processing/shared/data_cleaning.py": "normal",
+    "看板流水线/processing/shared/forecasting.py": "normal",
+    "看板流水线/processing/shared/pricing.py": "normal",
+    "看板流水线/processing/shared/risk_scoring.py": "normal",
+    "看板流水线/processing/shared/timing.py": "normal",
+    "看板流水线/run_chain.py": "normal"
+  }
+}

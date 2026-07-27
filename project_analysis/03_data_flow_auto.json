@@ -1,0 +1,5458 @@
+{
+  "components": [
+    {
+      "scripts": [
+        "工作文件/semiconductor_analysis/analysis1.py",
+        "工作文件/semiconductor_analysis/analysis2.py",
+        "工作文件/semiconductor_analysis/analysis3.py",
+        "工作文件/semiconductor_analysis/analysis4.py",
+        "工作文件/semiconductor_analysis/append_word_appendix.py",
+        "工作文件/semiconductor_analysis/asp_check.py",
+        "工作文件/semiconductor_analysis/audit.py",
+        "工作文件/semiconductor_analysis/audit_pline.py",
+        "工作文件/semiconductor_analysis/bridge2.py",
+        "工作文件/semiconductor_analysis/bridge3.py",
+        "工作文件/semiconductor_analysis/dashboard/audit_html.py",
+        "工作文件/semiconductor_analysis/dashboard/check_col.py",
+        "工作文件/semiconductor_analysis/dashboard/check_cust.py",
+        "工作文件/semiconductor_analysis/dashboard/check_kpi2.py",
+        "工作文件/semiconductor_analysis/dashboard/data_inventory.py",
+        "工作文件/semiconductor_analysis/dashboard/final_audit.py",
+        "工作文件/semiconductor_analysis/dashboard/final_check.py",
+        "工作文件/semiconductor_analysis/dashboard/find_col.py",
+        "工作文件/semiconductor_analysis/dashboard/find_col2.py",
+        "工作文件/semiconductor_analysis/dashboard/find_col3.py",
+        "工作文件/semiconductor_analysis/dashboard/find_col4.py",
+        "工作文件/semiconductor_analysis/dashboard/find_col5.py",
+        "工作文件/semiconductor_analysis/dashboard/verify_raw.py",
+        "工作文件/semiconductor_analysis/dashboard/verify_syntax.py",
+        "工作文件/semiconductor_analysis/deep_action.py",
+        "工作文件/semiconductor_analysis/deep_all.py",
+        "工作文件/semiconductor_analysis/deep_sales_products.py",
+        "工作文件/semiconductor_analysis/deep_zxkx.py",
+        "工作文件/semiconductor_analysis/diag.py",
+        "工作文件/semiconductor_analysis/fix_fonts.py",
+        "工作文件/semiconductor_analysis/fix_header_repeat.py",
+        "工作文件/semiconductor_analysis/fix_price.py",
+        "工作文件/semiconductor_analysis/fix_valign.py",
+        "工作文件/semiconductor_analysis/ka_list.py",
+        "工作文件/semiconductor_analysis/peek.py",
+        "工作文件/semiconductor_analysis/recompute_asp.py",
+        "工作文件/semiconductor_analysis/scout.py",
+        "工作文件/semiconductor_analysis/test.py",
+        "工作文件/semiconductor_analysis/verify.py"
+      ],
+      "data": [
+        {
+          "ref": "C:/Users/45091/Desktop/2026H1销售分析报告_分析+附件.docx",
+          "class": "final",
+          "exists_on_disk": false
+        },
+        {
+          "ref": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/asp_check.md",
+          "class": "final",
+          "exists_on_disk": false
+        },
+        {
+          "ref": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/audit.md",
+          "class": "final",
+          "exists_on_disk": false
+        },
+        {
+          "ref": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/audit_pline.md",
+          "class": "final",
+          "exists_on_disk": false
+        },
+        {
+          "ref": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/data/财务分析-5月（6.3）.xlsx",
+          "class": "raw",
+          "exists_on_disk": true
+        },
+        {
+          "ref": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/data/财务分析-6月（7.6）.xlsx",
+          "class": "raw",
+          "exists_on_disk": true
+        },
+        {
+          "ref": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/data/部门-人员-职务对应.md",
+          "class": "raw",
+          "exists_on_disk": false
+        },
+        {
+          "ref": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/deep_action.md",
+          "class": "final",
+          "exists_on_disk": false
+        },
+        {
+          "ref": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/deep_all.md",
+          "class": "final",
+          "exists_on_disk": false
+        },
+        {
+          "ref": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/deep_sales_products.md",
+          "class": "final",
+          "exists_on_disk": false
+        },
+        {
+          "ref": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/deep_zxkx.md",
+          "class": "final",
+          "exists_on_disk": false
+        },
+        {
+          "ref": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/diag_out.txt",
+          "class": "final",
+          "exists_on_disk": false
+        },
+        {
+          "ref": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/ka_list.md",
+          "class": "final",
+          "exists_on_disk": false
+        },
+        {
+          "ref": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/output/silver/silver_customer_x_product.csv",
+          "class": "raw",
+          "exists_on_disk": true
+        },
+        {
+          "ref": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/peek_out.txt",
+          "class": "final",
+          "exists_on_disk": false
+        },
+        {
+          "ref": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/res_asp.md",
+          "class": "final",
+          "exists_on_disk": false
+        },
+        {
+          "ref": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/res_bridge.md",
+          "class": "final",
+          "exists_on_disk": false
+        },
+        {
+          "ref": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/res_bridge2.md",
+          "class": "final",
+          "exists_on_disk": false
+        },
+        {
+          "ref": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/res_fix.md",
+          "class": "final",
+          "exists_on_disk": false
+        },
+        {
+          "ref": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/res_part1.md",
+          "class": "final",
+          "exists_on_disk": false
+        },
+        {
+          "ref": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/res_part2.md",
+          "class": "final",
+          "exists_on_disk": false
+        },
+        {
+          "ref": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/res_part3.md",
+          "class": "final",
+          "exists_on_disk": false
+        },
+        {
+          "ref": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/res_part4.md",
+          "class": "final",
+          "exists_on_disk": false
+        },
+        {
+          "ref": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/scout_out.txt",
+          "class": "final",
+          "exists_on_disk": false
+        },
+        {
+          "ref": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/test_out.txt",
+          "class": "final",
+          "exists_on_disk": false
+        },
+        {
+          "ref": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/verify_out.txt",
+          "class": "final",
+          "exists_on_disk": false
+        },
+        {
+          "ref": "audit_output.txt",
+          "class": "final",
+          "exists_on_disk": false
+        },
+        {
+          "ref": "col_output.txt",
+          "class": "final",
+          "exists_on_disk": false
+        },
+        {
+          "ref": "dashboard_a.html",
+          "class": "raw",
+          "exists_on_disk": false
+        },
+        {
+          "ref": "generate_dashboard.py",
+          "class": "raw",
+          "exists_on_disk": false
+        }
+      ],
+      "edges": [
+        {
+          "from": "工作文件/semiconductor_analysis/fix_valign.py",
+          "to": "C:/Users/45091/Desktop/2026H1销售分析报告_分析+附件.docx",
+          "kind": "write"
+        },
+        {
+          "from": "工作文件/semiconductor_analysis/fix_fonts.py",
+          "to": "C:/Users/45091/Desktop/2026H1销售分析报告_分析+附件.docx",
+          "kind": "write"
+        },
+        {
+          "from": "工作文件/semiconductor_analysis/append_word_appendix.py",
+          "to": "C:/Users/45091/Desktop/2026H1销售分析报告_分析+附件.docx",
+          "kind": "write"
+        },
+        {
+          "from": "工作文件/semiconductor_analysis/fix_header_repeat.py",
+          "to": "C:/Users/45091/Desktop/2026H1销售分析报告_分析+附件.docx",
+          "kind": "write"
+        },
+        {
+          "from": "工作文件/semiconductor_analysis/asp_check.py",
+          "to": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/asp_check.md",
+          "kind": "write"
+        },
+        {
+          "from": "工作文件/semiconductor_analysis/audit.py",
+          "to": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/audit.md",
+          "kind": "write"
+        },
+        {
+          "from": "工作文件/semiconductor_analysis/audit_pline.py",
+          "to": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/audit_pline.md",
+          "kind": "write"
+        },
+        {
+          "from": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/data/财务分析-5月（6.3）.xlsx",
+          "to": "工作文件/semiconductor_analysis/analysis2.py",
+          "kind": "read"
+        },
+        {
+          "from": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/data/财务分析-5月（6.3）.xlsx",
+          "to": "工作文件/semiconductor_analysis/audit.py",
+          "kind": "read"
+        },
+        {
+          "from": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/data/财务分析-5月（6.3）.xlsx",
+          "to": "工作文件/semiconductor_analysis/dashboard/check_col.py",
+          "kind": "read"
+        },
+        {
+          "from": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/data/财务分析-5月（6.3）.xlsx",
+          "to": "工作文件/semiconductor_analysis/audit_pline.py",
+          "kind": "read"
+        },
+        {
+          "from": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/data/财务分析-5月（6.3）.xlsx",
+          "to": "工作文件/semiconductor_analysis/asp_check.py",
+          "kind": "read"
+        },
+        {
+          "from": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/data/财务分析-5月（6.3）.xlsx",
+          "to": "工作文件/semiconductor_analysis/dashboard/find_col3.py",
+          "kind": "read"
+        },
+        {
+          "from": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/data/财务分析-5月（6.3）.xlsx",
+          "to": "工作文件/semiconductor_analysis/analysis3.py",
+          "kind": "read"
+        },
+        {
+          "from": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/data/财务分析-5月（6.3）.xlsx",
+          "to": "工作文件/semiconductor_analysis/dashboard/verify_raw.py",
+          "kind": "read"
+        },
+        {
+          "from": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/data/财务分析-5月（6.3）.xlsx",
+          "to": "工作文件/semiconductor_analysis/scout.py",
+          "kind": "read"
+        },
+        {
+          "from": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/data/财务分析-5月（6.3）.xlsx",
+          "to": "工作文件/semiconductor_analysis/recompute_asp.py",
+          "kind": "read"
+        },
+        {
+          "from": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/data/财务分析-5月（6.3）.xlsx",
+          "to": "工作文件/semiconductor_analysis/dashboard/find_col4.py",
+          "kind": "read"
+        },
+        {
+          "from": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/data/财务分析-5月（6.3）.xlsx",
+          "to": "工作文件/semiconductor_analysis/analysis1.py",
+          "kind": "read"
+        },
+        {
+          "from": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/data/财务分析-5月（6.3）.xlsx",
+          "to": "工作文件/semiconductor_analysis/peek.py",
+          "kind": "read"
+        },
+        {
+          "from": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/data/财务分析-5月（6.3）.xlsx",
+          "to": "工作文件/semiconductor_analysis/analysis4.py",
+          "kind": "read"
+        },
+        {
+          "from": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/data/财务分析-5月（6.3）.xlsx",
+          "to": "工作文件/semiconductor_analysis/bridge2.py",
+          "kind": "read"
+        },
+        {
+          "from": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/data/财务分析-5月（6.3）.xlsx",
+          "to": "工作文件/semiconductor_analysis/dashboard/find_col2.py",
+          "kind": "read"
+        },
+        {
+          "from": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/data/财务分析-5月（6.3）.xlsx",
+          "to": "工作文件/semiconductor_analysis/dashboard/find_col.py",
+          "kind": "read"
+        },
+        {
+          "from": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/data/财务分析-5月（6.3）.xlsx",
+          "to": "工作文件/semiconductor_analysis/deep_action.py",
+          "kind": "read"
+        },
+        {
+          "from": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/data/财务分析-5月（6.3）.xlsx",
+          "to": "工作文件/semiconductor_analysis/test.py",
+          "kind": "read"
+        },
+        {
+          "from": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/data/财务分析-5月（6.3）.xlsx",
+          "to": "工作文件/semiconductor_analysis/dashboard/final_audit.py",
+          "kind": "read"
+        },
+        {
+          "from": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/data/财务分析-5月（6.3）.xlsx",
+          "to": "工作文件/semiconductor_analysis/ka_list.py",
+          "kind": "read"
+        },
+        {
+          "from": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/data/财务分析-5月（6.3）.xlsx",
+          "to": "工作文件/semiconductor_analysis/deep_all.py",
+          "kind": "read"
+        },
+        {
+          "from": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/data/财务分析-5月（6.3）.xlsx",
+          "to": "工作文件/semiconductor_analysis/verify.py",
+          "kind": "read"
+        },
+        {
+          "from": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/data/财务分析-5月（6.3）.xlsx",
+          "to": "工作文件/semiconductor_analysis/bridge3.py",
+          "kind": "read"
+        },
+        {
+          "from": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/data/财务分析-5月（6.3）.xlsx",
+          "to": "工作文件/semiconductor_analysis/dashboard/check_cust.py",
+          "kind": "read"
+        },
+        {
+          "from": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/data/财务分析-5月（6.3）.xlsx",
+          "to": "工作文件/semiconductor_analysis/diag.py",
+          "kind": "read"
+        },
+        {
+          "from": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/data/财务分析-5月（6.3）.xlsx",
+          "to": "工作文件/semiconductor_analysis/fix_price.py",
+          "kind": "read"
+        },
+        {
+          "from": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/data/财务分析-5月（6.3）.xlsx",
+          "to": "工作文件/semiconductor_analysis/dashboard/find_col5.py",
+          "kind": "read"
+        },
+        {
+          "from": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/data/财务分析-6月（7.6）.xlsx",
+          "to": "工作文件/semiconductor_analysis/append_word_appendix.py",
+          "kind": "read"
+        },
+        {
+          "from": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/data/财务分析-6月（7.6）.xlsx",
+          "to": "工作文件/semiconductor_analysis/deep_zxkx.py",
+          "kind": "read"
+        },
+        {
+          "from": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/data/财务分析-6月（7.6）.xlsx",
+          "to": "工作文件/semiconductor_analysis/deep_sales_products.py",
+          "kind": "read"
+        },
+        {
+          "from": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/data/部门-人员-职务对应.md",
+          "to": "工作文件/semiconductor_analysis/recompute_asp.py",
+          "kind": "read"
+        },
+        {
+          "from": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/data/部门-人员-职务对应.md",
+          "to": "工作文件/semiconductor_analysis/append_word_appendix.py",
+          "kind": "read"
+        },
+        {
+          "from": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/data/部门-人员-职务对应.md",
+          "to": "工作文件/semiconductor_analysis/analysis2.py",
+          "kind": "read"
+        },
+        {
+          "from": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/data/部门-人员-职务对应.md",
+          "to": "工作文件/semiconductor_analysis/fix_price.py",
+          "kind": "read"
+        },
+        {
+          "from": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/data/部门-人员-职务对应.md",
+          "to": "工作文件/semiconductor_analysis/deep_all.py",
+          "kind": "read"
+        },
+        {
+          "from": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/data/部门-人员-职务对应.md",
+          "to": "工作文件/semiconductor_analysis/analysis1.py",
+          "kind": "read"
+        },
+        {
+          "from": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/data/部门-人员-职务对应.md",
+          "to": "工作文件/semiconductor_analysis/deep_sales_products.py",
+          "kind": "read"
+        },
+        {
+          "from": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/data/部门-人员-职务对应.md",
+          "to": "工作文件/semiconductor_analysis/analysis3.py",
+          "kind": "read"
+        },
+        {
+          "from": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/data/部门-人员-职务对应.md",
+          "to": "工作文件/semiconductor_analysis/analysis4.py",
+          "kind": "read"
+        },
+        {
+          "from": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/data/部门-人员-职务对应.md",
+          "to": "工作文件/semiconductor_analysis/deep_action.py",
+          "kind": "read"
+        },
+        {
+          "from": "工作文件/semiconductor_analysis/deep_action.py",
+          "to": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/deep_action.md",
+          "kind": "write"
+        },
+        {
+          "from": "工作文件/semiconductor_analysis/deep_all.py",
+          "to": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/deep_all.md",
+          "kind": "write"
+        },
+        {
+          "from": "工作文件/semiconductor_analysis/deep_sales_products.py",
+          "to": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/deep_sales_products.md",
+          "kind": "write"
+        },
+        {
+          "from": "工作文件/semiconductor_analysis/deep_zxkx.py",
+          "to": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/deep_zxkx.md",
+          "kind": "write"
+        },
+        {
+          "from": "工作文件/semiconductor_analysis/diag.py",
+          "to": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/diag_out.txt",
+          "kind": "write"
+        },
+        {
+          "from": "工作文件/semiconductor_analysis/ka_list.py",
+          "to": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/ka_list.md",
+          "kind": "write"
+        },
+        {
+          "from": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/output/silver/silver_customer_x_product.csv",
+          "to": "工作文件/semiconductor_analysis/dashboard/check_col.py",
+          "kind": "read"
+        },
+        {
+          "from": "工作文件/semiconductor_analysis/peek.py",
+          "to": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/peek_out.txt",
+          "kind": "write"
+        },
+        {
+          "from": "工作文件/semiconductor_analysis/recompute_asp.py",
+          "to": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/res_asp.md",
+          "kind": "write"
+        },
+        {
+          "from": "工作文件/semiconductor_analysis/bridge2.py",
+          "to": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/res_bridge.md",
+          "kind": "write"
+        },
+        {
+          "from": "工作文件/semiconductor_analysis/bridge3.py",
+          "to": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/res_bridge2.md",
+          "kind": "write"
+        },
+        {
+          "from": "工作文件/semiconductor_analysis/fix_price.py",
+          "to": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/res_fix.md",
+          "kind": "write"
+        },
+        {
+          "from": "工作文件/semiconductor_analysis/analysis1.py",
+          "to": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/res_part1.md",
+          "kind": "write"
+        },
+        {
+          "from": "工作文件/semiconductor_analysis/analysis2.py",
+          "to": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/res_part2.md",
+          "kind": "write"
+        },
+        {
+          "from": "工作文件/semiconductor_analysis/analysis3.py",
+          "to": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/res_part3.md",
+          "kind": "write"
+        },
+        {
+          "from": "工作文件/semiconductor_analysis/analysis4.py",
+          "to": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/res_part4.md",
+          "kind": "write"
+        },
+        {
+          "from": "工作文件/semiconductor_analysis/scout.py",
+          "to": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/scout_out.txt",
+          "kind": "write"
+        },
+        {
+          "from": "工作文件/semiconductor_analysis/test.py",
+          "to": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/test_out.txt",
+          "kind": "write"
+        },
+        {
+          "from": "工作文件/semiconductor_analysis/verify.py",
+          "to": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/verify_out.txt",
+          "kind": "write"
+        },
+        {
+          "from": "工作文件/semiconductor_analysis/dashboard/check_cust.py",
+          "to": "audit_output.txt",
+          "kind": "write"
+        },
+        {
+          "from": "工作文件/semiconductor_analysis/dashboard/data_inventory.py",
+          "to": "audit_output.txt",
+          "kind": "write"
+        },
+        {
+          "from": "工作文件/semiconductor_analysis/dashboard/audit_html.py",
+          "to": "audit_output.txt",
+          "kind": "write"
+        },
+        {
+          "from": "工作文件/semiconductor_analysis/dashboard/verify_raw.py",
+          "to": "audit_output.txt",
+          "kind": "write"
+        },
+        {
+          "from": "工作文件/semiconductor_analysis/dashboard/check_kpi2.py",
+          "to": "audit_output.txt",
+          "kind": "write"
+        },
+        {
+          "from": "工作文件/semiconductor_analysis/dashboard/find_col5.py",
+          "to": "col_output.txt",
+          "kind": "write"
+        },
+        {
+          "from": "工作文件/semiconductor_analysis/dashboard/find_col4.py",
+          "to": "col_output.txt",
+          "kind": "write"
+        },
+        {
+          "from": "工作文件/semiconductor_analysis/dashboard/find_col3.py",
+          "to": "col_output.txt",
+          "kind": "write"
+        },
+        {
+          "from": "工作文件/semiconductor_analysis/dashboard/find_col2.py",
+          "to": "col_output.txt",
+          "kind": "write"
+        },
+        {
+          "from": "dashboard_a.html",
+          "to": "工作文件/semiconductor_analysis/dashboard/final_check.py",
+          "kind": "read"
+        },
+        {
+          "from": "dashboard_a.html",
+          "to": "工作文件/semiconductor_analysis/dashboard/verify_syntax.py",
+          "kind": "read"
+        },
+        {
+          "from": "dashboard_a.html",
+          "to": "工作文件/semiconductor_analysis/dashboard/audit_html.py",
+          "kind": "read"
+        },
+        {
+          "from": "generate_dashboard.py",
+          "to": "工作文件/semiconductor_analysis/dashboard/data_inventory.py",
+          "kind": "read"
+        }
+      ],
+      "tags": [
+        "temp",
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/_debug_f1f.py",
+        "semiconductor_analysis/_explore_shipping.py",
+        "semiconductor_analysis/_step1_c6_compute.py",
+        "semiconductor_analysis/_step2_test_c6.py",
+        "semiconductor_analysis/recession_risk_opt/phaseA_check_cross_validation.py",
+        "semiconductor_analysis/recession_risk_opt/phaseA_data_check.py",
+        "semiconductor_analysis/recession_risk_opt/phaseA_severity_distribution.py",
+        "semiconductor_analysis/recession_risk_opt/phaseB1a_severity_regression.py",
+        "工作文件/semiconductor_analysis/dashboard/audit_alerts.py",
+        "工作文件/semiconductor_analysis/dashboard/audit_cats.py",
+        "工作文件/semiconductor_analysis/dashboard/audit_data.py",
+        "工作文件/semiconductor_analysis/dashboard/audit_final.py",
+        "工作文件/semiconductor_analysis/dashboard/audit_new.py",
+        "工作文件/semiconductor_analysis/dashboard/audit_rhythm.py",
+        "工作文件/semiconductor_analysis/dashboard/audit_small.py",
+        "工作文件/semiconductor_analysis/dashboard/check_data.py",
+        "工作文件/semiconductor_analysis/dashboard/check_kpi.py"
+      ],
+      "data": [
+        {
+          "ref": "data/b_custs.json",
+          "class": "raw",
+          "exists_on_disk": true
+        },
+        {
+          "ref": "data/出货明细修正版.xlsx",
+          "class": "raw",
+          "exists_on_disk": true
+        },
+        {
+          "ref": "data/所有的出货明细5.9.xlsx",
+          "class": "raw",
+          "exists_on_disk": true
+        },
+        {
+          "ref": "output/gold/客户全景.csv",
+          "class": "raw",
+          "exists_on_disk": true
+        },
+        {
+          "ref": "output/gold/异常日志.csv",
+          "class": "raw",
+          "exists_on_disk": true
+        },
+        {
+          "ref": "output/silver/silver_cleaned_rows.csv",
+          "class": "raw",
+          "exists_on_disk": true
+        },
+        {
+          "ref": "output/silver/silver_customer_monthly.csv",
+          "class": "raw",
+          "exists_on_disk": true
+        },
+        {
+          "ref": "output/silver/silver_customer_x_product.csv",
+          "class": "raw",
+          "exists_on_disk": true
+        },
+        {
+          "ref": "output/silver/silver_product_monthly.csv",
+          "class": "raw",
+          "exists_on_disk": true
+        },
+        {
+          "ref": "recession_risk_opt/data/samples.pkl",
+          "class": "raw",
+          "exists_on_disk": true
+        },
+        {
+          "ref": "{}/c6_factor_raw.csv",
+          "class": "intermediate",
+          "exists_on_disk": false
+        },
+        {
+          "ref": "{}/c6_test_results.json",
+          "class": "final",
+          "exists_on_disk": false
+        },
+        {
+          "ref": "{}/prospective_labels.csv",
+          "class": "raw",
+          "exists_on_disk": false
+        }
+      ],
+      "edges": [
+        {
+          "from": "data/b_custs.json",
+          "to": "工作文件/semiconductor_analysis/dashboard/audit_cats.py",
+          "kind": "read"
+        },
+        {
+          "from": "data/b_custs.json",
+          "to": "工作文件/semiconductor_analysis/dashboard/audit_final.py",
+          "kind": "read"
+        },
+        {
+          "from": "data/b_custs.json",
+          "to": "工作文件/semiconductor_analysis/dashboard/check_data.py",
+          "kind": "read"
+        },
+        {
+          "from": "data/出货明细修正版.xlsx",
+          "to": "semiconductor_analysis/_explore_shipping.py",
+          "kind": "read"
+        },
+        {
+          "from": "data/出货明细修正版.xlsx",
+          "to": "semiconductor_analysis/_step1_c6_compute.py",
+          "kind": "read"
+        },
+        {
+          "from": "data/所有的出货明细5.9.xlsx",
+          "to": "semiconductor_analysis/_debug_f1f.py",
+          "kind": "read"
+        },
+        {
+          "from": "output/gold/客户全景.csv",
+          "to": "工作文件/semiconductor_analysis/dashboard/audit_final.py",
+          "kind": "read"
+        },
+        {
+          "from": "output/gold/客户全景.csv",
+          "to": "工作文件/semiconductor_analysis/dashboard/audit_cats.py",
+          "kind": "read"
+        },
+        {
+          "from": "output/gold/客户全景.csv",
+          "to": "工作文件/semiconductor_analysis/dashboard/check_kpi.py",
+          "kind": "read"
+        },
+        {
+          "from": "output/gold/客户全景.csv",
+          "to": "工作文件/semiconductor_analysis/dashboard/audit_rhythm.py",
+          "kind": "read"
+        },
+        {
+          "from": "output/gold/客户全景.csv",
+          "to": "工作文件/semiconductor_analysis/dashboard/audit_data.py",
+          "kind": "read"
+        },
+        {
+          "from": "output/gold/客户全景.csv",
+          "to": "工作文件/semiconductor_analysis/dashboard/audit_new.py",
+          "kind": "read"
+        },
+        {
+          "from": "output/gold/客户全景.csv",
+          "to": "工作文件/semiconductor_analysis/dashboard/audit_alerts.py",
+          "kind": "read"
+        },
+        {
+          "from": "output/gold/异常日志.csv",
+          "to": "工作文件/semiconductor_analysis/dashboard/audit_alerts.py",
+          "kind": "read"
+        },
+        {
+          "from": "output/silver/silver_cleaned_rows.csv",
+          "to": "工作文件/semiconductor_analysis/dashboard/audit_small.py",
+          "kind": "read"
+        },
+        {
+          "from": "output/silver/silver_cleaned_rows.csv",
+          "to": "工作文件/semiconductor_analysis/dashboard/audit_new.py",
+          "kind": "read"
+        },
+        {
+          "from": "output/silver/silver_customer_monthly.csv",
+          "to": "工作文件/semiconductor_analysis/dashboard/audit_alerts.py",
+          "kind": "read"
+        },
+        {
+          "from": "output/silver/silver_customer_monthly.csv",
+          "to": "工作文件/semiconductor_analysis/dashboard/check_kpi.py",
+          "kind": "read"
+        },
+        {
+          "from": "output/silver/silver_customer_monthly.csv",
+          "to": "工作文件/semiconductor_analysis/dashboard/audit_rhythm.py",
+          "kind": "read"
+        },
+        {
+          "from": "output/silver/silver_customer_x_product.csv",
+          "to": "工作文件/semiconductor_analysis/dashboard/audit_final.py",
+          "kind": "read"
+        },
+        {
+          "from": "output/silver/silver_customer_x_product.csv",
+          "to": "工作文件/semiconductor_analysis/dashboard/check_kpi.py",
+          "kind": "read"
+        },
+        {
+          "from": "output/silver/silver_customer_x_product.csv",
+          "to": "工作文件/semiconductor_analysis/dashboard/audit_data.py",
+          "kind": "read"
+        },
+        {
+          "from": "output/silver/silver_customer_x_product.csv",
+          "to": "semiconductor_analysis/recession_risk_opt/phaseA_data_check.py",
+          "kind": "read"
+        },
+        {
+          "from": "output/silver/silver_customer_x_product.csv",
+          "to": "semiconductor_analysis/recession_risk_opt/phaseB1a_severity_regression.py",
+          "kind": "read"
+        },
+        {
+          "from": "output/silver/silver_product_monthly.csv",
+          "to": "semiconductor_analysis/recession_risk_opt/phaseA_check_cross_validation.py",
+          "kind": "read"
+        },
+        {
+          "from": "output/silver/silver_product_monthly.csv",
+          "to": "semiconductor_analysis/recession_risk_opt/phaseA_severity_distribution.py",
+          "kind": "read"
+        },
+        {
+          "from": "output/silver/silver_product_monthly.csv",
+          "to": "semiconductor_analysis/recession_risk_opt/phaseA_data_check.py",
+          "kind": "read"
+        },
+        {
+          "from": "output/silver/silver_product_monthly.csv",
+          "to": "semiconductor_analysis/recession_risk_opt/phaseB1a_severity_regression.py",
+          "kind": "read"
+        },
+        {
+          "from": "recession_risk_opt/data/samples.pkl",
+          "to": "semiconductor_analysis/_step2_test_c6.py",
+          "kind": "read"
+        },
+        {
+          "from": "recession_risk_opt/data/samples.pkl",
+          "to": "semiconductor_analysis/_debug_f1f.py",
+          "kind": "read"
+        },
+        {
+          "from": "recession_risk_opt/data/samples.pkl",
+          "to": "semiconductor_analysis/recession_risk_opt/phaseA_data_check.py",
+          "kind": "read"
+        },
+        {
+          "from": "recession_risk_opt/data/samples.pkl",
+          "to": "semiconductor_analysis/recession_risk_opt/phaseA_check_cross_validation.py",
+          "kind": "read"
+        },
+        {
+          "from": "recession_risk_opt/data/samples.pkl",
+          "to": "semiconductor_analysis/recession_risk_opt/phaseA_severity_distribution.py",
+          "kind": "read"
+        },
+        {
+          "from": "semiconductor_analysis/_step1_c6_compute.py",
+          "to": "{}/c6_factor_raw.csv",
+          "kind": "write"
+        },
+        {
+          "from": "{}/c6_factor_raw.csv",
+          "to": "semiconductor_analysis/_step2_test_c6.py",
+          "kind": "read"
+        },
+        {
+          "from": "semiconductor_analysis/_step2_test_c6.py",
+          "to": "{}/c6_test_results.json",
+          "kind": "write"
+        },
+        {
+          "from": "{}/prospective_labels.csv",
+          "to": "semiconductor_analysis/_step2_test_c6.py",
+          "kind": "read"
+        }
+      ],
+      "tags": [
+        "temp",
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/recession_risk_opt/archive/analysis/analyze_results.py",
+        "semiconductor_analysis/recession_risk_opt/archive/analysis/factor_exploration.py",
+        "semiconductor_analysis/recession_risk_opt/archive/analysis/orthogonal_check.py",
+        "semiconductor_analysis/recession_risk_opt/archive/demo/demo_tiered_risk.py",
+        "semiconductor_analysis/recession_risk_opt/archive/tests/test_consec_decline.py",
+        "semiconductor_analysis/recession_risk_opt/generate_snapshot.py"
+      ],
+      "data": [
+        {
+          "ref": "E:/3-其他资料/数据分析/semiconductor_analysis/output/gold/gold_product_portrait.csv",
+          "class": "raw",
+          "exists_on_disk": true
+        },
+        {
+          "ref": "E:/3-其他资料/数据分析/semiconductor_analysis/recession_risk_opt/reports/产品风险快照表_增强版_{}.xlsx",
+          "class": "final",
+          "exists_on_disk": false
+        },
+        {
+          "ref": "data/samples.pkl",
+          "class": "raw",
+          "exists_on_disk": true
+        },
+        {
+          "ref": "models/best_config.json",
+          "class": "raw",
+          "exists_on_disk": false
+        },
+        {
+          "ref": "pipeline.py",
+          "class": "raw",
+          "exists_on_disk": false
+        }
+      ],
+      "edges": [
+        {
+          "from": "E:/3-其他资料/数据分析/semiconductor_analysis/output/gold/gold_product_portrait.csv",
+          "to": "semiconductor_analysis/recession_risk_opt/generate_snapshot.py",
+          "kind": "read"
+        },
+        {
+          "from": "semiconductor_analysis/recession_risk_opt/generate_snapshot.py",
+          "to": "E:/3-其他资料/数据分析/semiconductor_analysis/recession_risk_opt/reports/产品风险快照表_增强版_{}.xlsx",
+          "kind": "write"
+        },
+        {
+          "from": "data/samples.pkl",
+          "to": "semiconductor_analysis/recession_risk_opt/archive/demo/demo_tiered_risk.py",
+          "kind": "read"
+        },
+        {
+          "from": "data/samples.pkl",
+          "to": "semiconductor_analysis/recession_risk_opt/archive/analysis/factor_exploration.py",
+          "kind": "read"
+        },
+        {
+          "from": "data/samples.pkl",
+          "to": "semiconductor_analysis/recession_risk_opt/archive/analysis/orthogonal_check.py",
+          "kind": "read"
+        },
+        {
+          "from": "data/samples.pkl",
+          "to": "semiconductor_analysis/recession_risk_opt/archive/tests/test_consec_decline.py",
+          "kind": "read"
+        },
+        {
+          "from": "data/samples.pkl",
+          "to": "semiconductor_analysis/recession_risk_opt/archive/analysis/analyze_results.py",
+          "kind": "read"
+        },
+        {
+          "from": "models/best_config.json",
+          "to": "semiconductor_analysis/recession_risk_opt/archive/demo/demo_tiered_risk.py",
+          "kind": "read"
+        },
+        {
+          "from": "models/best_config.json",
+          "to": "semiconductor_analysis/recession_risk_opt/archive/analysis/factor_exploration.py",
+          "kind": "read"
+        },
+        {
+          "from": "models/best_config.json",
+          "to": "semiconductor_analysis/recession_risk_opt/generate_snapshot.py",
+          "kind": "read"
+        },
+        {
+          "from": "models/best_config.json",
+          "to": "semiconductor_analysis/recession_risk_opt/archive/analysis/orthogonal_check.py",
+          "kind": "read"
+        },
+        {
+          "from": "models/best_config.json",
+          "to": "semiconductor_analysis/recession_risk_opt/archive/tests/test_consec_decline.py",
+          "kind": "read"
+        },
+        {
+          "from": "models/best_config.json",
+          "to": "semiconductor_analysis/recession_risk_opt/archive/analysis/analyze_results.py",
+          "kind": "read"
+        },
+        {
+          "from": "pipeline.py",
+          "to": "semiconductor_analysis/recession_risk_opt/archive/demo/demo_tiered_risk.py",
+          "kind": "read"
+        },
+        {
+          "from": "pipeline.py",
+          "to": "semiconductor_analysis/recession_risk_opt/archive/analysis/factor_exploration.py",
+          "kind": "read"
+        },
+        {
+          "from": "pipeline.py",
+          "to": "semiconductor_analysis/recession_risk_opt/archive/analysis/orthogonal_check.py",
+          "kind": "read"
+        },
+        {
+          "from": "pipeline.py",
+          "to": "semiconductor_analysis/recession_risk_opt/archive/tests/test_consec_decline.py",
+          "kind": "read"
+        },
+        {
+          "from": "pipeline.py",
+          "to": "semiconductor_analysis/recession_risk_opt/archive/analysis/analyze_results.py",
+          "kind": "read"
+        }
+      ],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "工作文件/eda_analysis.py",
+        "工作文件/eda_analysis_v2.py",
+        "工作文件/eda_analysis_v3.py",
+        "工作文件/longtail_forecast/run_longtail_forecast.py",
+        "工作文件/longtail_forecast/v2/run_full_forecast_v2.py",
+        "工作文件/longtail_forecast/v3/run_full_forecast_v3.py"
+      ],
+      "data": [
+        {
+          "ref": "C:/Users/45091/Desktop/工作文件/customer_activity.csv",
+          "class": "final",
+          "exists_on_disk": true
+        },
+        {
+          "ref": "C:/Users/45091/Desktop/工作文件/customer_agg.csv",
+          "class": "final",
+          "exists_on_disk": true
+        },
+        {
+          "ref": "C:/Users/45091/Desktop/工作文件/eda_results.txt",
+          "class": "final",
+          "exists_on_disk": false
+        },
+        {
+          "ref": "C:/Users/45091/Desktop/工作文件/财务分析-5月（6.3）(1).xlsx",
+          "class": "raw",
+          "exists_on_disk": true
+        }
+      ],
+      "edges": [
+        {
+          "from": "工作文件/eda_analysis_v3.py",
+          "to": "C:/Users/45091/Desktop/工作文件/customer_activity.csv",
+          "kind": "write"
+        },
+        {
+          "from": "工作文件/eda_analysis_v2.py",
+          "to": "C:/Users/45091/Desktop/工作文件/customer_activity.csv",
+          "kind": "write"
+        },
+        {
+          "from": "工作文件/eda_analysis_v3.py",
+          "to": "C:/Users/45091/Desktop/工作文件/customer_agg.csv",
+          "kind": "write"
+        },
+        {
+          "from": "工作文件/eda_analysis_v2.py",
+          "to": "C:/Users/45091/Desktop/工作文件/customer_agg.csv",
+          "kind": "write"
+        },
+        {
+          "from": "工作文件/eda_analysis_v3.py",
+          "to": "C:/Users/45091/Desktop/工作文件/eda_results.txt",
+          "kind": "write"
+        },
+        {
+          "from": "工作文件/eda_analysis_v2.py",
+          "to": "C:/Users/45091/Desktop/工作文件/eda_results.txt",
+          "kind": "write"
+        },
+        {
+          "from": "C:/Users/45091/Desktop/工作文件/财务分析-5月（6.3）(1).xlsx",
+          "to": "工作文件/longtail_forecast/run_longtail_forecast.py",
+          "kind": "read"
+        },
+        {
+          "from": "C:/Users/45091/Desktop/工作文件/财务分析-5月（6.3）(1).xlsx",
+          "to": "工作文件/eda_analysis_v3.py",
+          "kind": "read"
+        },
+        {
+          "from": "C:/Users/45091/Desktop/工作文件/财务分析-5月（6.3）(1).xlsx",
+          "to": "工作文件/eda_analysis_v2.py",
+          "kind": "read"
+        },
+        {
+          "from": "C:/Users/45091/Desktop/工作文件/财务分析-5月（6.3）(1).xlsx",
+          "to": "工作文件/longtail_forecast/v2/run_full_forecast_v2.py",
+          "kind": "read"
+        },
+        {
+          "from": "C:/Users/45091/Desktop/工作文件/财务分析-5月（6.3）(1).xlsx",
+          "to": "工作文件/eda_analysis.py",
+          "kind": "read"
+        },
+        {
+          "from": "C:/Users/45091/Desktop/工作文件/财务分析-5月（6.3）(1).xlsx",
+          "to": "工作文件/longtail_forecast/v3/run_full_forecast_v3.py",
+          "kind": "read"
+        }
+      ],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "工作文件/semiconductor_analysis/fix_word_24.py",
+        "工作文件/semiconductor_analysis/fix_word_75.py",
+        "工作文件/semiconductor_analysis/fix_word_bridge.py",
+        "工作文件/semiconductor_analysis/fix_word_ch9.py",
+        "工作文件/semiconductor_analysis/fix_word_zxkx.py",
+        "工作文件/semiconductor_analysis/make_word.py"
+      ],
+      "data": [
+        {
+          "ref": "C:/Users/45091/Desktop/2026H1销售分析报告_深度版.docx",
+          "class": "final",
+          "exists_on_disk": false
+        }
+      ],
+      "edges": [
+        {
+          "from": "工作文件/semiconductor_analysis/fix_word_bridge.py",
+          "to": "C:/Users/45091/Desktop/2026H1销售分析报告_深度版.docx",
+          "kind": "write"
+        },
+        {
+          "from": "工作文件/semiconductor_analysis/fix_word_ch9.py",
+          "to": "C:/Users/45091/Desktop/2026H1销售分析报告_深度版.docx",
+          "kind": "write"
+        },
+        {
+          "from": "工作文件/semiconductor_analysis/make_word.py",
+          "to": "C:/Users/45091/Desktop/2026H1销售分析报告_深度版.docx",
+          "kind": "write"
+        },
+        {
+          "from": "工作文件/semiconductor_analysis/fix_word_75.py",
+          "to": "C:/Users/45091/Desktop/2026H1销售分析报告_深度版.docx",
+          "kind": "write"
+        },
+        {
+          "from": "工作文件/semiconductor_analysis/fix_word_zxkx.py",
+          "to": "C:/Users/45091/Desktop/2026H1销售分析报告_深度版.docx",
+          "kind": "write"
+        },
+        {
+          "from": "工作文件/semiconductor_analysis/fix_word_24.py",
+          "to": "C:/Users/45091/Desktop/2026H1销售分析报告_深度版.docx",
+          "kind": "write"
+        }
+      ],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/unified_forecast_system.py",
+        "semiconductor_analysis/unified_forecast_system_backup_v1.py",
+        "semiconductor_analysis/unified_forecast_system_backup_v2.py",
+        "semiconductor_analysis/unified_forecast_system_backup_v3.py",
+        "semiconductor_analysis/unified_forecast_v3.py"
+      ],
+      "data": [
+        {
+          "ref": "E:/3-其他资料/数据分析/semiconductor_analysis/quarterly_forecast_package/output/quarterly_forecast_customer/预测方法排行榜.csv",
+          "class": "raw",
+          "exists_on_disk": true
+        }
+      ],
+      "edges": [
+        {
+          "from": "E:/3-其他资料/数据分析/semiconductor_analysis/quarterly_forecast_package/output/quarterly_forecast_customer/预测方法排行榜.csv",
+          "to": "semiconductor_analysis/unified_forecast_system_backup_v2.py",
+          "kind": "read"
+        },
+        {
+          "from": "E:/3-其他资料/数据分析/semiconductor_analysis/quarterly_forecast_package/output/quarterly_forecast_customer/预测方法排行榜.csv",
+          "to": "semiconductor_analysis/unified_forecast_v3.py",
+          "kind": "read"
+        },
+        {
+          "from": "E:/3-其他资料/数据分析/semiconductor_analysis/quarterly_forecast_package/output/quarterly_forecast_customer/预测方法排行榜.csv",
+          "to": "semiconductor_analysis/unified_forecast_system.py",
+          "kind": "read"
+        },
+        {
+          "from": "E:/3-其他资料/数据分析/semiconductor_analysis/quarterly_forecast_package/output/quarterly_forecast_customer/预测方法排行榜.csv",
+          "to": "semiconductor_analysis/unified_forecast_system_backup_v1.py",
+          "kind": "read"
+        },
+        {
+          "from": "E:/3-其他资料/数据分析/semiconductor_analysis/quarterly_forecast_package/output/quarterly_forecast_customer/预测方法排行榜.csv",
+          "to": "semiconductor_analysis/unified_forecast_system_backup_v3.py",
+          "kind": "read"
+        }
+      ],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/scripts/chart_data.py",
+        "semiconductor_analysis/scripts/final_forecast.py"
+      ],
+      "data": [
+        {
+          "ref": "E:/3-其他资料/数据分析/semiconductor_analysis/output/silver/silver_cleaned_rows.csv",
+          "class": "raw",
+          "exists_on_disk": true
+        }
+      ],
+      "edges": [
+        {
+          "from": "E:/3-其他资料/数据分析/semiconductor_analysis/output/silver/silver_cleaned_rows.csv",
+          "to": "semiconductor_analysis/scripts/final_forecast.py",
+          "kind": "read"
+        },
+        {
+          "from": "E:/3-其他资料/数据分析/semiconductor_analysis/output/silver/silver_cleaned_rows.csv",
+          "to": "semiconductor_analysis/scripts/chart_data.py",
+          "kind": "read"
+        }
+      ],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/_debug_mw.py"
+      ],
+      "data": [
+        {
+          "ref": "recession_risk_opt/phase2_f1_repair.py",
+          "class": "raw",
+          "exists_on_disk": false
+        }
+      ],
+      "edges": [
+        {
+          "from": "recession_risk_opt/phase2_f1_repair.py",
+          "to": "semiconductor_analysis/_debug_mw.py",
+          "kind": "read"
+        }
+      ],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/analysis/__init__.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/analysis/b2b_adapters.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/analysis/c6_production_mapping.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/analysis/gold_builders.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/analysis/pricing/__init__.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/analysis/pricing/pricing_actions.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/analysis/pricing/pricing_insights.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/analysis/pricing/pricing_trends.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/analysis/rfm_pi.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/b2b_v2/__init__.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/b2b_v2/actions/__init__.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/b2b_v2/actions/cross_sell.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/b2b_v2/anomaly/__init__.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/b2b_v2/anomaly/inventory.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/b2b_v2/anomaly/isolation_forest.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/b2b_v2/anomaly/run.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/b2b_v2/behavior/__init__.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/b2b_v2/journey/__init__.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/b2b_v2/journey/stage_classifier.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/b2b_v2/profitability/__init__.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/config/settings_product.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/conftest.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/core/__init__.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/core/config.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/core/interfaces.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/core/pipeline.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/customer_analysis/customer_master.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/customer_analysis/dimensions.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/customer_analysis/group_aggregation.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/customer_analysis/report.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/customer_analysis/scoring.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/customer_analysis/silver.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/data/decrypt_excel.py"
+      ],
+      "data": [
+        {
+          "ref": "{}_decrypted.xlsx",
+          "class": "intermediate",
+          "exists_on_disk": false
+        }
+      ],
+      "edges": [
+        {
+          "from": "semiconductor_analysis/data/decrypt_excel.py",
+          "to": "{}_decrypted.xlsx",
+          "kind": "write"
+        },
+        {
+          "from": "{}_decrypted.xlsx",
+          "to": "semiconductor_analysis/data/decrypt_excel.py",
+          "kind": "read"
+        }
+      ],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/data_pipeline/__init__.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/data_pipeline/aggregator.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/data_pipeline/cleaner.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/data_pipeline/loader.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/data_pipeline/validator.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/detailed_excel_analysis.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/experiment_log/00_master/field_check_20260612.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/experiment_log/00_master/field_check_period_20260612.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/experiment_log/00_master/run_phase1_correction.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/experiment_log/00_master/summarize_corrected_runs_20260612.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/experiment_log/01_exp_0.0_trivial_baselines/run_0.0_trivial_baselines.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/experiment_log/02_exp_0.0.5_coverage_diagnosis/run_0.0.5_v2.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/experiment_log/04_exp_0.1.5_method_filter/run_0.1.5_v2.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/experiment_log/05_exp_0.2_baseline_lock/run_0.2_baseline_lock.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/experiment_log/07_exp_0.3_lifecycle_alignment/run_0.3_v3.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/experiment_log/08_exp_0.0.6_hierarchy_eligibility/run_0.0.6.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/experiment_log/09_exp_1.0_hierarchy_granularity/run_1.0_hierarchy_granularity.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/experiment_log/10_exp_0.0.7_corrected_hierarchy_eligibility/run_0.0.7_corrected_hierarchy_eligibility.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/experiment_log/11_exp_1.1_intermittent_demand/run_1.1_corrected.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/experiment_log/11_exp_1.1_intermittent_demand/run_1.1_full_corrected.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/experiment_log/11_exp_1.1_intermittent_demand/run_1.1_intermittent_demand.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/experiment_log/13_exp_1.2_window_optimization/run_1.2_window_optimization.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/experiment_log/14_exp_1.3_lifecycle_calibration/run_1.3_lifecycle_calibration.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/experiment_log/15_exp_1.4_new_product_layering/run_1.4_new_product_layering.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/experiment_log/20_exp_2.1_hierarchical_reconciliation/run_2.1_hierarchical_reconciliation.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/experiment_log/21_exp_2.2_hierarchical_all_plines/run_2.2_hierarchical_all_plines.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/experiment_log/22_exp_2.3_pit_factor_deepening/run_2.3_pit_factor_deepening.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/experiment_log/23_phase2_redesign/run_phase2_redesign.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/experiment_log/24_phase2_final_validation/run_phase2_final_validation.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/experiment_log/25_phase3_ensemble/run_phase3_ensemble.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/experiment_log/26_phase4_final/run_phase4_final.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/experiment_log/experiment_log_extra_quantile_prediction/run_1.2_quantile_forecasting.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/linked_list_cycle.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "junk"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/lru_cache_decorator.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "junk"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/majority_element.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "junk"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/optimize_duplicates.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "junk"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/optimizer/__init__.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/optimizer/blindspot_analysis_rest.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/optimizer/blindspot_diagnosis.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/optimizer/comprehensive_eval.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/optimizer/comprehensive_eval_part2.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/optimizer/config.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/optimizer/crossval.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/optimizer/data_loader.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/optimizer/evaluate_solutions_2024.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/optimizer/metrics.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/optimizer/recent_eval_and_solutions.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/optimizer/reporter.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/optimizer/run_pipeline.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/optimizer/scoring_v2.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/optimizer/threshold_search.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/optimizer/weight_search.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/parse_excel_file.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/product_lifecycle/__init__.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/product_lifecycle/report.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/quarterly_forecast_package/run_customer_forecast.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/quarterly_forecast_package/run_quarterly_forecast.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/race_condition_clear_demo.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "junk"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/recession_risk_opt/archive/runners/run_stage5.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/recession_risk_opt/archive/runners/stage5_final.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/recession_risk_opt/backtest_framework.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/recession_risk_opt/models/risk_scorer.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/recession_risk_opt/phase1_customer_factors.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/recession_risk_opt/phase2_f1_repair.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/recession_risk_opt/phase3_model_comparison.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/recession_risk_opt/phase4_case_review.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/recession_risk_opt/phase5_action_baseline.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/recession_risk_opt/pipeline.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/recession_risk_opt/v31_calibration.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/recession_risk_opt/v31_final_optimization.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/reports/__init__.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/safe_divide.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/scripts/generate_chart_html.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/shared/classifiers.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/shared/timing.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/test/__init__.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/test/test_analysis_scoring.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/test/test_gold_builders.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/test/test_gold_exporter.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/test/test_pipeline.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/test/test_validator.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/test/validation_suite.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis/thread_race_condition_demo.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "junk"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis_before/src/__init__.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis_before/src/actions/__init__.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis_before/src/anomaly/__init__.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis_before/src/behavior/__init__.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis_before/src/behavior/volatility.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis_before/src/journey/__init__.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis_before/src/journey/stage_classifier.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis_before/src/profitability/__init__.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis_before/src/profitability/true_profit_estimator.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis_before/test/templates/__init__.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "semiconductor_analysis_before/test/templates/test_case_template.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "产品生命周期评估/backup/build_config.py"
+      ],
+      "data": [
+        {
+          "ref": "E:/3-其他资料/产品生命周期评估/config.xlsx",
+          "class": "final",
+          "exists_on_disk": true
+        }
+      ],
+      "edges": [
+        {
+          "from": "产品生命周期评估/backup/build_config.py",
+          "to": "E:/3-其他资料/产品生命周期评估/config.xlsx",
+          "kind": "write"
+        }
+      ],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "产品生命周期评估/backup/build_html.py"
+      ],
+      "data": [
+        {
+          "ref": "E:/3-其他资料/产品生命周期评估/dashboard.html",
+          "class": "final",
+          "exists_on_disk": false
+        },
+        {
+          "ref": "E:/3-其他资料/产品生命周期评估/data.json",
+          "class": "raw",
+          "exists_on_disk": true
+        }
+      ],
+      "edges": [
+        {
+          "from": "产品生命周期评估/backup/build_html.py",
+          "to": "E:/3-其他资料/产品生命周期评估/dashboard.html",
+          "kind": "write"
+        },
+        {
+          "from": "E:/3-其他资料/产品生命周期评估/data.json",
+          "to": "产品生命周期评估/backup/build_html.py",
+          "kind": "read"
+        }
+      ],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "产品生命周期评估/backup/excel_helper.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "产品生命周期评估/backup/generate_dashboard_v4.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "产品生命周期评估/backup/run.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "产品生命周期评估/backup/run_v2.7_增强版_20260510_before_fix.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "产品生命周期评估/backup/run_v2.7_增强版_backup_20260510.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "产品生命周期评估/backup/run_v2.7_增强版_before_20260510_141955.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "产品生命周期评估/backup/run_v2.8.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "产品生命周期评估/backup/模型测试.py"
+      ],
+      "data": [
+        {
+          "ref": "E:/3-其他资料/产品生命周期评估/所有的出货明细5.7.xlsx",
+          "class": "raw",
+          "exists_on_disk": true
+        },
+        {
+          "ref": "full_model_test_results.xlsx",
+          "class": "final",
+          "exists_on_disk": false
+        }
+      ],
+      "edges": [
+        {
+          "from": "E:/3-其他资料/产品生命周期评估/所有的出货明细5.7.xlsx",
+          "to": "产品生命周期评估/backup/模型测试.py",
+          "kind": "read"
+        },
+        {
+          "from": "产品生命周期评估/backup/模型测试.py",
+          "to": "full_model_test_results.xlsx",
+          "kind": "write"
+        }
+      ],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "产品生命周期评估/run_v2.8.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "产品生命周期评估/产品生命周期量化评估方案_v2.9/generate_v4.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "产品生命周期评估/产品生命周期量化评估方案_v2.9/run_v2.8.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "工作文件/longtail_forecast/generate_report.py"
+      ],
+      "data": [
+        {
+          "ref": "长尾客户季度历史与预测.csv",
+          "class": "raw",
+          "exists_on_disk": true
+        },
+        {
+          "ref": "长尾客户季度销售预测报告.html",
+          "class": "final",
+          "exists_on_disk": false
+        },
+        {
+          "ref": "长尾客户预测总表.csv",
+          "class": "raw",
+          "exists_on_disk": true
+        },
+        {
+          "ref": "长尾预测摘要.json",
+          "class": "raw",
+          "exists_on_disk": true
+        },
+        {
+          "ref": "预测方法选优结果.csv",
+          "class": "raw",
+          "exists_on_disk": true
+        }
+      ],
+      "edges": [
+        {
+          "from": "长尾客户季度历史与预测.csv",
+          "to": "工作文件/longtail_forecast/generate_report.py",
+          "kind": "read"
+        },
+        {
+          "from": "工作文件/longtail_forecast/generate_report.py",
+          "to": "长尾客户季度销售预测报告.html",
+          "kind": "write"
+        },
+        {
+          "from": "长尾客户预测总表.csv",
+          "to": "工作文件/longtail_forecast/generate_report.py",
+          "kind": "read"
+        },
+        {
+          "from": "长尾预测摘要.json",
+          "to": "工作文件/longtail_forecast/generate_report.py",
+          "kind": "read"
+        },
+        {
+          "from": "预测方法选优结果.csv",
+          "to": "工作文件/longtail_forecast/generate_report.py",
+          "kind": "read"
+        }
+      ],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "工作文件/longtail_forecast/v2/gen_dashboard.py"
+      ],
+      "data": [
+        {
+          "ref": "全客户增强预测总表.csv",
+          "class": "raw",
+          "exists_on_disk": true
+        },
+        {
+          "ref": "全客户季度历史与预测.csv",
+          "class": "raw",
+          "exists_on_disk": true
+        },
+        {
+          "ref": "回测摘要.json",
+          "class": "raw",
+          "exists_on_disk": true
+        },
+        {
+          "ref": "多维度对比.csv",
+          "class": "raw",
+          "exists_on_disk": true
+        },
+        {
+          "ref": "长尾预测增强版仪表盘.html",
+          "class": "final",
+          "exists_on_disk": false
+        }
+      ],
+      "edges": [
+        {
+          "from": "全客户增强预测总表.csv",
+          "to": "工作文件/longtail_forecast/v2/gen_dashboard.py",
+          "kind": "read"
+        },
+        {
+          "from": "全客户季度历史与预测.csv",
+          "to": "工作文件/longtail_forecast/v2/gen_dashboard.py",
+          "kind": "read"
+        },
+        {
+          "from": "回测摘要.json",
+          "to": "工作文件/longtail_forecast/v2/gen_dashboard.py",
+          "kind": "read"
+        },
+        {
+          "from": "多维度对比.csv",
+          "to": "工作文件/longtail_forecast/v2/gen_dashboard.py",
+          "kind": "read"
+        },
+        {
+          "from": "工作文件/longtail_forecast/v2/gen_dashboard.py",
+          "to": "长尾预测增强版仪表盘.html",
+          "kind": "write"
+        }
+      ],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "工作文件/longtail_forecast/v3/generate_report.py"
+      ],
+      "data": [
+        {
+          "ref": "{}/全客户季度历史与预测.csv",
+          "class": "raw",
+          "exists_on_disk": true
+        },
+        {
+          "ref": "{}/全客户季度销售预测报告.html",
+          "class": "final",
+          "exists_on_disk": false
+        },
+        {
+          "ref": "{}/全客户预测总表.csv",
+          "class": "raw",
+          "exists_on_disk": true
+        },
+        {
+          "ref": "{}/全客户预测摘要.json",
+          "class": "raw",
+          "exists_on_disk": true
+        }
+      ],
+      "edges": [
+        {
+          "from": "{}/全客户季度历史与预测.csv",
+          "to": "工作文件/longtail_forecast/v3/generate_report.py",
+          "kind": "read"
+        },
+        {
+          "from": "工作文件/longtail_forecast/v3/generate_report.py",
+          "to": "{}/全客户季度销售预测报告.html",
+          "kind": "write"
+        },
+        {
+          "from": "{}/全客户预测总表.csv",
+          "to": "工作文件/longtail_forecast/v3/generate_report.py",
+          "kind": "read"
+        },
+        {
+          "from": "{}/全客户预测摘要.json",
+          "to": "工作文件/longtail_forecast/v3/generate_report.py",
+          "kind": "read"
+        }
+      ],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "工作文件/semiconductor_analysis/analysis/pricing/pricing_bands.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "工作文件/semiconductor_analysis/analysis/pricing/pricing_customer.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "工作文件/semiconductor_analysis/analysis/pricing/pricing_lifecycle.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "工作文件/semiconductor_analysis/analysis/scoring.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "工作文件/semiconductor_analysis/b2b_v2/actions/category_aptitude.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "工作文件/semiconductor_analysis/b2b_v2/actions/negative_margin.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "工作文件/semiconductor_analysis/b2b_v2/actions/product_insights.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "工作文件/semiconductor_analysis/b2b_v2/actions/rules_engine.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "工作文件/semiconductor_analysis/b2b_v2/actions/run.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "工作文件/semiconductor_analysis/b2b_v2/actions/sales_profiling.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "工作文件/semiconductor_analysis/b2b_v2/anomaly/rules.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "工作文件/semiconductor_analysis/b2b_v2/behavior/volatility.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "工作文件/semiconductor_analysis/b2b_v2/profitability/true_profit_estimator.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "工作文件/semiconductor_analysis/config/__init__.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "工作文件/semiconductor_analysis/config/settings.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "工作文件/semiconductor_analysis/config/settings_customer.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "工作文件/semiconductor_analysis/cross_reference/__init__.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "工作文件/semiconductor_analysis/cross_reference/run_cross_ref.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "工作文件/semiconductor_analysis/customer_analysis/__init__.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "工作文件/semiconductor_analysis/customer_analysis/gold.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "工作文件/semiconductor_analysis/customer_analysis/models.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "工作文件/semiconductor_analysis/customer_analysis/period_analysis.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "工作文件/semiconductor_analysis/customer_analysis/portrait.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "工作文件/semiconductor_analysis/customer_analysis/price_deep_dive.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "工作文件/semiconductor_analysis/customer_analysis/rd_recommendation.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "工作文件/semiconductor_analysis/customer_analysis/run_kpi_daily.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "工作文件/semiconductor_analysis/customer_analysis/run_pipeline.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "工作文件/semiconductor_analysis/customer_analysis/trend_analysis.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "工作文件/semiconductor_analysis/dashboard/_patch_dashboard.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "工作文件/semiconductor_analysis/dashboard/audit_cats2.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "temp"
+      ]
+    },
+    {
+      "scripts": [
+        "工作文件/semiconductor_analysis/dashboard/audit_deep.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "temp"
+      ]
+    },
+    {
+      "scripts": [
+        "工作文件/semiconductor_analysis/dashboard/build_data.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "工作文件/semiconductor_analysis/dashboard/check_names.py"
+      ],
+      "data": [
+        {
+          "ref": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/output/gold/客户全景.csv",
+          "class": "raw",
+          "exists_on_disk": true
+        }
+      ],
+      "edges": [
+        {
+          "from": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/output/gold/客户全景.csv",
+          "to": "工作文件/semiconductor_analysis/dashboard/check_names.py",
+          "kind": "read"
+        }
+      ],
+      "tags": [
+        "temp"
+      ]
+    },
+    {
+      "scripts": [
+        "工作文件/semiconductor_analysis/dashboard/generate_dashboard.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "工作文件/semiconductor_analysis/dashboard/verify_ytd.py"
+      ],
+      "data": [
+        {
+          "ref": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/output/silver/silver_customer_monthly.csv",
+          "class": "raw",
+          "exists_on_disk": true
+        }
+      ],
+      "edges": [
+        {
+          "from": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/output/silver/silver_customer_monthly.csv",
+          "to": "工作文件/semiconductor_analysis/dashboard/verify_ytd.py",
+          "kind": "read"
+        }
+      ],
+      "tags": [
+        "temp"
+      ]
+    },
+    {
+      "scripts": [
+        "工作文件/semiconductor_analysis/experiment_log/phase_0_baseline/exp_0.0.5_coverage_diagnosis/run_0.0.5_v2.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "工作文件/semiconductor_analysis/experiment_log/phase_0_baseline/exp_0.0_trivial_baselines/run_0.0_trivial_baselines.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "工作文件/semiconductor_analysis/experiment_log/phase_0_baseline/exp_0.1.5_method_filter/run_0.1.5_v2.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "工作文件/semiconductor_analysis/experiment_log/phase_0_baseline/exp_0.2_baseline_lock/run_0.2_baseline_lock.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "工作文件/semiconductor_analysis/experiment_log/phase_0_baseline/exp_0.3_lifecycle_alignment/run_0.3_v3.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "工作文件/semiconductor_analysis/generate_v4.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "工作文件/semiconductor_analysis/output/test/run_0.0.5_coverage_diagnosis.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "工作文件/semiconductor_analysis/output/test/run_0.0.5_v2.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "工作文件/semiconductor_analysis/output/test/run_0.0_trivial_baselines.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "工作文件/semiconductor_analysis/output/test/run_0.1.5_method_filter.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "工作文件/semiconductor_analysis/output/test/run_0.1.5_v2.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "工作文件/semiconductor_analysis/output/test/run_0.2_baseline_lock.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "工作文件/semiconductor_analysis/output/test/run_0.3_lifecycle.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "工作文件/semiconductor_analysis/output/test/run_0.3_v2.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "工作文件/semiconductor_analysis/output/test/run_0.3_v3.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "工作文件/semiconductor_analysis/product_lifecycle/nine_grid.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "工作文件/semiconductor_analysis/product_lifecycle/notes.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "工作文件/semiconductor_analysis/product_lifecycle/profiling.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "工作文件/semiconductor_analysis/product_lifecycle/run.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "工作文件/semiconductor_analysis/reports/gold_exporter.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "工作文件/semiconductor_analysis/run2.py"
+      ],
+      "data": [
+        {
+          "ref": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/err.txt",
+          "class": "final",
+          "exists_on_disk": false
+        }
+      ],
+      "edges": [
+        {
+          "from": "工作文件/semiconductor_analysis/run2.py",
+          "to": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/err.txt",
+          "kind": "write"
+        }
+      ],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "工作文件/semiconductor_analysis/run3.py"
+      ],
+      "data": [
+        {
+          "ref": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/err3.txt",
+          "class": "final",
+          "exists_on_disk": false
+        }
+      ],
+      "edges": [
+        {
+          "from": "工作文件/semiconductor_analysis/run3.py",
+          "to": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/err3.txt",
+          "kind": "write"
+        }
+      ],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "工作文件/semiconductor_analysis/run4.py"
+      ],
+      "data": [
+        {
+          "ref": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/err4.txt",
+          "class": "final",
+          "exists_on_disk": false
+        }
+      ],
+      "edges": [
+        {
+          "from": "工作文件/semiconductor_analysis/run4.py",
+          "to": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/err4.txt",
+          "kind": "write"
+        }
+      ],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "工作文件/semiconductor_analysis/run_action.py"
+      ],
+      "data": [
+        {
+          "ref": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/deep_action_err.txt",
+          "class": "final",
+          "exists_on_disk": false
+        }
+      ],
+      "edges": [
+        {
+          "from": "工作文件/semiconductor_analysis/run_action.py",
+          "to": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/deep_action_err.txt",
+          "kind": "write"
+        }
+      ],
+      "tags": [
+        "temp"
+      ]
+    },
+    {
+      "scripts": [
+        "工作文件/semiconductor_analysis/run_all.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "工作文件/semiconductor_analysis/run_audit.py"
+      ],
+      "data": [
+        {
+          "ref": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/audit_err.txt",
+          "class": "final",
+          "exists_on_disk": false
+        }
+      ],
+      "edges": [
+        {
+          "from": "工作文件/semiconductor_analysis/run_audit.py",
+          "to": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/audit_err.txt",
+          "kind": "write"
+        }
+      ],
+      "tags": [
+        "temp"
+      ]
+    },
+    {
+      "scripts": [
+        "工作文件/semiconductor_analysis/run_customer.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "工作文件/semiconductor_analysis/run_deep.py"
+      ],
+      "data": [
+        {
+          "ref": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/deep_err.txt",
+          "class": "final",
+          "exists_on_disk": false
+        }
+      ],
+      "edges": [
+        {
+          "from": "工作文件/semiconductor_analysis/run_deep.py",
+          "to": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/deep_err.txt",
+          "kind": "write"
+        }
+      ],
+      "tags": [
+        "temp"
+      ]
+    },
+    {
+      "scripts": [
+        "工作文件/semiconductor_analysis/run_product.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "工作文件/semiconductor_analysis/run_sp.py"
+      ],
+      "data": [
+        {
+          "ref": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/sp_err.txt",
+          "class": "final",
+          "exists_on_disk": false
+        }
+      ],
+      "edges": [
+        {
+          "from": "工作文件/semiconductor_analysis/run_sp.py",
+          "to": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/sp_err.txt",
+          "kind": "write"
+        }
+      ],
+      "tags": [
+        "temp"
+      ]
+    },
+    {
+      "scripts": [
+        "工作文件/semiconductor_analysis/run_zxkx.py"
+      ],
+      "data": [
+        {
+          "ref": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/zxkx_err.txt",
+          "class": "final",
+          "exists_on_disk": false
+        }
+      ],
+      "edges": [
+        {
+          "from": "工作文件/semiconductor_analysis/run_zxkx.py",
+          "to": "C:/Users/45091/Desktop/工作文件/semiconductor_analysis/zxkx_err.txt",
+          "kind": "write"
+        }
+      ],
+      "tags": [
+        "temp"
+      ]
+    },
+    {
+      "scripts": [
+        "工作文件/semiconductor_analysis/runall.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "工作文件/semiconductor_analysis/shared/__init__.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "工作文件/semiconductor_analysis/shared/calc_utils.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "工作文件/semiconductor_analysis/shared/customer_analysis.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "工作文件/semiconductor_analysis/shared/data_cleaning.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "工作文件/semiconductor_analysis/shared/forecasting.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "工作文件/semiconductor_analysis/shared/pricing.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "工作文件/semiconductor_analysis/shared/risk_scoring.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "工作文件/semiconductor_analysis/test/batch_a_test.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "工作文件/semiconductor_analysis/test/conftest.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "工作文件/semiconductor_analysis/test/fallback.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "工作文件/semiconductor_analysis/test/phase1_load.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "工作文件/semiconductor_analysis/test/phase2_validate.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "工作文件/semiconductor_analysis/test/phase3_visualize.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "工作文件/semiconductor_analysis/test/run_all_tests.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "工作文件/semiconductor_analysis/test/test_week1_modules.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "工作文件/semiconductor_analysis/test_output/check_data.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "工作文件/semiconductor_analysis/verify_word.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "看板流水线/dashboard/generate_dashboard.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "看板流水线/processing/analysis/__init__.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "看板流水线/processing/analysis/b2b_adapters.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "看板流水线/processing/analysis/c6_production_mapping.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "看板流水线/processing/analysis/gold_builders.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "看板流水线/processing/analysis/pricing/__init__.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "看板流水线/processing/analysis/pricing/pricing_actions.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "看板流水线/processing/analysis/pricing/pricing_bands.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "看板流水线/processing/analysis/pricing/pricing_customer.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "看板流水线/processing/analysis/pricing/pricing_insights.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "看板流水线/processing/analysis/pricing/pricing_lifecycle.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "看板流水线/processing/analysis/pricing/pricing_trends.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "看板流水线/processing/analysis/rfm_pi.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "看板流水线/processing/analysis/scoring.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "看板流水线/processing/b2b_v2/__init__.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "看板流水线/processing/b2b_v2/actions/__init__.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "看板流水线/processing/b2b_v2/actions/category_aptitude.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "看板流水线/processing/b2b_v2/actions/cross_sell.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "看板流水线/processing/b2b_v2/actions/negative_margin.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "看板流水线/processing/b2b_v2/actions/product_insights.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "看板流水线/processing/b2b_v2/actions/rules_engine.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "看板流水线/processing/b2b_v2/actions/run.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "看板流水线/processing/b2b_v2/actions/sales_profiling.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "看板流水线/processing/b2b_v2/anomaly/__init__.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "看板流水线/processing/b2b_v2/anomaly/inventory.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "看板流水线/processing/b2b_v2/anomaly/isolation_forest.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "看板流水线/processing/b2b_v2/anomaly/rules.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "看板流水线/processing/b2b_v2/anomaly/run.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "看板流水线/processing/b2b_v2/behavior/__init__.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "看板流水线/processing/b2b_v2/behavior/volatility.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "看板流水线/processing/b2b_v2/journey/__init__.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "看板流水线/processing/b2b_v2/journey/stage_classifier.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "看板流水线/processing/b2b_v2/profitability/__init__.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "看板流水线/processing/b2b_v2/profitability/true_profit_estimator.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "看板流水线/processing/config/__init__.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "看板流水线/processing/config/settings.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "看板流水线/processing/config/settings_customer.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "看板流水线/processing/config/settings_product.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "看板流水线/processing/core/__init__.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "看板流水线/processing/core/config.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "看板流水线/processing/core/interfaces.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "看板流水线/processing/core/pipeline.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "看板流水线/processing/cross_reference/__init__.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "看板流水线/processing/cross_reference/run_cross_ref.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "看板流水线/processing/customer_analysis/__init__.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "看板流水线/processing/customer_analysis/customer_master.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "看板流水线/processing/customer_analysis/dimensions.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "看板流水线/processing/customer_analysis/gold.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "看板流水线/processing/customer_analysis/group_aggregation.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "看板流水线/processing/customer_analysis/models.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "看板流水线/processing/customer_analysis/period_analysis.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "看板流水线/processing/customer_analysis/portrait.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "看板流水线/processing/customer_analysis/price_deep_dive.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "看板流水线/processing/customer_analysis/rd_recommendation.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "看板流水线/processing/customer_analysis/report.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "看板流水线/processing/customer_analysis/run_kpi_daily.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "看板流水线/processing/customer_analysis/run_pipeline.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "看板流水线/processing/customer_analysis/scoring.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "看板流水线/processing/customer_analysis/silver.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "看板流水线/processing/customer_analysis/trend_analysis.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "看板流水线/processing/data_pipeline/__init__.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "看板流水线/processing/data_pipeline/aggregator.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "看板流水线/processing/data_pipeline/cleaner.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "看板流水线/processing/data_pipeline/loader.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "看板流水线/processing/data_pipeline/validator.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "看板流水线/processing/product_lifecycle/__init__.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "看板流水线/processing/product_lifecycle/nine_grid.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "看板流水线/processing/product_lifecycle/notes.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "看板流水线/processing/product_lifecycle/profiling.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "看板流水线/processing/product_lifecycle/report.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "看板流水线/processing/product_lifecycle/run.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "看板流水线/processing/reports/__init__.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "看板流水线/processing/reports/gold_exporter.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "看板流水线/processing/run_all.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "看板流水线/processing/shared/__init__.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "看板流水线/processing/shared/calc_utils.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "看板流水线/processing/shared/classifiers.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "看板流水线/processing/shared/customer_analysis.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "看板流水线/processing/shared/data_cleaning.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "看板流水线/processing/shared/forecasting.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "看板流水线/processing/shared/pricing.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "看板流水线/processing/shared/risk_scoring.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "看板流水线/processing/shared/timing.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    },
+    {
+      "scripts": [
+        "看板流水线/run_chain.py"
+      ],
+      "data": [],
+      "edges": [],
+      "tags": [
+        "normal"
+      ]
+    }
+  ],
+  "shared_modules": [
+    {
+      "module": "config.settings",
+      "used_by": [
+        "semiconductor_analysis/analysis/gold_builders.py",
+        "semiconductor_analysis/analysis/pricing/pricing_actions.py",
+        "semiconductor_analysis/analysis/rfm_pi.py",
+        "semiconductor_analysis/b2b_v2/actions/cross_sell.py",
+        "semiconductor_analysis/b2b_v2/anomaly/inventory.py",
+        "semiconductor_analysis/b2b_v2/anomaly/isolation_forest.py",
+        "semiconductor_analysis/b2b_v2/journey/stage_classifier.py",
+        "semiconductor_analysis/core/pipeline.py",
+        "semiconductor_analysis/customer_analysis/customer_master.py",
+        "semiconductor_analysis/customer_analysis/dimensions.py",
+        "semiconductor_analysis/customer_analysis/group_aggregation.py",
+        "semiconductor_analysis/customer_analysis/silver.py",
+        "semiconductor_analysis/optimizer/data_loader.py",
+        "semiconductor_analysis/test/validation_suite.py",
+        "semiconductor_analysis_before/src/profitability/true_profit_estimator.py",
+        "工作文件/semiconductor_analysis/analysis/pricing/pricing_customer.py",
+        "工作文件/semiconductor_analysis/analysis/pricing/pricing_lifecycle.py",
+        "工作文件/semiconductor_analysis/analysis/scoring.py",
+        "工作文件/semiconductor_analysis/b2b_v2/anomaly/rules.py",
+        "工作文件/semiconductor_analysis/customer_analysis/gold.py",
+        "工作文件/semiconductor_analysis/customer_analysis/portrait.py",
+        "工作文件/semiconductor_analysis/customer_analysis/price_deep_dive.py",
+        "工作文件/semiconductor_analysis/customer_analysis/run_kpi_daily.py",
+        "工作文件/semiconductor_analysis/customer_analysis/run_pipeline.py",
+        "工作文件/semiconductor_analysis/customer_analysis/trend_analysis.py",
+        "工作文件/semiconductor_analysis/dashboard/check_col.py",
+        "工作文件/semiconductor_analysis/product_lifecycle/nine_grid.py",
+        "工作文件/semiconductor_analysis/product_lifecycle/run.py",
+        "工作文件/semiconductor_analysis/reports/gold_exporter.py",
+        "工作文件/semiconductor_analysis/shared/data_cleaning.py",
+        "工作文件/semiconductor_analysis/test/batch_a_test.py",
+        "看板流水线/processing/analysis/gold_builders.py",
+        "看板流水线/processing/analysis/pricing/pricing_actions.py",
+        "看板流水线/processing/analysis/pricing/pricing_customer.py",
+        "看板流水线/processing/analysis/pricing/pricing_lifecycle.py",
+        "看板流水线/processing/analysis/rfm_pi.py",
+        "看板流水线/processing/analysis/scoring.py",
+        "看板流水线/processing/b2b_v2/actions/cross_sell.py",
+        "看板流水线/processing/b2b_v2/anomaly/inventory.py",
+        "看板流水线/processing/b2b_v2/anomaly/isolation_forest.py",
+        "看板流水线/processing/b2b_v2/anomaly/rules.py",
+        "看板流水线/processing/b2b_v2/journey/stage_classifier.py",
+        "看板流水线/processing/core/pipeline.py",
+        "看板流水线/processing/customer_analysis/customer_master.py",
+        "看板流水线/processing/customer_analysis/dimensions.py",
+        "看板流水线/processing/customer_analysis/gold.py",
+        "看板流水线/processing/customer_analysis/group_aggregation.py",
+        "看板流水线/processing/customer_analysis/portrait.py",
+        "看板流水线/processing/customer_analysis/price_deep_dive.py",
+        "看板流水线/processing/customer_analysis/run_kpi_daily.py",
+        "看板流水线/processing/customer_analysis/run_pipeline.py",
+        "看板流水线/processing/customer_analysis/silver.py",
+        "看板流水线/processing/customer_analysis/trend_analysis.py",
+        "看板流水线/processing/product_lifecycle/nine_grid.py",
+        "看板流水线/processing/product_lifecycle/run.py",
+        "看板流水线/processing/reports/gold_exporter.py",
+        "看板流水线/processing/shared/data_cleaning.py"
+      ]
+    },
+    {
+      "module": "shared.data_cleaning",
+      "used_by": [
+        "semiconductor_analysis/customer_analysis/customer_master.py",
+        "semiconductor_analysis/customer_analysis/silver.py",
+        "semiconductor_analysis/data_pipeline/aggregator.py",
+        "semiconductor_analysis/data_pipeline/cleaner.py",
+        "semiconductor_analysis/data_pipeline/loader.py",
+        "semiconductor_analysis/quarterly_forecast_package/run_customer_forecast.py",
+        "semiconductor_analysis/quarterly_forecast_package/run_quarterly_forecast.py",
+        "semiconductor_analysis/recession_risk_opt/archive/analysis/factor_exploration.py",
+        "semiconductor_analysis/recession_risk_opt/archive/tests/test_consec_decline.py",
+        "semiconductor_analysis/recession_risk_opt/pipeline.py",
+        "semiconductor_analysis/test/validation_suite.py",
+        "工作文件/semiconductor_analysis/customer_analysis/portrait.py",
+        "工作文件/semiconductor_analysis/customer_analysis/run_kpi_daily.py",
+        "工作文件/semiconductor_analysis/customer_analysis/run_pipeline.py",
+        "工作文件/semiconductor_analysis/product_lifecycle/run.py",
+        "工作文件/semiconductor_analysis/test/batch_a_test.py",
+        "工作文件/semiconductor_analysis/test/phase1_load.py",
+        "看板流水线/processing/customer_analysis/customer_master.py",
+        "看板流水线/processing/customer_analysis/portrait.py",
+        "看板流水线/processing/customer_analysis/run_kpi_daily.py",
+        "看板流水线/processing/customer_analysis/run_pipeline.py",
+        "看板流水线/processing/customer_analysis/silver.py",
+        "看板流水线/processing/data_pipeline/aggregator.py",
+        "看板流水线/processing/data_pipeline/cleaner.py",
+        "看板流水线/processing/data_pipeline/loader.py",
+        "看板流水线/processing/product_lifecycle/run.py"
+      ]
+    },
+    {
+      "module": "optimizer.scoring_v2",
+      "used_by": [
+        "semiconductor_analysis/optimizer/blindspot_analysis_rest.py",
+        "semiconductor_analysis/optimizer/blindspot_diagnosis.py",
+        "semiconductor_analysis/optimizer/comprehensive_eval.py",
+        "semiconductor_analysis/optimizer/comprehensive_eval_part2.py",
+        "semiconductor_analysis/optimizer/crossval.py",
+        "semiconductor_analysis/optimizer/evaluate_solutions_2024.py",
+        "semiconductor_analysis/optimizer/recent_eval_and_solutions.py",
+        "semiconductor_analysis/optimizer/run_pipeline.py"
+      ]
+    },
+    {
+      "module": "optimizer.data_loader",
+      "used_by": [
+        "semiconductor_analysis/optimizer/blindspot_analysis_rest.py",
+        "semiconductor_analysis/optimizer/blindspot_diagnosis.py",
+        "semiconductor_analysis/optimizer/comprehensive_eval.py",
+        "semiconductor_analysis/optimizer/comprehensive_eval_part2.py",
+        "semiconductor_analysis/optimizer/evaluate_solutions_2024.py",
+        "semiconductor_analysis/optimizer/recent_eval_and_solutions.py",
+        "semiconductor_analysis/optimizer/run_pipeline.py"
+      ]
+    },
+    {
+      "module": "optimizer.metrics",
+      "used_by": [
+        "semiconductor_analysis/optimizer/comprehensive_eval.py",
+        "semiconductor_analysis/optimizer/comprehensive_eval_part2.py",
+        "semiconductor_analysis/optimizer/crossval.py",
+        "semiconductor_analysis/optimizer/recent_eval_and_solutions.py",
+        "semiconductor_analysis/optimizer/run_pipeline.py",
+        "semiconductor_analysis/optimizer/threshold_search.py",
+        "semiconductor_analysis/optimizer/weight_search.py"
+      ]
+    },
+    {
+      "module": "reports.gold_exporter",
+      "used_by": [
+        "semiconductor_analysis/core/pipeline.py",
+        "semiconductor_analysis/customer_analysis/report.py",
+        "semiconductor_analysis/test/test_gold_exporter.py",
+        "semiconductor_analysis/test/test_pipeline.py",
+        "看板流水线/processing/core/pipeline.py",
+        "看板流水线/processing/customer_analysis/report.py"
+      ]
+    },
+    {
+      "module": "config.settings_customer",
+      "used_by": [
+        "工作文件/semiconductor_analysis/analysis/scoring.py",
+        "工作文件/semiconductor_analysis/config/settings.py",
+        "工作文件/semiconductor_analysis/customer_analysis/price_deep_dive.py",
+        "看板流水线/processing/analysis/scoring.py",
+        "看板流水线/processing/config/settings.py",
+        "看板流水线/processing/customer_analysis/price_deep_dive.py"
+      ]
+    },
+    {
+      "module": "b2b_v2.behavior.volatility",
+      "used_by": [
+        "semiconductor_analysis/analysis/b2b_adapters.py",
+        "工作文件/semiconductor_analysis/customer_analysis/gold.py",
+        "工作文件/semiconductor_analysis/test/test_week1_modules.py",
+        "看板流水线/processing/analysis/b2b_adapters.py",
+        "看板流水线/processing/customer_analysis/gold.py"
+      ]
+    },
+    {
+      "module": "b2b_v2.journey.stage_classifier",
+      "used_by": [
+        "semiconductor_analysis/analysis/b2b_adapters.py",
+        "工作文件/semiconductor_analysis/customer_analysis/gold.py",
+        "工作文件/semiconductor_analysis/test/test_week1_modules.py",
+        "看板流水线/processing/analysis/b2b_adapters.py",
+        "看板流水线/processing/customer_analysis/gold.py"
+      ]
+    },
+    {
+      "module": "b2b_v2.profitability.true_profit_estimator",
+      "used_by": [
+        "semiconductor_analysis/analysis/b2b_adapters.py",
+        "工作文件/semiconductor_analysis/customer_analysis/gold.py",
+        "工作文件/semiconductor_analysis/test/test_week1_modules.py",
+        "看板流水线/processing/analysis/b2b_adapters.py",
+        "看板流水线/processing/customer_analysis/gold.py"
+      ]
+    },
+    {
+      "module": "customer_analysis.gold",
+      "used_by": [
+        "semiconductor_analysis/core/pipeline.py",
+        "semiconductor_analysis/test/test_pipeline.py",
+        "工作文件/semiconductor_analysis/customer_analysis/run_pipeline.py",
+        "看板流水线/processing/core/pipeline.py",
+        "看板流水线/processing/customer_analysis/run_pipeline.py"
+      ]
+    },
+    {
+      "module": "shared.pricing",
+      "used_by": [
+        "semiconductor_analysis/customer_analysis/dimensions.py",
+        "工作文件/semiconductor_analysis/product_lifecycle/profiling.py",
+        "工作文件/semiconductor_analysis/test/batch_a_test.py",
+        "看板流水线/processing/customer_analysis/dimensions.py",
+        "看板流水线/processing/product_lifecycle/profiling.py"
+      ]
+    },
+    {
+      "module": "analysis.scoring",
+      "used_by": [
+        "semiconductor_analysis/customer_analysis/scoring.py",
+        "semiconductor_analysis/test/test_analysis_scoring.py",
+        "工作文件/semiconductor_analysis/customer_analysis/gold.py",
+        "看板流水线/processing/customer_analysis/gold.py",
+        "看板流水线/processing/customer_analysis/scoring.py"
+      ]
+    },
+    {
+      "module": "optimizer.config",
+      "used_by": [
+        "semiconductor_analysis/optimizer/crossval.py",
+        "semiconductor_analysis/optimizer/run_pipeline.py",
+        "semiconductor_analysis/optimizer/scoring_v2.py",
+        "semiconductor_analysis/optimizer/threshold_search.py",
+        "semiconductor_analysis/optimizer/weight_search.py"
+      ]
+    },
+    {
+      "module": "config.settings_product",
+      "used_by": [
+        "semiconductor_analysis/recession_risk_opt/archive/analysis/factor_exploration.py",
+        "semiconductor_analysis/recession_risk_opt/archive/tests/test_consec_decline.py",
+        "semiconductor_analysis/recession_risk_opt/pipeline.py",
+        "工作文件/semiconductor_analysis/config/settings.py",
+        "看板流水线/processing/config/settings.py"
+      ]
+    },
+    {
+      "module": "analysis.rfm_pi",
+      "used_by": [
+        "semiconductor_analysis/test/test_analysis_scoring.py",
+        "工作文件/semiconductor_analysis/customer_analysis/gold.py",
+        "工作文件/semiconductor_analysis/customer_analysis/models.py",
+        "看板流水线/processing/customer_analysis/gold.py",
+        "看板流水线/processing/customer_analysis/models.py"
+      ]
+    },
+    {
+      "module": "shared.calc_utils",
+      "used_by": [
+        "semiconductor_analysis/test/validation_suite.py",
+        "工作文件/semiconductor_analysis/customer_analysis/trend_analysis.py",
+        "工作文件/semiconductor_analysis/product_lifecycle/profiling.py",
+        "看板流水线/processing/customer_analysis/trend_analysis.py",
+        "看板流水线/processing/product_lifecycle/profiling.py"
+      ]
+    },
+    {
+      "module": "shared.forecasting",
+      "used_by": [
+        "semiconductor_analysis/test/validation_suite.py",
+        "工作文件/semiconductor_analysis/customer_analysis/trend_analysis.py",
+        "工作文件/semiconductor_analysis/product_lifecycle/profiling.py",
+        "看板流水线/processing/customer_analysis/trend_analysis.py",
+        "看板流水线/processing/product_lifecycle/profiling.py"
+      ]
+    },
+    {
+      "module": "b2b_v2.actions.run",
+      "used_by": [
+        "semiconductor_analysis/analysis/b2b_adapters.py",
+        "工作文件/semiconductor_analysis/customer_analysis/gold.py",
+        "看板流水线/processing/analysis/b2b_adapters.py",
+        "看板流水线/processing/customer_analysis/gold.py"
+      ]
+    },
+    {
+      "module": "b2b_v2.anomaly.run",
+      "used_by": [
+        "semiconductor_analysis/analysis/b2b_adapters.py",
+        "工作文件/semiconductor_analysis/customer_analysis/gold.py",
+        "看板流水线/processing/analysis/b2b_adapters.py",
+        "看板流水线/processing/customer_analysis/gold.py"
+      ]
+    },
+    {
+      "module": "customer_analysis.run_pipeline",
+      "used_by": [
+        "semiconductor_analysis/core/pipeline.py",
+        "semiconductor_analysis/test/test_pipeline.py",
+        "工作文件/semiconductor_analysis/run_customer.py",
+        "看板流水线/processing/core/pipeline.py"
+      ]
+    },
+    {
+      "module": "data_pipeline.validator",
+      "used_by": [
+        "semiconductor_analysis/core/pipeline.py",
+        "semiconductor_analysis/test/test_pipeline.py",
+        "semiconductor_analysis/test/test_validator.py",
+        "看板流水线/processing/core/pipeline.py"
+      ]
+    },
+    {
+      "module": "product_lifecycle.profiling",
+      "used_by": [
+        "semiconductor_analysis/test/validation_suite.py",
+        "工作文件/semiconductor_analysis/product_lifecycle/run.py",
+        "工作文件/semiconductor_analysis/test/batch_a_test.py",
+        "看板流水线/processing/product_lifecycle/run.py"
+      ]
+    },
+    {
+      "module": "customer_analysis.dimensions",
+      "used_by": [
+        "工作文件/semiconductor_analysis/customer_analysis/gold.py",
+        "工作文件/semiconductor_analysis/customer_analysis/portrait.py",
+        "看板流水线/processing/customer_analysis/gold.py",
+        "看板流水线/processing/customer_analysis/portrait.py"
+      ]
+    },
+    {
+      "module": "product_lifecycle.nine_grid",
+      "used_by": [
+        "工作文件/semiconductor_analysis/product_lifecycle/profiling.py",
+        "工作文件/semiconductor_analysis/product_lifecycle/run.py",
+        "看板流水线/processing/product_lifecycle/profiling.py",
+        "看板流水线/processing/product_lifecycle/run.py"
+      ]
+    },
+    {
+      "module": "product_lifecycle.notes",
+      "used_by": [
+        "工作文件/semiconductor_analysis/product_lifecycle/profiling.py",
+        "工作文件/semiconductor_analysis/product_lifecycle/run.py",
+        "看板流水线/processing/product_lifecycle/profiling.py",
+        "看板流水线/processing/product_lifecycle/run.py"
+      ]
+    },
+    {
+      "module": "(relative).volatility",
+      "used_by": [
+        "semiconductor_analysis/b2b_v2/behavior/__init__.py",
+        "semiconductor_analysis_before/src/behavior/__init__.py",
+        "看板流水线/processing/b2b_v2/behavior/__init__.py"
+      ]
+    },
+    {
+      "module": "(relative).stage_classifier",
+      "used_by": [
+        "semiconductor_analysis/b2b_v2/journey/__init__.py",
+        "semiconductor_analysis_before/src/journey/__init__.py",
+        "看板流水线/processing/b2b_v2/journey/__init__.py"
+      ]
+    },
+    {
+      "module": "(relative).true_profit_estimator",
+      "used_by": [
+        "semiconductor_analysis/b2b_v2/profitability/__init__.py",
+        "semiconductor_analysis_before/src/profitability/__init__.py",
+        "看板流水线/processing/b2b_v2/profitability/__init__.py"
+      ]
+    },
+    {
+      "module": "core.config",
+      "used_by": [
+        "semiconductor_analysis/core/pipeline.py",
+        "semiconductor_analysis/test/test_pipeline.py",
+        "看板流水线/processing/core/pipeline.py"
+      ]
+    },
+    {
+      "module": "core.interfaces",
+      "used_by": [
+        "semiconductor_analysis/core/pipeline.py",
+        "semiconductor_analysis/test/test_pipeline.py",
+        "看板流水线/processing/core/pipeline.py"
+      ]
+    },
+    {
+      "module": "data_pipeline.aggregator",
+      "used_by": [
+        "semiconductor_analysis/core/pipeline.py",
+        "semiconductor_analysis/test/test_pipeline.py",
+        "看板流水线/processing/core/pipeline.py"
+      ]
+    },
+    {
+      "module": "data_pipeline.cleaner",
+      "used_by": [
+        "semiconductor_analysis/core/pipeline.py",
+        "semiconductor_analysis/test/test_pipeline.py",
+        "看板流水线/processing/core/pipeline.py"
+      ]
+    },
+    {
+      "module": "data_pipeline.loader",
+      "used_by": [
+        "semiconductor_analysis/core/pipeline.py",
+        "semiconductor_analysis/test/test_pipeline.py",
+        "看板流水线/processing/core/pipeline.py"
+      ]
+    },
+    {
+      "module": "product_lifecycle.run",
+      "used_by": [
+        "semiconductor_analysis/core/pipeline.py",
+        "工作文件/semiconductor_analysis/run_product.py",
+        "看板流水线/processing/core/pipeline.py"
+      ]
+    },
+    {
+      "module": "analysis.gold_builders",
+      "used_by": [
+        "semiconductor_analysis/test/test_gold_builders.py",
+        "工作文件/semiconductor_analysis/customer_analysis/gold.py",
+        "看板流水线/processing/customer_analysis/gold.py"
+      ]
+    },
+    {
+      "module": "customer_analysis.portrait",
+      "used_by": [
+        "semiconductor_analysis/test/validation_suite.py",
+        "工作文件/semiconductor_analysis/customer_analysis/run_pipeline.py",
+        "看板流水线/processing/customer_analysis/run_pipeline.py"
+      ]
+    },
+    {
+      "module": "shared.risk_scoring",
+      "used_by": [
+        "semiconductor_analysis/test/validation_suite.py",
+        "工作文件/semiconductor_analysis/product_lifecycle/profiling.py",
+        "看板流水线/processing/product_lifecycle/profiling.py"
+      ]
+    },
+    {
+      "module": "test.conftest",
+      "used_by": [
+        "semiconductor_analysis_before/test/templates/test_case_template.py",
+        "工作文件/semiconductor_analysis/test/phase1_load.py",
+        "工作文件/semiconductor_analysis/test/phase3_visualize.py"
+      ]
+    },
+    {
+      "module": "shared.customer_analysis",
+      "used_by": [
+        "semiconductor_analysis/analysis/gold_builders.py",
+        "看板流水线/processing/analysis/gold_builders.py"
+      ]
+    },
+    {
+      "module": "b2b_v2.anomaly.isolation_forest",
+      "used_by": [
+        "semiconductor_analysis/b2b_v2/anomaly/run.py",
+        "看板流水线/processing/b2b_v2/anomaly/run.py"
+      ]
+    },
+    {
+      "module": "b2b_v2.anomaly.rules",
+      "used_by": [
+        "semiconductor_analysis/b2b_v2/anomaly/run.py",
+        "看板流水线/processing/b2b_v2/anomaly/run.py"
+      ]
+    },
+    {
+      "module": "cross_reference.run_cross_ref",
+      "used_by": [
+        "semiconductor_analysis/core/pipeline.py",
+        "看板流水线/processing/core/pipeline.py"
+      ]
+    },
+    {
+      "module": "customer_analysis.run_kpi_daily",
+      "used_by": [
+        "semiconductor_analysis/core/pipeline.py",
+        "看板流水线/processing/core/pipeline.py"
+      ]
+    },
+    {
+      "module": "optimizer.weight_search",
+      "used_by": [
+        "semiconductor_analysis/optimizer/reporter.py",
+        "semiconductor_analysis/optimizer/run_pipeline.py"
+      ]
+    },
+    {
+      "module": "(relative).nine_grid",
+      "used_by": [
+        "semiconductor_analysis/product_lifecycle/__init__.py",
+        "看板流水线/processing/product_lifecycle/__init__.py"
+      ]
+    },
+    {
+      "module": "(relative).notes",
+      "used_by": [
+        "semiconductor_analysis/product_lifecycle/__init__.py",
+        "看板流水线/processing/product_lifecycle/__init__.py"
+      ]
+    },
+    {
+      "module": "(relative).profiling",
+      "used_by": [
+        "semiconductor_analysis/product_lifecycle/__init__.py",
+        "看板流水线/processing/product_lifecycle/__init__.py"
+      ]
+    },
+    {
+      "module": "(relative).run",
+      "used_by": [
+        "semiconductor_analysis/product_lifecycle/__init__.py",
+        "看板流水线/processing/product_lifecycle/__init__.py"
+      ]
+    },
+    {
+      "module": "b2b_v2.actions.product_insights",
+      "used_by": [
+        "工作文件/semiconductor_analysis/b2b_v2/actions/rules_engine.py",
+        "看板流水线/processing/b2b_v2/actions/rules_engine.py"
+      ]
+    },
+    {
+      "module": "b2b_v2.actions.cross_sell",
+      "used_by": [
+        "工作文件/semiconductor_analysis/b2b_v2/actions/run.py",
+        "看板流水线/processing/b2b_v2/actions/run.py"
+      ]
+    },
+    {
+      "module": "b2b_v2.actions.rules_engine",
+      "used_by": [
+        "工作文件/semiconductor_analysis/b2b_v2/actions/run.py",
+        "看板流水线/processing/b2b_v2/actions/run.py"
+      ]
+    },
+    {
+      "module": "(relative).settings",
+      "used_by": [
+        "工作文件/semiconductor_analysis/config/__init__.py",
+        "看板流水线/processing/config/__init__.py"
+      ]
+    },
+    {
+      "module": "(relative).run_cross_ref",
+      "used_by": [
+        "工作文件/semiconductor_analysis/cross_reference/__init__.py",
+        "看板流水线/processing/cross_reference/__init__.py"
+      ]
+    },
+    {
+      "module": "(relative).models",
+      "used_by": [
+        "工作文件/semiconductor_analysis/customer_analysis/__init__.py",
+        "看板流水线/processing/customer_analysis/__init__.py"
+      ]
+    },
+    {
+      "module": "(relative).run_pipeline",
+      "used_by": [
+        "工作文件/semiconductor_analysis/customer_analysis/__init__.py",
+        "看板流水线/processing/customer_analysis/__init__.py"
+      ]
+    },
+    {
+      "module": "b2b_v2.actions.category_aptitude",
+      "used_by": [
+        "工作文件/semiconductor_analysis/customer_analysis/gold.py",
+        "看板流水线/processing/customer_analysis/gold.py"
+      ]
+    },
+    {
+      "module": "b2b_v2.actions.negative_margin",
+      "used_by": [
+        "工作文件/semiconductor_analysis/customer_analysis/gold.py",
+        "看板流水线/processing/customer_analysis/gold.py"
+      ]
+    },
+    {
+      "module": "b2b_v2.actions.sales_profiling",
+      "used_by": [
+        "工作文件/semiconductor_analysis/customer_analysis/gold.py",
+        "看板流水线/processing/customer_analysis/gold.py"
+      ]
+    },
+    {
+      "module": "b2b_v2.anomaly.inventory",
+      "used_by": [
+        "工作文件/semiconductor_analysis/customer_analysis/gold.py",
+        "看板流水线/processing/customer_analysis/gold.py"
+      ]
+    },
+    {
+      "module": "customer_analysis.group_aggregation",
+      "used_by": [
+        "工作文件/semiconductor_analysis/customer_analysis/gold.py",
+        "看板流水线/processing/customer_analysis/gold.py"
+      ]
+    },
+    {
+      "module": "customer_analysis.period_analysis",
+      "used_by": [
+        "工作文件/semiconductor_analysis/customer_analysis/gold.py",
+        "看板流水线/processing/customer_analysis/gold.py"
+      ]
+    },
+    {
+      "module": "customer_analysis.price_deep_dive",
+      "used_by": [
+        "工作文件/semiconductor_analysis/customer_analysis/gold.py",
+        "看板流水线/processing/customer_analysis/gold.py"
+      ]
+    },
+    {
+      "module": "customer_analysis.rd_recommendation",
+      "used_by": [
+        "工作文件/semiconductor_analysis/customer_analysis/gold.py",
+        "看板流水线/processing/customer_analysis/gold.py"
+      ]
+    },
+    {
+      "module": "customer_analysis.trend_analysis",
+      "used_by": [
+        "工作文件/semiconductor_analysis/customer_analysis/gold.py",
+        "看板流水线/processing/customer_analysis/gold.py"
+      ]
+    },
+    {
+      "module": "customer_analysis.report",
+      "used_by": [
+        "工作文件/semiconductor_analysis/customer_analysis/run_pipeline.py",
+        "看板流水线/processing/customer_analysis/run_pipeline.py"
+      ]
+    },
+    {
+      "module": "customer_analysis.silver",
+      "used_by": [
+        "工作文件/semiconductor_analysis/customer_analysis/run_pipeline.py",
+        "看板流水线/processing/customer_analysis/run_pipeline.py"
+      ]
+    },
+    {
+      "module": "shared.classifiers",
+      "used_by": [
+        "工作文件/semiconductor_analysis/product_lifecycle/profiling.py",
+        "看板流水线/processing/product_lifecycle/profiling.py"
+      ]
+    },
+    {
+      "module": "product_lifecycle.report",
+      "used_by": [
+        "工作文件/semiconductor_analysis/product_lifecycle/run.py",
+        "看板流水线/processing/product_lifecycle/run.py"
+      ]
+    },
+    {
+      "module": "shared.timing",
+      "used_by": [
+        "工作文件/semiconductor_analysis/product_lifecycle/run.py",
+        "看板流水线/processing/product_lifecycle/run.py"
+      ]
+    },
+    {
+      "module": "(relative).calc_utils",
+      "used_by": [
+        "工作文件/semiconductor_analysis/shared/__init__.py",
+        "看板流水线/processing/shared/__init__.py"
+      ]
+    },
+    {
+      "module": "(relative).classifiers",
+      "used_by": [
+        "工作文件/semiconductor_analysis/shared/__init__.py",
+        "看板流水线/processing/shared/__init__.py"
+      ]
+    },
+    {
+      "module": "(relative).customer_analysis",
+      "used_by": [
+        "工作文件/semiconductor_analysis/shared/__init__.py",
+        "看板流水线/processing/shared/__init__.py"
+      ]
+    },
+    {
+      "module": "(relative).data_cleaning",
+      "used_by": [
+        "工作文件/semiconductor_analysis/shared/__init__.py",
+        "看板流水线/processing/shared/__init__.py"
+      ]
+    },
+    {
+      "module": "(relative).forecasting",
+      "used_by": [
+        "工作文件/semiconductor_analysis/shared/__init__.py",
+        "看板流水线/processing/shared/__init__.py"
+      ]
+    },
+    {
+      "module": "(relative).pricing",
+      "used_by": [
+        "工作文件/semiconductor_analysis/shared/__init__.py",
+        "看板流水线/processing/shared/__init__.py"
+      ]
+    },
+    {
+      "module": "(relative).risk_scoring",
+      "used_by": [
+        "工作文件/semiconductor_analysis/shared/__init__.py",
+        "看板流水线/processing/shared/__init__.py"
+      ]
+    },
+    {
+      "module": "analysis.pricing.pricing_actions",
+      "used_by": [
+        "工作文件/semiconductor_analysis/shared/pricing.py",
+        "看板流水线/processing/shared/pricing.py"
+      ]
+    },
+    {
+      "module": "analysis.pricing.pricing_bands",
+      "used_by": [
+        "工作文件/semiconductor_analysis/shared/pricing.py",
+        "看板流水线/processing/shared/pricing.py"
+      ]
+    },
+    {
+      "module": "analysis.pricing.pricing_customer",
+      "used_by": [
+        "工作文件/semiconductor_analysis/shared/pricing.py",
+        "看板流水线/processing/shared/pricing.py"
+      ]
+    },
+    {
+      "module": "analysis.pricing.pricing_insights",
+      "used_by": [
+        "工作文件/semiconductor_analysis/shared/pricing.py",
+        "看板流水线/processing/shared/pricing.py"
+      ]
+    },
+    {
+      "module": "analysis.pricing.pricing_lifecycle",
+      "used_by": [
+        "工作文件/semiconductor_analysis/shared/pricing.py",
+        "看板流水线/processing/shared/pricing.py"
+      ]
+    },
+    {
+      "module": "analysis.pricing.pricing_trends",
+      "used_by": [
+        "工作文件/semiconductor_analysis/shared/pricing.py",
+        "看板流水线/processing/shared/pricing.py"
+      ]
+    }
+  ]
+}

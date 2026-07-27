@@ -1,0 +1,12 @@
+# 看板流水线运行依赖
+# 安装：pip install -r requirements.txt
+
+pandas>=2.2        # 后段Excel读取使用calamine引擎（pandas 2.1+才支持，留余量）
+numpy
+openpyxl>=3.1
+statsmodels
+chinese_calendar
+rapidfuzz
+matplotlib
+scikit-learn
+python-calamine  # 必需：前后段Excel读取引擎，缺失会报 Unknown engine: calamine

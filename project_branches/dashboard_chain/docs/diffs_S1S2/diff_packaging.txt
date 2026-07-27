@@ -1,0 +1,123 @@
+﻿diff --git "a/D:\\Files\\projects\\\345\267\245\344\275\234\346\226\207\344\273\266\\semiconductor_analysis\\dashboard\\generate_dashboard.py" "b/C:\\Users\\17986\\AppData\\Local\\Temp\\opencode\\generate_dashboard_pre_S1S2.py"
+index aae0359..62b2b14 100644
+--- "a/D:\\Files\\projects\\\345\267\245\344\275\234\346\226\207\344\273\266\\semiconductor_analysis\\dashboard\\generate_dashboard.py"
++++ "b/C:\\Users\\17986\\AppData\\Local\\Temp\\opencode\\generate_dashboard_pre_S1S2.py"
+@@ -7,7 +7,7 @@
+ 用法: python dashboard/generate_dashboard.py
+ """
+ 
+-import pandas as pd, numpy as np, os, json, re, math
++import pandas as pd, numpy as np, os, json, re, math, glob
+ from collections import Counter, defaultdict
+ 
+ PROJECT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+@@ -241,12 +241,73 @@ def build_c_sankey(table, history):
+             links.append({"source": f"{src_q}_{src_p}", "target": f"{tgt_q}_{tgt_p}", "value": len(products), "products": products})
+     return {"nodes": nodes, "links": links}
+ 
+-def build_c_data(prod_df):
+-    """从gold_product_portrait.csv构建完整的C面DATA对象。"""
+-    print("[C面] 从gold_product_portrait.csv构建DATA...")
++def load_product_report():
++    """定位并读取最新产品生命周期报告Excel（含历史/桑基/数据月份）。
++
++    返回 (df_snapshot, df_history, data_month, insuff_count)。
++    若未找到报告则返回 (None, None, None, 0)，调用方回退gold快照（无历史/桑基/月份）。
++    """
++    report_dir = os.path.join(PROJECT, "output", "report")
++    cands = sorted(
++        [f for f in glob.glob(os.path.join(report_dir, "产品生命周期报告_v4.0_*.xlsx"))
++         if not os.path.basename(f).startswith("~$")],
++        key=os.path.getmtime, reverse=True,
++    )
++    if not cands:
++        print("  [C面] 未找到产品生命周期报告，回退gold快照（历史/桑基/月份缺失）")
++        return None, None, None, 0
++    path = cands[0]
++    print(f"  [C面] 产品报告: {os.path.basename(path)}")
++    xls = pd.ExcelFile(path)
++    def _sheet(frag):
++        for nm in xls.sheet_names:
++            if frag in nm:
++                return nm
++        return None
++    df_snap = pd.read_excel(path, sheet_name=_sheet("产品快照表") or xls.sheet_names[0])
++    df_snap.columns = [str(c).strip() for c in df_snap.columns]
++    # 历史：主表自带 _t-N 列（Format A）则用主表，否则读"历史画像追踪"（Format B）
++    hist_name = _sheet("历史画像追踪")
++    has_hist_cols = any(re.match(r"当前画像_t-\d+", str(c)) for c in df_snap.columns)
++    if has_hist_cols:
++        df_hist = df_snap
++    elif hist_name:
++        df_hist = pd.read_excel(path, sheet_name=hist_name)
++        df_hist.columns = [str(c).strip() for c in df_hist.columns]
++    else:
++        df_hist = None
++    # 数据月份
++    data_month = None
++    if "最新数据月份" in df_snap.columns:
++        dm = df_snap["最新数据月份"].dropna()
++        if not dm.empty:
++            data_month = str(dm.iloc[0])
++    # 数据不足产品数
++    insuff = 0
++    insuff_name = _sheet("数据不足")
++    if insuff_name:
++        try:
++            insuff = len(pd.read_excel(path, sheet_name=insuff_name))
++        except Exception:
++            insuff = 0
++    return df_snap, df_hist, data_month, insuff
++
++
++def build_c_data(prod_df, hist_df=None, data_month=None, insuff_count=0):
++    """构建完整的C面DATA对象。
++
++    prod_df     : 产品当前快照（gold_product_portrait.csv，与A面产品列表同源）
++    hist_df     : 历史画像追踪df（含 当前画像_t-N / 近12月毛利率%_t-N / 近12月销量_t-N）；
++                  None 时回退用 prod_df（无历史则桑基图为空）
++    data_month  : 数据月份（如 2026-06），写入 DATA.data_month
++    insuff_count: 数据不足产品数，写入 kpi.data_insufficient
++    """
++    print("[C面] 构建DATA（统一数据源）...")
+     table = build_c_table(prod_df)
+-    history = build_c_history(prod_df)
++    hist_src = hist_df if hist_df is not None else prod_df
++    history = build_c_history(hist_src)
+     kpi = build_c_kpi(table)
++    kpi["data_insufficient"] = int(insuff_count)
+     charts = build_c_charts(table)
+     filters = build_c_filters(table)
+     scatter = build_c_scatter(prod_df)
+@@ -256,11 +317,16 @@ def build_c_data(prod_df):
+         "sankey": sankey, "table": table, "filters": filters,
+         "history": history, "rfm": {}, "graph": {"nodes": [], "links": []},
+     }
++    if data_month:
++        data["data_month"] = str(data_month)
++    _nonempty_hist = sum(1 for v in history.values() if any(v.get("portraits", [])))
+     print(f"  table: {len(table)} records")
+-    print(f"  history: {len(history)} products")
++    print(f"  history: {len(history)} products (非空历史:{_nonempty_hist})")
+     print(f"  scatter: {len(scatter)} points")
+     print(f"  sankey: {len(sankey['nodes'])} nodes, {len(sankey['links'])} links")
+     print(f"  kpi: {kpi}")
++    if data_month:
++        print(f"  数据月份: {data_month}")
+     return data
+ 
+ # ========== 1. 加载 ==========
+@@ -1936,8 +2002,11 @@ cat_list=[{"n":str(r["_cat"]),"rev":round(float(r["cat_rev"])/1e4,1),"count":int
+ print("[C面] 统一数据源集成模式（内联）")
+ import pathlib
+ 
+-# 构建C面DATA对象
+-c_data = build_c_data(prod_df)
++# 构建C面DATA对象：优先用产品生命周期报告（快照+历史+月份，内部自洽，与GOOD一致）；
++# 报告缺失时回退 gold_product_portrait.csv（无历史/桑基/月份）
++_snap_df, _hist_df, _data_month, _insuff = load_product_report()
++_c_src = _snap_df if _snap_df is not None else prod_df
++c_data = build_c_data(_c_src, hist_df=_hist_df, data_month=_data_month, insuff_count=_insuff)
+ c_data_json = json.dumps(c_data, ensure_ascii=False, separators=(",", ":"))
+ print(f"  C_DATA JSON大小: {len(c_data_json):,} 字符")
+ 

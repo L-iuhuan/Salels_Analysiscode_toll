@@ -1,0 +1,16 @@
+RC:0
+STDOUT:
+part4 done
+
+
+STDERR:
+top\�����ļ�\semiconductor_analysis\analysis4.py:104: FutureWarning: DataFrameGroupBy.apply operated on the grouping columns. This behavior is deprecated, and in a future version of pandas the grouping columns will be excluded from the operation. Either pass `include_groups=False` to exclude the groupings or explicitly select the grouping columns after groupby to silence this warning.
+  hi_gm_avg=cur_s[cur_s['sku'].isin(hi_skus)].groupby('sku').apply(lambda x:x['profit'].sum()/x['rev'].sum() if x['rev'].sum() else 0).mean() if cur_s['sku'].isin(hi_skus).any() else BENCH/100
+C:\Users\45091\Desktop\�����ļ�\semiconductor_analysis\analysis4.py:105: FutureWarning: DataFrameGroupBy.apply operated on the grouping columns. This behavior is deprecated, and in a future version of pandas the grouping columns will be excluded from the operation. Either pass `include_groups=False` to exclude the groupings or explicitly select the grouping columns after groupby to silence this warning.
+  lo_gm_avg=s_cur[s_cur['sku'].isin(lo_skus|neg_skus)].groupby('sku').apply(lambda x:x['profit'].sum()/x['rev'].sum() if x['rev'].sum() else 0).mean() if (s_cur['sku'].isin(lo_skus|neg_skus)).any() else 0
+C:\Users\45091\Desktop\�����ļ�\semiconductor_analysis\analysis4.py:104: FutureWarning: DataFrameGroupBy.apply operated on the grouping columns. This behavior is deprecated, and in a future version of pandas the grouping columns will be excluded from the operation. Either pass `include_groups=False` to exclude the groupings or explicitly select the grouping columns after groupby to silence this warning.
+  hi_gm_avg=cur_s[cur_s['sku'].isin(hi_skus)].groupby('sku').apply(lambda x:x['profit'].sum()/x['rev'].sum() if x['rev'].sum() else 0).mean() if cur_s['sku'].isin(hi_skus).any() else BENCH/100
+C:\Users\45091\Desktop\�����ļ�\semiconductor_analysis\analysis4.py:104: FutureWarning: DataFrameGroupBy.apply operated on the grouping columns. This behavior is deprecated, and in a future version of pandas the grouping columns will be excluded from the operation. Either pass `include_groups=False` to exclude the groupings or explicitly select the grouping columns after groupby to silence this warning.
+  hi_gm_avg=cur_s[cur_s['sku'].isin(hi_skus)].groupby('sku').apply(lambda x:x['profit'].sum()/x['rev'].sum() if x['rev'].sum() else 0).mean() if cur_s['sku'].isin(hi_skus).any() else BENCH/100
+C:\Users\45091\Desktop\�����ļ�\semiconductor_analysis\analysis4.py:105: FutureWarning: DataFrameGroupBy.apply operated on the grouping columns. This behavior is deprecated, and in a future version of pandas the grouping columns will be excluded from the operation. Either pass `include_groups=False` to exclude the groupings or explicitly select the grouping columns after groupby to silence this warning.
+  lo_gm_avg=s_cur[s_cur['sku'].isin(lo_skus|neg_skus)].groupby('sku').apply(lambda x:x['profit'].sum()/x['rev'].sum() if x['rev'].sum() else 0).mean() if (s_cur['sku'].isin(lo_skus|neg_skus)).any() else 0

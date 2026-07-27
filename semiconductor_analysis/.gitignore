@@ -1,0 +1,32 @@
+# Output directories
+output/
+output_baseline/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+
+# AI assistant config
+.claude/
+
+# Backup files
+*.bak
+*.orig
+
+# IDE files
+.vscode/
+.idea/
+
+# OS files
+Thumbs.db
+.DS_Store
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Environment
+.env
+.venv/
+venv/

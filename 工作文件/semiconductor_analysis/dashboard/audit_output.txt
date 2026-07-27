@@ -1,0 +1,76 @@
+=== generate_dashboard.py 数据源审计 ===
+
+【数据加载】
+  df = pd.read_csv(os.path.join(GOLD, "客户全景.csv"))
+  scm = pd.read_csv(os.path.join(SILVER, "silver_customer_monthly.csv"))
+  cxp = pd.read_csv(os.path.join(SILVER, "silver_customer_x_product.csv"))
+  raw_excel = pd.read_excel(excel_path, sheet_name="24-26", usecols=raw_cols)
+  raw_rows = pd.read_csv(os.path.join(SILVER,"silver_cleaned_rows.csv"), usecols=cleaned_cols)
+  prod_df = pd.read_csv(os.path.join(GOLD,"gold_product_portrait.csv"))
+
+【数据用途→数据源映射】
+
+  TREND (A面月度柱状图数据):
+    构建: line 404: f.write("var B_TREND="+json.dumps(ctr,ensure_ascii=False)+";\n")
+
+  trend_tiers (A面层级筛选趋势):
+    构建: line 422: trend_tiers = {}
+
+  karev (A面KA+AA月度折线):
+    构建: line 111: karev = {}
+
+  csa/SA (A面客户列表):
+
+  ka_kpi (A面KA月度卡片):
+    构建: line 165: ka_kpi = {
+
+  kpi_r/kpi_p等 (A面顶部KPI卡片):
+
+  scat (A面KA散点图):
+    构建: line 104: scat=[]
+
+  pie (A面K类饼图):
+    构建: line 90: pie = [{"name":t,"value":int(tc.get(t,0))} for t in ["KA","AA","KM"] if t in tc]
+
+  B_CUSTS/call (B面客户数据):
+
+  B_TREND/ctr (B面客户月度趋势):
+
+  cid_fin (B面客户财务数据(YTD等)):
+    构建: line 258: cid_fin = {}
+
+  new_detail (B面新品明细):
+    构建: line 241: new_detail = {}
+
+  cid_12m_data (B面品类结构(品种/品类/饼图)):
+    构建: line 295: cid_12m_data = {}
+
+  product_change_detail (A面产品变迁窗口):
+    构建: line 175: product_change_detail = []
+
+  prank (B面Top5产品):
+    构建: line 222: prank={}
+
+  cid_margin (B面毛利率(旧,已废弃)):
+
+
+【需要从Silver迁移到Raw Excel的项】
+  - TREND (A面月度柱状图): scm → raw_excel  (按_月聚合 rev/profit)
+  - trend_tiers (层级筛选): scm → raw_excel  (加层级列后按_月+层级聚合)
+  - karev (KA+AA折线): scm → raw_excel  (筛选KA/AA客户后按月聚合)
+  - scat (KA散点图): scm → raw_excel  (按客户YTD聚合)
+  - B面 cid_12m_data (品类数/饼图): cxp → raw_excel  (按客户+产品品类聚合)
+  - B面 cid_fin (YTD/上月等): scm → raw_excel  (按客户+时间切片聚合)
+  - B面 ctr (客户月度趋势): scm → raw_excel  (按客户+月聚合)
+  - product_change_detail (产品变迁): cxp → raw_excel  (按客户+产品+时间切片聚合)
+  - prank (Top5产品): cxp → raw_excel  (按客户+产品聚合)
+  - A面客户列表(月环比): scm → raw_excel  (单月对比)
+
+
+【保持不变(来自Gold层,非收入/利润)】
+  - 客户层级/综合价值层级/风险评级/业务负责人等属性 → df (客户全景.csv)
+  - 策略建议/策略原因/异常告警 → df
+  - RFMπ分数/综合评分 → df
+  - 双轴分类/生命周期/活跃状态 → df
+  - 新品标记/新品采购额等 → cleaned_rows.csv (仅新品标记字段)
+  - 产品名称/当前画像等C面数据 → gold_product_portrait.csv

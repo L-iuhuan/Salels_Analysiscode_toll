@@ -1,0 +1,17 @@
+{
+  "baseline": {
+    "high_risk_pct": 70.59
+  },
+  "margin_squeeze_-20%": {
+    "high_risk_pct": 71.82,
+    "delta_pp": 1.23
+  },
+  "demand_shock": {
+    "high_risk_pct": 75.4,
+    "delta_pp": 4.81
+  },
+  "price_war_(ASP-0.1%)": {
+    "high_risk_pct": 70.59,
+    "delta_pp": 0.0
+  }
+}

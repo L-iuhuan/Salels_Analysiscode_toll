@@ -1,0 +1,43 @@
+{
+  "branches": {
+    "main_pipeline": {
+      "files_copied": 152,
+      "note": "主流水线:silver→product→customer→kpi→cross_ref"
+    },
+    "dashboard_chain": {
+      "files_copied": 95,
+      "note": "看板便携包:processing→generate_dashboard→dashboard_a.html"
+    },
+    "deep_dive_h1_report": {
+      "files_copied": 35,
+      "note": "H1报告链:deep_*→md→make_word→docx;含大量硬编码桌面路径"
+    },
+    "eda_forecast": {
+      "files_copied": 6,
+      "note": "EDA迭代终版v3 + 长尾/全量出货预测"
+    },
+    "recession_risk_opt": {
+      "files_copied": 35,
+      "note": "衰退风险:phase1-5 + phaseA/B + snapshot;样本数据已随包(samples.pkl 3MB)"
+    },
+    "quarterly_forecast": {
+      "files_copied": 15,
+      "note": "产品线+客户双维度季度预测(statsmodels ETS)"
+    },
+    "unified_forecast": {
+      "files_copied": 5,
+      "note": "统一预测系统;依赖 quarterly_forecast 分支的输出CSV"
+    },
+    "product_lifecycle_legacy_v28": {
+      "files_copied": 38,
+      "note": "v2.8旧项目存档(config.xlsx驱动);v2.9迭代在子目录"
+    },
+    "_orphans": {
+      "files_copied": 49,
+      "note": "孤儿收容:temp/junk/debug/uncertain 四类"
+    }
+  },
+  "skipped_big": [],
+  "missing": [],
+  "missing_round2_resolved": 16
+}

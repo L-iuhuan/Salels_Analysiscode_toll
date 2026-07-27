@@ -1,0 +1,320 @@
+[
+  {
+    "file": "semiconductor_analysis/config/__init__.py",
+    "loc": 15,
+    "key_libraries": [],
+    "internal_imports": [
+      "(relative).settings"
+    ]
+  },
+  {
+    "file": "semiconductor_analysis/cross_reference/__init__.py",
+    "loc": 1,
+    "key_libraries": [],
+    "internal_imports": [
+      "(relative).run_cross_ref"
+    ]
+  },
+  {
+    "file": "semiconductor_analysis/customer_analysis/__init__.py",
+    "loc": 10,
+    "key_libraries": [],
+    "internal_imports": [
+      "(relative).models",
+      "(relative).run_pipeline"
+    ]
+  },
+  {
+    "file": "semiconductor_analysis/linked_list_cycle.py",
+    "loc": 148,
+    "key_libraries": [],
+    "internal_imports": []
+  },
+  {
+    "file": "semiconductor_analysis/lru_cache_decorator.py",
+    "loc": 267,
+    "key_libraries": [],
+    "internal_imports": []
+  },
+  {
+    "file": "semiconductor_analysis/majority_element.py",
+    "loc": 81,
+    "key_libraries": [],
+    "internal_imports": []
+  },
+  {
+    "file": "semiconductor_analysis/optimize_duplicates.py",
+    "loc": 233,
+    "key_libraries": [],
+    "internal_imports": []
+  },
+  {
+    "file": "semiconductor_analysis/optimizer/__init__.py",
+    "loc": 0,
+    "key_libraries": [],
+    "internal_imports": []
+  },
+  {
+    "file": "semiconductor_analysis/product_lifecycle/__init__.py",
+    "loc": 4,
+    "key_libraries": [],
+    "internal_imports": [
+      "(relative).nine_grid",
+      "(relative).notes",
+      "(relative).profiling",
+      "(relative).run"
+    ]
+  },
+  {
+    "file": "semiconductor_analysis/race_condition_clear_demo.py",
+    "loc": 219,
+    "key_libraries": [],
+    "internal_imports": []
+  },
+  {
+    "file": "semiconductor_analysis/safe_divide.py",
+    "loc": 114,
+    "key_libraries": [],
+    "internal_imports": []
+  },
+  {
+    "file": "semiconductor_analysis/shared/__init__.py",
+    "loc": 54,
+    "key_libraries": [],
+    "internal_imports": [
+      "(relative).calc_utils",
+      "(relative).classifiers",
+      "(relative).customer_analysis",
+      "(relative).data_cleaning",
+      "(relative).forecasting",
+      "(relative).pricing",
+      "(relative).risk_scoring"
+    ]
+  },
+  {
+    "file": "semiconductor_analysis/shared/calc_utils.py",
+    "loc": 156,
+    "key_libraries": [
+      "numpy",
+      "pandas"
+    ],
+    "internal_imports": []
+  },
+  {
+    "file": "semiconductor_analysis/thread_race_condition_demo.py",
+    "loc": 236,
+    "key_libraries": [],
+    "internal_imports": []
+  },
+  {
+    "file": "semiconductor_analysis_before/config/__init__.py",
+    "loc": 19,
+    "key_libraries": [],
+    "internal_imports": [
+      "(relative).settings"
+    ]
+  },
+  {
+    "file": "semiconductor_analysis_before/cross_reference/__init__.py",
+    "loc": 1,
+    "key_libraries": [],
+    "internal_imports": [
+      "(relative).run_cross_ref"
+    ]
+  },
+  {
+    "file": "semiconductor_analysis_before/customer_analysis/__init__.py",
+    "loc": 12,
+    "key_libraries": [],
+    "internal_imports": [
+      "(relative).models",
+      "(relative).run_pipeline"
+    ]
+  },
+  {
+    "file": "semiconductor_analysis_before/shared/__init__.py",
+    "loc": 48,
+    "key_libraries": [],
+    "internal_imports": [
+      "(relative).calc_utils",
+      "(relative).classifiers",
+      "(relative).customer_analysis",
+      "(relative).data_cleaning",
+      "(relative).forecasting",
+      "(relative).pricing",
+      "(relative).risk_scoring"
+    ]
+  },
+  {
+    "file": "semiconductor_analysis_before/shared/calc_utils.py",
+    "loc": 156,
+    "key_libraries": [
+      "numpy",
+      "pandas"
+    ],
+    "internal_imports": []
+  },
+  {
+    "file": "semiconductor_analysis_before/shared/data_cleaning.py",
+    "loc": 227,
+    "key_libraries": [
+      "numpy",
+      "pandas"
+    ],
+    "internal_imports": [
+      "config.settings"
+    ]
+  },
+  {
+    "file": "产品生命周期评估/backup/excel_helper.py",
+    "loc": 96,
+    "key_libraries": [
+      "openpyxl"
+    ],
+    "internal_imports": []
+  },
+  {
+    "file": "工作文件/semiconductor_analysis/dashboard/audit_cats.py",
+    "loc": 30,
+    "key_libraries": [
+      "pandas"
+    ],
+    "internal_imports": []
+  },
+  {
+    "file": "工作文件/semiconductor_analysis/dashboard/audit_cats2.py",
+    "loc": 36,
+    "key_libraries": [],
+    "internal_imports": []
+  },
+  {
+    "file": "工作文件/semiconductor_analysis/dashboard/audit_deep.py",
+    "loc": 39,
+    "key_libraries": [],
+    "internal_imports": []
+  },
+  {
+    "file": "工作文件/semiconductor_analysis/dashboard/audit_rhythm.py",
+    "loc": 76,
+    "key_libraries": [
+      "numpy",
+      "pandas"
+    ],
+    "internal_imports": []
+  },
+  {
+    "file": "工作文件/semiconductor_analysis/dashboard/audit_small.py",
+    "loc": 19,
+    "key_libraries": [
+      "pandas"
+    ],
+    "internal_imports": []
+  },
+  {
+    "file": "工作文件/semiconductor_analysis/dashboard/check_cust.py",
+    "loc": 33,
+    "key_libraries": [
+      "pandas"
+    ],
+    "internal_imports": []
+  },
+  {
+    "file": "工作文件/semiconductor_analysis/dashboard/check_data.py",
+    "loc": 34,
+    "key_libraries": [],
+    "internal_imports": []
+  },
+  {
+    "file": "工作文件/semiconductor_analysis/dashboard/check_names.py",
+    "loc": 7,
+    "key_libraries": [
+      "pandas"
+    ],
+    "internal_imports": []
+  },
+  {
+    "file": "工作文件/semiconductor_analysis/dashboard/final_check.py",
+    "loc": 14,
+    "key_libraries": [],
+    "internal_imports": []
+  },
+  {
+    "file": "工作文件/semiconductor_analysis/dashboard/find_col2.py",
+    "loc": 12,
+    "key_libraries": [
+      "pandas"
+    ],
+    "internal_imports": []
+  },
+  {
+    "file": "工作文件/semiconductor_analysis/dashboard/find_col5.py",
+    "loc": 21,
+    "key_libraries": [
+      "pandas"
+    ],
+    "internal_imports": []
+  },
+  {
+    "file": "工作文件/semiconductor_analysis/dashboard/generate_dashboard.py",
+    "loc": 1775,
+    "key_libraries": [
+      "pandas"
+    ],
+    "internal_imports": []
+  },
+  {
+    "file": "工作文件/semiconductor_analysis/dashboard/verify_ytd.py",
+    "loc": 29,
+    "key_libraries": [
+      "pandas"
+    ],
+    "internal_imports": []
+  },
+  {
+    "file": "工作文件/semiconductor_analysis/peek.py",
+    "loc": 20,
+    "key_libraries": [
+      "openpyxl"
+    ],
+    "internal_imports": []
+  },
+  {
+    "file": "工作文件/semiconductor_analysis/run_action.py",
+    "loc": 6,
+    "key_libraries": [],
+    "internal_imports": []
+  },
+  {
+    "file": "工作文件/semiconductor_analysis/run_all.py",
+    "loc": 442,
+    "key_libraries": [
+      "numpy",
+      "pandas"
+    ],
+    "internal_imports": []
+  },
+  {
+    "file": "工作文件/semiconductor_analysis/run_audit.py",
+    "loc": 5,
+    "key_libraries": [],
+    "internal_imports": []
+  },
+  {
+    "file": "工作文件/semiconductor_analysis/run_deep.py",
+    "loc": 6,
+    "key_libraries": [],
+    "internal_imports": []
+  },
+  {
+    "file": "工作文件/semiconductor_analysis/run_sp.py",
+    "loc": 6,
+    "key_libraries": [],
+    "internal_imports": []
+  },
+  {
+    "file": "工作文件/semiconductor_analysis/run_zxkx.py",
+    "loc": 6,
+    "key_libraries": [],
+    "internal_imports": []
+  }
+]

@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(python -c \"import chinese_calendar; print\\('chinese_calendar OK'\\); import rapidfuzz; print\\('rapidfuzz OK'\\); import python_calamine; print\\('python-calamine OK'\\)\")",
+      "PowerShell(Get-Process *)",
+      "PowerShell(Write-Host \"=== Silver 层 ===\"; Get-ChildItem \"output\\\\silver\" | Select-Object Name, @{N='Size\\(KB\\)';E={[math]::Round\\($_.Length/1KB,1\\)}}; Write-Host \"\"; Write-Host \"=== Excel 报告 ===\"; Get-ChildItem \"output\\\\report\" | Select-Object Name, @{N='Size\\(KB\\)';E={[math]::Round\\($_.Length/1KB,1\\)}}; Write-Host \"\"; Write-Host \"=== Gold 表总数 ===\"; \\(Get-ChildItem \"output\\\\gold\"\\).Count; Write-Host \"\"; Write-Host \"=== 客户全景摘要 ===\"; python -c \"import pandas as pd; df=pd.read_csv\\('output/gold/客户全景.csv',encoding='utf-8-sig'\\); print\\(f'客户数: {len\\(df\\)}'\\); print\\(f'列数: {len\\(df.columns\\)}'\\); print\\(f'综合价值层级分布: {df[\\\\\"综合价值层级\\\\\"].value_counts\\(\\).to_dict\\(\\) if \\\\\"综合价值层级\\\\\" in df.columns else \\\\\"N/A\\\\\"}'\\)\")",
+      "PowerShell(python -c \"import pandas as pd; import sys; sys.path.insert\\(0, '.'\\); df=pd.read_csv\\('output/gold/客户全景.csv', encoding='utf-8-sig'\\); print\\('客户数:', len\\(df\\)\\); print\\('列数:', len\\(df.columns\\)\\); tiers=df['综合价值层级'].value_counts\\(\\).to_dict\\(\\) if '综合价值层级' in df.columns else {}; print\\('综合价值层级分布:', tiers\\)\")",
+      "PowerShell(Write-Host \"========================================\"; Write-Host \"  全量运行完成 - 输出汇总\"; Write-Host \"========================================\"; Write-Host \"\"; Write-Host \"Silver 层 \\(output/silver/\\):\"; Get-ChildItem \"output\\\\silver\" | ForEach-Object { $size = [math]::Round\\($_.Length/1KB, 1\\); Write-Host \"  $\\($_.Name\\)  \\($size KB\\)\" }; Write-Host \"\"; Write-Host \"Gold 层 \\(output/gold/\\) - $\\(\\(Get-ChildItem 'output\\\\gold'\\).Count\\) 张表:\"; Get-ChildItem \"output\\\\gold\" | ForEach-Object { $size = [math]::Round\\($_.Length/1KB, 1\\); Write-Host \"  $\\($_.Name\\)  \\($size KB\\)\" }; Write-Host \"\"; Write-Host \"Excel 报告 \\(output/report/\\):\"; Get-ChildItem \"output\\\\report\" | ForEach-Object { $size = [math]::Round\\($_.Length/1KB, 1\\); Write-Host \"  $\\($_.Name\\)  \\($size KB\\)\" })",
+      "PowerShell(Get-ChildItem \"output\\\\silver\" | ForEach-Object { Remove-Item $_.FullName -Force -ErrorAction SilentlyContinue }; Get-ChildItem \"output\\\\gold\" | ForEach-Object { Remove-Item $_.FullName -Force -ErrorAction SilentlyContinue }; Get-ChildItem \"output\\\\report\" -ErrorAction SilentlyContinue | ForEach-Object { Remove-Item $_.FullName -Force -ErrorAction SilentlyContinue }; Write-Host \"Cache cleared\")",
+      "PowerShell(python run_all.py 2>&1)",
+      "PowerShell(Get-ChildItem \"data\" | ForEach-Object { Write-Host $_.Name })"
+    ]
+  }
+}

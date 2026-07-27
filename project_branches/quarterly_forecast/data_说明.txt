@@ -1,0 +1,2 @@
+输入:原始出货明细 Excel(未复制,>50MB)。
+样例: E:\3-其他资料\数据分析\工作文件\semiconductor_analysis\data\财务分析-6月（7.6）.xlsx

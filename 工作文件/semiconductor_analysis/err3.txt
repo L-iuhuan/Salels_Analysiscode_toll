@@ -1,0 +1,9 @@
+RC:0
+STDOUT:
+part3 done
+
+
+STDERR:
+C:\Users\45091\Desktop\�����ļ�\semiconductor_analysis\analysis3.py:42: FutureWarning: DataFrameGroupBy.apply operated on the grouping columns. This behavior is deprecated, and in a future version of pandas the grouping columns will be excluded from the operation. Either pass `include_groups=False` to exclude the groupings or explicitly select the grouping columns after groupby to silence this warning.
+  sku_gm_cur=cur.groupby('sku').apply(lambda x: x['profit'].sum()/x['rev'].sum() if x['rev'].sum() else 0)
+---CHECK---

@@ -1,0 +1,16 @@
+﻿diff --git "a/D:\\Files\\projects\\\345\267\245\344\275\234\346\226\207\344\273\266\\semiconductor_analysis\\analysis\\pricing\\pricing_customer.py" "b/D:\\Files\\projects\\\347\234\213\346\235\277\346\265\201\346\260\264\347\272\277\\processing\\analysis\\pricing\\pricing_customer.py"
+index 582ce7d..a8cc024 100644
+--- "a/D:\\Files\\projects\\\345\267\245\344\275\234\346\226\207\344\273\266\\semiconductor_analysis\\analysis\\pricing\\pricing_customer.py"
++++ "b/D:\\Files\\projects\\\347\234\213\346\235\277\346\265\201\346\260\264\347\272\277\\processing\\analysis\\pricing\\pricing_customer.py"
+@@ -193,7 +193,10 @@ def calc_category_acceptance(
+ 
+     # 主导品类（占比最高的品类）— 排除NaN类别和NaN索引
+     category_share_valid = category_share.dropna(subset=[category_col])
+-    idx_max = category_share_valid.groupby(cust_col)["占比"].idxmax().dropna()
++    # pandas 3.0 兼容：groupby().idxmax() 遇到“占比”全NaN的客户组会抛 ValueError
++    # （pandas 2.x 是返回NaN，再由链尾 .dropna() 去掉）。先 dropna(subset=["占比"])
++    # 让全NaN组提前消失，效果与 2.x 完全一致，不改变任何正常客户的结果。
++    idx_max = category_share_valid.dropna(subset=["占比"]).groupby(cust_col)["占比"].idxmax().dropna()
+     dominant = category_share_valid.loc[idx_max].reset_index(drop=True)
+     dominant = dominant[[cust_col, category_col, "占比"]].rename(
+         columns={category_col: "主导品类", "占比": "主导品类占比"}

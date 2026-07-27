@@ -1,0 +1,37 @@
+
+Sheet[0] '简称检查报告' -> 6 cols
+
+Sheet[1] '简称映射表' -> 2 cols
+
+Sheet[2] '总表' -> 67 cols
+  Last 5 cols: ['原币税额', '终端客户名称_客户类别', '代理商系统账号', '对比列', '销售模式']
+  [23] 产品线
+  [24] 型号_产品线（新）
+  [26] 型号_产品品类
+  [27] 产品类别
+
+Sheet[3] 'Sheet3' -> 8 cols
+
+Sheet[4] 'Sheet1' -> 19 cols
+
+Sheet[5] 'Sheet2' -> 2 cols
+
+Sheet[6] 'Sheet4' -> 7 cols
+
+Sheet[7] 'Sheet5' -> 19 cols
+
+Sheet[8] '已有BL数据' -> 13 cols
+
+Sheet[9] 'BL映射表' -> 1 cols
+
+Sheet[10] 'Sheet8' -> 7 cols
+
+Sheet[11] 'Sheet9' -> 7 cols
+
+Sheet[12] '24-26' -> 67 cols
+  Last 5 cols: ['原币税额', '终端客户名称_客户类别', '代理商系统账号', '销售模式', '产品品类（新）']
+  [23] 产品线
+  [24] 型号_产品线（新）
+  [26] 型号_产品品类
+  [27] 产品类别
+  [66] 产品品类（新）

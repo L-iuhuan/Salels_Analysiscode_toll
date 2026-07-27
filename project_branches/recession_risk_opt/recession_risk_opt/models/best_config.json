@@ -1,0 +1,113 @@
+{
+  "weights": {
+    "f1_margin_slope": 0.08995464845297627,
+    "f3_order_cv": 0.1805907025535397,
+    "f4_growth_decay": 0.19858556854110923,
+    "f5_self_health": 0.47289640278524175,
+    "f6_asp_trend": 0.05797267766713305
+  },
+  "f1_slope_thresholds": [
+    -0.014736745458452894,
+    -0.01348819017898186,
+    0.0
+  ],
+  "f1_scores": [
+    80,
+    50,
+    20,
+    10
+  ],
+  "f1_zero_profit_score": 80,
+  "f1_insufficient_score": 50,
+  "f1_min_points": 3,
+  "f3_cv_thresholds": [
+    0.85135462313524,
+    0.3476642140921469,
+    0.13000355937010272
+  ],
+  "f3_scores": [
+    85,
+    65,
+    40,
+    10
+  ],
+  "f3_default_score": 85,
+  "f4_decay_high_pp": -21.501362215946415,
+  "f4_decay_mid_pp": -5.854464703952135,
+  "f4_yoy_high_ratio": -0.1,
+  "f4_default_score": 20,
+  "f4_growth_rapid": 0.5,
+  "f4_growth_shrunk": -0.1,
+  "f4_decay_rapid_high_pp": 10,
+  "f4_decay_recover_high_pp": 10,
+  "f4_consec_decline_bonus": 10,
+  "f5_health_thresholds": [
+    39,
+    49,
+    65
+  ],
+  "f5_scores": [
+    90,
+    70,
+    40,
+    10
+  ],
+  "f5_default_score": 50,
+  "f6_asp_thresholds": [
+    -0.016444795781576437,
+    -0.015101303160192698,
+    0.0
+  ],
+  "f6_scores": [
+    80,
+    50,
+    20,
+    10
+  ],
+  "f6_asp_margin_joint_score": 50,
+  "f6_default_score": 80,
+  "f6_min_points": 3,
+  "f6_slope_mid_for_joint": -0.003,
+  "reliability_rules": {
+    "f1": {
+      "checks": [
+        "slope_insufficient",
+        "zero_profit"
+      ],
+      "default_weight": 0.0
+    },
+    "f3": {
+      "checks": [
+        "cv_invalid"
+      ],
+      "default_weight": 0.0
+    },
+    "f4": {
+      "checks": [],
+      "default_weight": null
+    },
+    "f5": {
+      "checks": [
+        "no_valid_hist_margin"
+      ],
+      "default_weight": 0.0
+    },
+    "f6": {
+      "checks": [
+        "asp_insufficient"
+      ],
+      "default_weight": 0.0
+    }
+  },
+  "cut_points": [
+    34,
+    52,
+    58
+  ],
+  "risk_labels": [
+    "低风险",
+    "中风险",
+    "高风险",
+    "极高风险"
+  ]
+}

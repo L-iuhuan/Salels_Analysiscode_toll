@@ -1,0 +1,25 @@
+{
+  "warning_threshold": 25,
+  "cut_points": [
+    34,
+    25,
+    75
+  ],
+  "cost_matrix": {
+    "false_positive": 1,
+    "false_negative": 3
+  },
+  "min_total_cost": 11685,
+  "performance": {
+    "cut_point": 25,
+    "total_cost": 11685,
+    "accuracy": 0.5267430441898527,
+    "recall": 0.5094671950682519,
+    "precision": 0.3163362952836637,
+    "false_positive_rate": 0.46594614739588186,
+    "true_positives": 2314,
+    "false_positives": 5001,
+    "false_negatives": 2228,
+    "true_negatives": 5732
+  }
+}

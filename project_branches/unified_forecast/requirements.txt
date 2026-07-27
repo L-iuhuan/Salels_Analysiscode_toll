@@ -1,0 +1,6 @@
+# 自动生成:基于分支内脚本的 import 静态推导
+
+numpy>=1.21
+pandas>=1.3
+python_calamine
+scipy
