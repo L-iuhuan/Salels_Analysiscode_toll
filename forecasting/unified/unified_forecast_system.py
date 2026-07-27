@@ -20,17 +20,33 @@ from collections import defaultdict
 import warnings
 import os
 import re
+import sys
 
 warnings.filterwarnings('ignore')
 
 # ============================================================
-# CONFIGURATION
+# CONFIGURATION (重组修改#1-3: 绝对路径 → 相对/CLI, 2026-07-27)
 # ============================================================
-DATA_FILE = r"E:\3-其他资料\数据分析\semiconductor_analysis\data\财务分析-5月（6.3）.xlsx"
-SHEET_NAME = "总表"
-RANKING_FILE = r"E:\3-其他资料\数据分析\semiconductor_analysis\quarterly_forecast_package\output\quarterly_forecast_customer\预测方法排行榜.csv"
-OUTPUT_DIR = r"E:\3-其他资料\数据分析\semiconductor_analysis\output\unified_forecast"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))            # forecasting\unified
+ROOT_DIR = os.path.dirname(os.path.dirname(BASE_DIR))            # 数据分析根
+
+# DATA_FILE: CLI 第1参数优先; 默认取 sales_analytics_platform\data\ 下最新 xlsx
+def _default_data_file():
+    data_dir = os.path.join(ROOT_DIR, "sales_analytics_platform", "data")
+    xs = [os.path.join(data_dir, f) for f in os.listdir(data_dir)
+          if f.endswith(".xlsx") and not f.startswith("~$")]
+    return max(xs, key=os.path.getmtime) if xs else None
+
+DATA_FILE = sys.argv[1] if len(sys.argv) > 1 else _default_data_file()
+SHEET_NAME = "24-26"  # 修改#2(定版确认): "总表"已停止更新(5月/6月文件内容逐行相同,冻结于2026-05);
+                      # "24-26"为月度刷新的活跃主表(与平台 DATA_SHEET_NAME 一致),历史窗口2024-01起
+RANKING_FILE = os.path.join(BASE_DIR, "..", "quarterly", "output",
+                            "quarterly_forecast_customer", "预测方法排行榜.csv")
+OUTPUT_DIR = os.path.join(BASE_DIR, "output")
 os.makedirs(OUTPUT_DIR, exist_ok=True)
+print(f"  [配置] DATA_FILE = {DATA_FILE}")
+print(f"  [配置] RANKING_FILE = {RANKING_FILE}")
+print(f"  [配置] OUTPUT_DIR = {OUTPUT_DIR}")
 
 # ============================================================
 # STEP 1: DATA LOADING (Fix 1: use column NAMES)

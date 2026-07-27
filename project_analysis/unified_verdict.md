@@ -41,3 +41,25 @@
 - 淘汰归档:`forecasting\unified\_archive\unified_forecast_v3.py`(bug 记录于本文)
 - 技术报告:`semiconductor_analysis\output\unified_forecast\预测系统技术报告.md`(6/17,随 system 产物)
 - ① output\unified_forecast 当前为 system 于 7/27 的复跑产物(与 6/17 基线一致)
+
+## 附录:修改#1-3 落地与主表切换(2026-07-27,M4前置)
+
+按方案 §4 完成定版脚本配置级修改并端到端验证:
+
+| # | 修改 | 落地 |
+|---|---|---|
+| 1 | DATA_FILE 绝对路径→相对/CLI | CLI 第1参数;默认自动取 `sales_analytics_platform\data\` 最新 xlsx |
+| 2 | SHEET_NAME 对齐实际主表 | **"总表"→"24-26"**(探针证实:总表在6月文件中冻结于2026-05、与5月文件逐行相同;24-26 才是月度刷新的活跃主表,与平台 DATA_SHEET_NAME 一致) |
+| 3 | RANKING_FILE 绝对路径→相对 | 指向 `forecasting\quarterly\output\quarterly_forecast_customer\预测方法排行榜.csv`(已从①收割,6/11 版) |
+| — | OUTPUT_DIR 同步相对化 | `forecasting\unified\output\` |
+
+**冒烟验证(6月数据+24-26)**:加载 191,725 行(2024-01~2026-06),预测 horizon 平移至 2026-07 起,
+12 个月总额 **8.92 亿** ≈ TTM 的 ~105%(合理含增长),两路径对账 +0.1%,高置信度行 2956(旧表口径 2704)。
+产物: `forecasting\unified\output\{product,customer}_path_forecast.csv`。
+
+**重要认知**:定版对比(v3 vs system)是在总表口径下进行的——两候选同口径,相对结论
+(system 胜、v3 月度值写入季度桶)与 sheet 选择无关,不受影响。生产口径已切换为 24-26,
+历史窗口从 2020+ 缩至 2024+(~10 个季度),换来月度数据新鲜度;回测深度略减属可接受折中。
+
+工具: `_tools\m4_sheet_probe.py`(sheet 行数/日期范围探针);日志: `unified_smoke_june.log`(旧表口径)、
+`unified_smoke_june2.log`(24-26 口径)。
