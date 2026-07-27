@@ -1,0 +1,301 @@
+{
+  "report_title": "全客户季度销售预测报告",
+  "report_date": "2026-06-11",
+  "pred_target": "2026Q2 (预测季度)",
+  "train_end": "2026Q1 (训练截止)",
+  "data_cutoff": "2026-05-30",
+  "methods_total": 540,
+  "customers_total": 3930,
+  "overall": {
+    "pred_revenue_wan": 20068.74,
+    "pred_profit_wan": 7224.74,
+    "avg_wape_pct": 68.68,
+    "med_wape_pct": 90.0,
+    "grades": {
+      "A": 490,
+      "B": 227,
+      "C": 291,
+      "D": 276,
+      "E": 2646
+    },
+    "high_confidence_ab": 717,
+    "high_confidence_pct": 18.2,
+    "second_pass_improved": 763
+  },
+  "by_type": {
+    "KA": {
+      "n": 19,
+      "pred_total": 49150562.165815465,
+      "avg_wape": 22.16,
+      "med_wape": 19.3,
+      "grades": {
+        "A": 7,
+        "B": 6,
+        "C": 5,
+        "D": 0,
+        "E": 1
+      },
+      "ab_count": 13,
+      "ab_rev_pct": 77.0
+    },
+    "AA": {
+      "n": 22,
+      "pred_total": 12347039.667706154,
+      "avg_wape": 30.49,
+      "med_wape": 25.04,
+      "grades": {
+        "A": 6,
+        "B": 5,
+        "C": 6,
+        "D": 3,
+        "E": 2
+      },
+      "ab_count": 11,
+      "ab_rev_pct": 75.6
+    },
+    "MM": {
+      "n": 3694,
+      "pred_total": 107142543.51893908,
+      "avg_wape": 70.15,
+      "med_wape": 90.0,
+      "grades": {
+        "A": 432,
+        "B": 198,
+        "C": 243,
+        "D": 252,
+        "E": 2569
+      },
+      "ab_count": 630,
+      "ab_rev_pct": 44.8
+    },
+    "KM": {
+      "n": 124,
+      "pred_total": 25462087.969230004,
+      "avg_wape": 39.35,
+      "med_wape": 30.11,
+      "grades": {
+        "A": 34,
+        "B": 16,
+        "C": 28,
+        "D": 17,
+        "E": 29
+      },
+      "ab_count": 50,
+      "ab_rev_pct": 49.7
+    },
+    "未分类": {
+      "n": 71,
+      "pred_total": 6585125.952948738,
+      "avg_wape": 67.97,
+      "med_wape": 90.0,
+      "grades": {
+        "A": 11,
+        "B": 2,
+        "C": 9,
+        "D": 4,
+        "E": 45
+      },
+      "ab_count": 13,
+      "ab_rev_pct": 19.6
+    }
+  },
+  "top15_methods": {
+    "组合预测": 749,
+    "稀疏需求": 249,
+    "季节Naive": 166,
+    "同比季节": 65,
+    "统计模型": 49,
+    "调和平均": 40,
+    "移动平均": 36,
+    "简单": 35,
+    "EWMA": 35,
+    "差分": 34,
+    "对数线性": 29,
+    "中位数": 26,
+    "数据变换": 19,
+    "线性趋势": 18,
+    "同类参照": 14
+  },
+  "top20_customers": [
+    {
+      "name": "追觅",
+      "type": "KA",
+      "pred_wan": 734.19,
+      "WAPE": 2.7770434787235,
+      "grade": "A",
+      "method": "Ensemble_Top3WAPE",
+      "mcat": "组合预测"
+    },
+    {
+      "name": "石头",
+      "type": "KA",
+      "pred_wan": 587.61,
+      "WAPE": 22.709399805086704,
+      "grade": "B",
+      "method": "Ensemble_Top3WAPE",
+      "mcat": "组合预测"
+    },
+    {
+      "name": "TPLINK",
+      "type": "KA",
+      "pred_wan": 384.17,
+      "WAPE": 11.74,
+      "grade": "A",
+      "method": "Croston(w=8,α=0.2)",
+      "mcat": "稀疏需求"
+    },
+    {
+      "name": "中兴康讯",
+      "type": "KA",
+      "pred_wan": 380.59,
+      "WAPE": 18.32,
+      "grade": "B",
+      "method": "YoY(w=6,lag=3,gw=4)",
+      "mcat": "同比季节"
+    },
+    {
+      "name": "CVTE",
+      "type": "KA",
+      "pred_wan": 380.1,
+      "WAPE": 19.72,
+      "grade": "B",
+      "method": "TSB(w=6,α=0.05,β=0.15)",
+      "mcat": "稀疏需求"
+    },
+    {
+      "name": "长虹集团",
+      "type": "KA",
+      "pred_wan": 332.38,
+      "WAPE": 19.3,
+      "grade": "B",
+      "method": "Harmonic(w=8)",
+      "mcat": "调和平均"
+    },
+    {
+      "name": "大华集团",
+      "type": "KA",
+      "pred_wan": 331.11,
+      "WAPE": 36.19,
+      "grade": "C",
+      "method": "Quad(w=4)",
+      "mcat": "多项式"
+    },
+    {
+      "name": "海康威视",
+      "type": "KA",
+      "pred_wan": 317.45,
+      "WAPE": 28.0,
+      "grade": "C",
+      "method": "Croston(w=10,α=0.1)",
+      "mcat": "稀疏需求"
+    },
+    {
+      "name": "共进",
+      "type": "AA",
+      "pred_wan": 312.28,
+      "WAPE": 7.91,
+      "grade": "A",
+      "method": "YoY(w=4,lag=4,gw=3)",
+      "mcat": "同比季节"
+    },
+    {
+      "name": "兆驰",
+      "type": "AA",
+      "pred_wan": 303.92,
+      "WAPE": 15.15,
+      "grade": "B",
+      "method": "SNaive(lag=3)",
+      "mcat": "季节Naive"
+    },
+    {
+      "name": "微浦",
+      "type": "KM",
+      "pred_wan": 299.28,
+      "WAPE": 25.75,
+      "grade": "C",
+      "method": "EWMA(w=3,α=0.7)",
+      "mcat": "EWMA"
+    },
+    {
+      "name": "小米集团",
+      "type": "KA",
+      "pred_wan": 274.01,
+      "WAPE": 26.46876301896369,
+      "grade": "C",
+      "method": "Ensemble_Top3WAPE",
+      "mcat": "组合预测"
+    },
+    {
+      "name": "未知客户",
+      "type": "未分类",
+      "pred_wan": 241.6,
+      "WAPE": 43.16230118845336,
+      "grade": "D",
+      "method": "Ensemble_Top3WAPE",
+      "mcat": "组合预测"
+    },
+    {
+      "name": "SAMSUNG",
+      "type": "KA",
+      "pred_wan": 224.53,
+      "WAPE": 6.6,
+      "grade": "A",
+      "method": "Croston(w=10,α=0.15)",
+      "mcat": "稀疏需求"
+    },
+    {
+      "name": "通则康威",
+      "type": "MM",
+      "pred_wan": 211.62,
+      "WAPE": 16.23,
+      "grade": "B",
+      "method": "LogLin(w=12)",
+      "mcat": "对数线性"
+    },
+    {
+      "name": "创维数字",
+      "type": "KA",
+      "pred_wan": 208.69,
+      "WAPE": 8.73,
+      "grade": "A",
+      "method": "SNaive(lag=3)",
+      "mcat": "季节Naive"
+    },
+    {
+      "name": "诺瓦星云",
+      "type": "AA",
+      "pred_wan": 204.05,
+      "WAPE": 39.29,
+      "grade": "C",
+      "method": "Croston(w=8,α=0.08)",
+      "mcat": "稀疏需求"
+    },
+    {
+      "name": "杉川",
+      "type": "KM",
+      "pred_wan": 200.92,
+      "WAPE": 2.943329144059419,
+      "grade": "A",
+      "method": "Ensemble_Top3WAPE",
+      "mcat": "组合预测"
+    },
+    {
+      "name": "安克创新",
+      "type": "KA",
+      "pred_wan": 172.04,
+      "WAPE": 1.0090137883000525,
+      "grade": "A",
+      "method": "Ensemble_Top3WAPE",
+      "mcat": "组合预测"
+    },
+    {
+      "name": "海信集团",
+      "type": "KA",
+      "pred_wan": 161.94,
+      "WAPE": 8.33,
+      "grade": "A",
+      "method": "MSI(w=24,si=12)",
+      "mcat": "季节指数"
+    }
+  ]
+}

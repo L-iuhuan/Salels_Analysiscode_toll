@@ -1,0 +1,6 @@
+[
+  "quarterly: ①版已拷(排除output/)",
+  "unified: v3+system两候选待M3跑对比定版;backup_v1-3入_archive",
+  "utils: chart_data/final_forecast/generate_chart_html",
+  "_archive: eda×3 / longtail全族 / quantile实验 / optimizer"
+]
