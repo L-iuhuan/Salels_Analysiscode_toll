@@ -1,0 +1,19 @@
+﻿diff --git "a/D:\\Files\\projects\\\345\267\245\344\275\234\346\226\207\344\273\266\\semiconductor_analysis\\config\\settings.py" "b/D:\\Files\\projects\\\347\234\213\346\235\277\346\265\201\346\260\264\347\272\277\\processing\\config\\settings.py"
+index a9ace96..0c3582d 100644
+--- "a/D:\\Files\\projects\\\345\267\245\344\275\234\346\226\207\344\273\266\\semiconductor_analysis\\config\\settings.py"
++++ "b/D:\\Files\\projects\\\347\234\213\346\235\277\346\265\201\346\260\264\347\272\277\\processing\\config\\settings.py"
+@@ -19,8 +19,12 @@ import os
+ # ============================================================
+ 
+ PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+-DATA_DIR = os.path.join(PROJECT_ROOT, "data")           # 源数据存放目录（ERP导出的.xlsx文件）
+-OUTPUT_DIR = os.path.join(PROJECT_ROOT, "output")
++# ── 便携包改造：输入/输出指向“包根目录”（processing/ 的上一级）──
++# 使前段与后段共享 单一 data/ 输入目录 和 单一 output/ 输出目录，
++# 不再各自维护一份，也省去向看板端同步/重复拷贝的开销。
++PKG_ROOT = os.path.abspath(os.path.join(PROJECT_ROOT, ".."))
++DATA_DIR = os.path.join(PKG_ROOT, "data")           # 源数据存放目录（ERP导出的.xlsx文件）
++OUTPUT_DIR = os.path.join(PKG_ROOT, "output")
+ OUTPUT_SILVER = os.path.join(OUTPUT_DIR, "silver")      # Silver层CSV输出
+ OUTPUT_GOLD = os.path.join(OUTPUT_DIR, "gold")          # Gold层CSV输出
+ OUTPUT_REPORT = os.path.join(OUTPUT_DIR, "report")      # Excel报告输出

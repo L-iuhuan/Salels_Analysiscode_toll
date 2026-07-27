@@ -1,0 +1,16 @@
+{
+  "overwritten": [],
+  "added_from_2": [],
+  "kept_3_version": [
+    "看板流水线/processing/config/settings.py",
+    "看板流水线/processing/analysis/pricing/pricing_customer.py"
+  ],
+  "only_in_3": [],
+  "notes": [
+    "③骨架拷贝 95 文件",
+    "test/ 落包根 15 文件 + 根conftest.py(注入processing/)",
+    "①文档4份并入 docs/①文档参考/",
+    "数据: 财务分析-6月（7.6）.xlsx(219.7MB)+部门-人员.md 已复制到 data/",
+    "包根bat入口3个(调run_chain.py)"
+  ]
+}

@@ -1,0 +1,78 @@
+﻿diff --git "a/C:\\Users\\17986\\AppData\\Local\\Temp\\opencode\\generate_dashboard_pre_S1S2.py" "b/D:\\Files\\projects\\\347\234\213\346\235\277\346\265\201\346\260\264\347\272\277\\dashboard\\generate_dashboard.py"
+index 62b2b14..5fa3498 100644
+--- "a/C:\\Users\\17986\\AppData\\Local\\Temp\\opencode\\generate_dashboard_pre_S1S2.py"
++++ "b/D:\\Files\\projects\\\347\234\213\346\235\277\346\265\201\346\260\264\347\272\277\\dashboard\\generate_dashboard.py"
+@@ -258,13 +258,13 @@ def load_product_report():
+         return None, None, None, 0
+     path = cands[0]
+     print(f"  [C面] 产品报告: {os.path.basename(path)}")
+-    xls = pd.ExcelFile(path)
++    xls = pd.ExcelFile(path, engine="calamine")
+     def _sheet(frag):
+         for nm in xls.sheet_names:
+             if frag in nm:
+                 return nm
+         return None
+-    df_snap = pd.read_excel(path, sheet_name=_sheet("产品快照表") or xls.sheet_names[0])
++    df_snap = pd.read_excel(path, sheet_name=_sheet("产品快照表") or xls.sheet_names[0], engine="calamine")
+     df_snap.columns = [str(c).strip() for c in df_snap.columns]
+     # 历史：主表自带 _t-N 列（Format A）则用主表，否则读"历史画像追踪"（Format B）
+     hist_name = _sheet("历史画像追踪")
+@@ -272,7 +272,7 @@ def load_product_report():
+     if has_hist_cols:
+         df_hist = df_snap
+     elif hist_name:
+-        df_hist = pd.read_excel(path, sheet_name=hist_name)
++        df_hist = pd.read_excel(path, sheet_name=hist_name, engine="calamine")
+         df_hist.columns = [str(c).strip() for c in df_hist.columns]
+     else:
+         df_hist = None
+@@ -287,7 +287,7 @@ def load_product_report():
+     insuff_name = _sheet("数据不足")
+     if insuff_name:
+         try:
+-            insuff = len(pd.read_excel(path, sheet_name=insuff_name))
++            insuff = len(pd.read_excel(path, sheet_name=insuff_name, engine="calamine"))
+         except Exception:
+             insuff = 0
+     return df_snap, df_hist, data_month, insuff
+@@ -346,25 +346,23 @@ if not _xl_candidates:
+     raise FileNotFoundError("data/ 目录下未找到 .xlsx 文件")
+ excel_path = _xl_candidates[0]
+ print(f"  数据源: {os.path.basename(excel_path)}")
+-# 读取所有列再筛选（避免列名编码问题）
+-rex = pd.read_excel(excel_path, sheet_name="24-26")
++# 先读表头确定需要的列，再按列名精准读取（calamine引擎 + usecols，结果与全量读取完全一致）
++raw_all_cols = list(pd.read_excel(excel_path, sheet_name="24-26", nrows=0, engine="calamine").columns)
+ # 找到产品列（含"产品线"或"产品品种"关键字）
+-prod_cols_avail = [c for c in rex.columns if "产品" in str(c) or "型号" in str(c)]
++prod_cols_avail = [c for c in raw_all_cols if "产品" in str(c) or "型号" in str(c)]
+ # 优先选"产品线"列，其次"产品品种"
+ prod_col = next((c for c in prod_cols_avail if "产品线" in str(c)),
+             next((c for c in prod_cols_avail if "品种" in str(c)), None))
+ # 品类列：精确匹配"产品品类（新）"（Excel最后一列），回退到index 66
+-cat_col = next((c for c in rex.columns if "产品品类（新）" in str(c)), None) or (list(rex.columns)[66] if len(rex.columns) > 66 else next((c for c in rex.columns if "品类" in str(c)), None))
++cat_col = next((c for c in raw_all_cols if "产品品类（新）" in str(c)), None) or (raw_all_cols[66] if len(raw_all_cols) > 66 else next((c for c in raw_all_cols if "品类" in str(c)), None))
+ # 存货名称列（用于A面产品型号变迁）
+-item_col = next((c for c in rex.columns if "存货名称" in str(c)), None)
++item_col = next((c for c in raw_all_cols if "存货名称" in str(c)), None)
+ keep_cols = ["发货日期","RMB 未税金额小计","利润","发货数量","终端客户名称_客户类别","终端客户简称","客户订单号"]
+ if prod_col: keep_cols.append(prod_col)
+ if cat_col: keep_cols.append(cat_col)
+ if item_col: keep_cols.append(item_col)
+ # cat_new_col 与 cat_col 同列（产品品类（新）），不重复添加
+ cat_new_col = cat_col
+-# 读完整列名（用于按索引定位）
+-raw_all_cols = list(pd.read_excel(excel_path, sheet_name="24-26", nrows=0).columns)
+ # E面：产品线（新）列 (index 24)
+ pline_new_col = raw_all_cols[24] if len(raw_all_cols) > 24 else None
+ if pline_new_col and pline_new_col not in keep_cols:
+@@ -377,6 +375,8 @@ if newprod_col and newprod_col not in keep_cols:
+ sales_col_raw = raw_all_cols[4] if len(raw_all_cols) > 4 else None  # 实际业务员
+ if sales_col_raw and sales_col_raw not in keep_cols:
+     keep_cols.append(sales_col_raw)
++# 精准读取所需列（usecols 按文件原顺序返回；下一行再按 keep_cols 归一列序，与改造前完全一致）
++rex = pd.read_excel(excel_path, sheet_name="24-26", usecols=keep_cols, engine="calamine")
+ rex = rex[keep_cols]
+ print(f"  产品列: {repr(prod_col)}  品类列: {repr(cat_col)}")
+ rex["_d"] = pd.to_datetime(rex["发货日期"], errors="coerce")
