@@ -10,3 +10,4 @@ rapidfuzz
 matplotlib
 scikit-learn
 python-calamine  # 必需：前后段Excel读取引擎，缺失会报 Unknown engine: calamine
+xlsxwriter      # 必需：gold 报告 Excel 导出(reports/gold_exporter.py)，漏装会在客户分析阶段崩溃

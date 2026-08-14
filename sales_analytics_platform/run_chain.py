@@ -164,6 +164,26 @@ def main():
         print(f"\n[错误] 未找到原始Excel。请把 数据文件.xlsx 放进：\n  {DIR_DATA}")
         sys.exit(1)
     print(f"  数据源: {raw_path}")
+
+    # ── 统一输入:把 --data 指定的原始Excel接入 data/ ──
+    # 后段 generate_dashboard.py 不接收 --data,只扫描 data/ 目录按 mtime 取最新;
+    # 运行器同步代码时排除 data/(保护本地数据),所以必须把用户指定的文件接进来,
+    # 否则数据处理跑完后后段必报 "data/ 目录下未找到 .xlsx 文件"
+    os.makedirs(DIR_DATA, exist_ok=True)
+    raw_in_data = os.path.join(DIR_DATA, os.path.basename(raw_path))
+    if os.path.abspath(raw_path) != os.path.abspath(raw_in_data):
+        shutil.copy2(raw_path, raw_in_data)
+        # 抬升接入文件的 mtime,保证后段"取最新"永远选中本次指定的文件(不改动源文件)
+        os.utime(raw_in_data, None)
+        print(f"  已接入数据源到 data/: {os.path.basename(raw_path)}")
+
+    # 人员对应表基准版随代码分发(包根),本地 data/ 缺失时接入(后段F面从 data/ 读取)
+    p_base = os.path.join(PKG, PERSONNEL_CANONICAL)
+    p_in_data = os.path.join(DIR_DATA, PERSONNEL_CANONICAL)
+    if os.path.exists(p_base) and not os.path.exists(p_in_data):
+        shutil.copy2(p_base, p_in_data)
+        print(f"  已接入人员对应表到 data/")
+
     # 人员对应表（后段F面要用），缺失仅提示不阻断
     p_md = os.path.join(DIR_DATA, cfg.get("personnel_md", PERSONNEL_CANONICAL))
     if not os.path.exists(p_md):
@@ -189,6 +209,7 @@ def main():
 
     # ── 步骤 2/2：生成看板（后段，从 output/ 和 data/ 取数）──
     if not args.skip_dashboard:
+        print("[STAGE 6/6] 生成看板", flush=True)
         be = [sys.executable, os.path.join(DIR_DASH, "generate_dashboard.py")]
         rc, _ = run_subprocess(be, DIR_DASH, "步骤 2/2 · 生成看板 (generate_dashboard.py)")
         if rc != 0:

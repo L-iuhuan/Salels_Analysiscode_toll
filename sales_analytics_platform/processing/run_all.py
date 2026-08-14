@@ -133,6 +133,7 @@ def stage_silver(source_path: str) -> tuple:
     """
     print(f"\n{'=' * 60}")
     print(f"阶段: silver — 共享数据管道")
+    print("[STAGE 1/6] 数据清洗 silver", flush=True)
     print(f"{'=' * 60}")
     _t0 = time.time()
 
@@ -239,6 +240,7 @@ def stage_product(source_path: str) -> bool:
     """阶段：产品生命周期分析。"""
     print(f"\n{'=' * 60}")
     print(f"阶段: product — 产品生命周期分析")
+    print("[STAGE 2/6] 产品生命周期", flush=True)
     print(f"{'=' * 60}")
     _t0 = time.time()
 
@@ -251,6 +253,7 @@ def stage_customer(source_path: str, raw_data: pd.DataFrame = None, cust_info: p
     """阶段：客户销售分析。"""
     print(f"\n{'=' * 60}")
     print(f"阶段: customer — 客户销售分析")
+    print("[STAGE 3/6] 客户分析", flush=True)
     print(f"{'=' * 60}")
 
     from customer_analysis.run_pipeline import run as run_customer
@@ -267,6 +270,7 @@ def stage_kpi(source_path: str, raw_data: pd.DataFrame = None) -> bool:
     """阶段：准实时KPI。"""
     print(f"\n{'=' * 60}")
     print(f"阶段: kpi — 准实时KPI")
+    print("[STAGE 4/6] 准实时KPI", flush=True)
     print(f"{'=' * 60}")
 
     from customer_analysis.run_kpi_daily import run as run_kpi
@@ -278,6 +282,7 @@ def stage_cross_ref(source_path: str = None) -> bool:
     """阶段：交叉关联。"""
     print(f"\n{'=' * 60}")
     print(f"阶段: cross_ref — 交叉关联")
+    print("[STAGE 5/6] 交叉关联", flush=True)
     print(f"{'=' * 60}")
 
     from cross_reference.run_cross_ref import run as run_cross
