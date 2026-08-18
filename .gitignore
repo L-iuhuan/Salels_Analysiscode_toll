@@ -39,3 +39,6 @@ Thumbs.db
 
 # unified 定版对比收割的大型CSV(磁盘留证,不入库)
 project_analysis/unified_compare/**/*.csv
+
+# kanban 为独立 git 仓库（含便携 Python 环境），不纳入本仓库
+kanban/
