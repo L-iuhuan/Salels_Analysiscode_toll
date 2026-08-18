@@ -194,6 +194,14 @@ def main():
     # ── 统一输出目录：processing/output 联接到包根 output/（前段产出落单一目录）──
     ensure_output_junction()
 
+    # ── 跳过数据处理的前置校验:无缓存产出时中文报错,避免后段炸英文 traceback ──
+    if args.skip_processing:
+        gold_dir = os.path.join(DIR_OUT, "gold")
+        if not (os.path.isdir(gold_dir) and any(f.endswith(".csv") for f in os.listdir(gold_dir))):
+            print("[错误] 勾选了「跳过数据处理」但本地没有处理缓存(output/gold 为空)。")
+            print("       请取消勾选,先完整运行一次数据处理。")
+            sys.exit(1)
+
     # ── 步骤 1/2：数据处理（前段，产出直接写 output/）──
     if not args.skip_processing:
         fe = [sys.executable, os.path.join(DIR_PROC, "run_all.py"),
