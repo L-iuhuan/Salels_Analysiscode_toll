@@ -1,13 +1,16 @@
 # 看板流水线运行依赖
 # 安装：pip install -r requirements.txt
+# 版本区间按宪法 A3 锁定上限（2026-08-18 批次⓪，基于生产环境已验证版本：
+# pandas 2.3.1 / numpy 2.4.0 / openpyxl 3.1.5 / statsmodels 0.14.6 / chinese_calendar 1.11.0
+# rapidfuzz 3.14.5 / matplotlib 3.10.3 / scikit-learn 1.8.0 / python-calamine 0.6.2 / xlsxwriter 3.2.9）
 
-pandas>=2.2        # 后段Excel读取使用calamine引擎（pandas 2.1+才支持，留余量）
-numpy
-openpyxl>=3.1
-statsmodels
-chinese_calendar
-rapidfuzz
-matplotlib
-scikit-learn
-python-calamine  # 必需：前后段Excel读取引擎，缺失会报 Unknown engine: calamine
-xlsxwriter      # 必需：gold 报告 Excel 导出(reports/gold_exporter.py)，漏装会在客户分析阶段崩溃
+pandas>=2.2,<3.0        # 后段Excel读取使用calamine引擎（pandas 2.1+才支持，留余量）
+numpy>=1.26,<3.0
+openpyxl>=3.1,<4.0
+statsmodels>=0.14,<0.16
+chinese_calendar>=1.11,<2.0
+rapidfuzz>=3.0,<4.0
+matplotlib>=3.7,<4.0
+scikit-learn>=1.3,<2.0
+python-calamine>=0.2,<1.0  # 必需：前后段Excel读取引擎，缺失会报 Unknown engine: calamine
+xlsxwriter>=3.1,<4.0       # 必需：gold 报告 Excel 导出(reports/gold_exporter.py)，漏装会在客户分析阶段崩溃
