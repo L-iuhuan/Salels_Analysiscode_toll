@@ -62,16 +62,20 @@ def calc_price_band_distribution(
     choices = ["低价带", "中价带"]
     cp["价格带"] = np.select(conditions, choices, default="高价带")
 
-    # 客户维度汇总
-    customer_bands = cp.groupby(cust_col).apply(
-        lambda g: pd.Series({
-            "低价品种收入": g[g["价格带"] == "低价带"]["total_rev"].sum(),
-            "中价品种收入": g[g["价格带"] == "中价带"]["total_rev"].sum(),
-            "高价品种收入": g[g["价格带"] == "高价带"]["total_rev"].sum(),
-            "总收入": g["total_rev"].sum(),
-        }),
-        include_groups=False,
-    ).reset_index()
+    # 客户维度汇总（向量化：按 [客户, 价格带] 一次聚合，替换原逐客户 groupby.apply）
+    # 原版逐客户 `g[...]["total_rev"].sum()` 对 float32 输入返回 float32；此处保持一致，
+    # 缺失价格带补 np.float32(0) 并显式 astype("float32")，避免 unstack(fill_value) 提升为 float64。
+    band_rev = cp.groupby([cust_col, "价格带"], observed=True)["total_rev"].sum().unstack()
+    for _b in ["低价带", "中价带", "高价带"]:
+        if _b not in band_rev.columns:
+            band_rev[_b] = np.float32(0)
+    band_rev = band_rev[["低价带", "中价带", "高价带"]].fillna(np.float32(0)).astype("float32")
+    customer_bands = band_rev.reset_index()
+    customer_bands["总收入"] = cp.groupby(cust_col, observed=True)["total_rev"].sum().to_numpy()
+    customer_bands = customer_bands.rename(columns={
+        "低价带": "低价品种收入", "中价带": "中价品种收入", "高价带": "高价品种收入",
+    })
+    customer_bands["总收入"] = customer_bands["总收入"].astype("float32")
 
     customer_bands["低价品种收入占比"] = (
         customer_bands["低价品种收入"] / customer_bands["总收入"].replace(0, float("nan"))
@@ -82,6 +86,8 @@ def calc_price_band_distribution(
     customer_bands["高价品种收入占比"] = (
         customer_bands["高价品种收入"] / customer_bands["总收入"].replace(0, float("nan"))
     )
+    for _c in ["低价品种收入占比", "中价品种收入占比", "高价品种收入占比"]:
+        customer_bands[_c] = customer_bands[_c].astype("float32")
 
     return customer_bands
 

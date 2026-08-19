@@ -78,7 +78,9 @@ def generate_cross_sell(
 
     for cid, purchased in cust_products.items():
         # Products the customer hasn't purchased yet
-        candidates = all_products - purchased
+        # 批次②.5车道B：原 set 迭代顺序随 PYTHONHASHSEED 跨进程随机（同分产品推荐漂移），
+        # 改为确定性排序；同分推荐按产品名顺序稳定排序。
+        candidates = sorted(all_products - purchased)
 
         if len(candidates) == 0:
             continue
@@ -100,9 +102,9 @@ def generate_cross_sell(
                 cat_bonus = cat_bonus_cfg
                 reasons.append(f"同品类[{prod_cat}]扩展")
 
-            # Bonus for association with already-purchased products
+            # Bonus for association with already-purchased products（purchased 亦排序，保证理由顺序确定）
             assoc_bonus = 0
-            for owned in purchased:
+            for owned in sorted(purchased):
                 key = (owned, prod)
                 if key in assoc_map:
                     assoc_bonus += assoc_map[key].get("bonus", 0)

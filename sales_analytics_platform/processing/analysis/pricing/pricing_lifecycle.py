@@ -55,6 +55,10 @@ def calc_sku_lifecycle_stage(
 
     返回:
         DataFrame: 每个SKU的最新生命周期阶段
+
+    批次②.5 车道D（等价向量化）：原 _stage_for_sku 逐SKU groupby.apply + 有序状态机，
+    现改为一次性分组聚合计算全部谓词后按原优先级级联判定（导入→衰退出清→隐性衰退→成长→平稳→导入）。
+    输出逐值与原版一致（浮点 1e-6 容差内）。
     """
     latest_month = prod_monthly[date_col].max()
 
@@ -68,53 +72,74 @@ def calc_sku_lifecycle_stage(
     _sku_exit_ratio = _plc.get("sku_exit_ratio", 0.30)
     _sku_decline_ratio = _plc.get("sku_decline_ratio", 0.70)
 
-    def _stage_for_sku(group):
-        g = group.sort_values(date_col, kind='stable')
-        g = g[(g[rev_col] > 0) | (g[qty_col] > 0)]
-        if len(g) < 2:
-            return "导入试销"
+    # 过滤：与原 `g[(rev>0)|(qty>0)]` 一致
+    filt = prod_monthly[(prod_monthly[rev_col] > 0) | (prod_monthly[qty_col] > 0)]
+    if len(filt) == 0:
+        all_prods = prod_monthly[prod_col].drop_duplicates().sort_values(kind="stable")
+        return pd.DataFrame({prod_col: list(all_prods), "SKU生命周期阶段": "导入试销"})
 
-        in_months = len(g)
-        total_rev = g[rev_col].sum()
-        total_qty = g[qty_col].sum()
+    filt = filt.sort_values([prod_col, date_col], kind="stable")
+    g = filt.groupby(prod_col, observed=True)
 
-        # 最近3月和之前3月
-        recent3 = g[g[date_col] > (latest_month - 3)]
-        prior3 = g[(g[date_col] <= (latest_month - 3)) & (g[date_col] > (latest_month - 6))]
+    # ---- 每SKU基础量 ----
+    f_size = g.size()
+    total_rev = g[rev_col].sum()
+    total_qty = g[qty_col].sum()
+    peak_rev = g[rev_col].max()
 
-        recent3_rev_avg = recent3[rev_col].mean() if len(recent3) > 0 else 0
-        prior3_rev_avg = prior3[rev_col].mean() if len(prior3) > 0 else 0
+    # 窗口：近3月/前3月（latest_month 取自过滤前全表，与原版一致）
+    mask_r3 = filt[date_col] > (latest_month - 3)
+    mask_p3 = (filt[date_col] <= (latest_month - 3)) & (filt[date_col] > (latest_month - 6))
+    recent3_rev_avg = filt.loc[mask_r3, rev_col].groupby(
+        filt.loc[mask_r3, prod_col], observed=True).mean().reindex(f_size.index).fillna(0.0)
+    prior3_rev_avg = filt.loc[mask_p3, rev_col].groupby(
+        filt.loc[mask_p3, prod_col], observed=True).mean().reindex(f_size.index).fillna(0.0)
+    last3_rev = filt.loc[mask_r3, rev_col].groupby(
+        filt.loc[mask_r3, prod_col], observed=True).sum().reindex(f_size.index).fillna(0.0)
+    prior3_rev = filt.loc[mask_p3, rev_col].groupby(
+        filt.loc[mask_p3, prod_col], observed=True).sum().reindex(f_size.index).fillna(0.0)
 
-        peak_rev = g[rev_col].max()
-        last3_rev = recent3[rev_col].sum()
-        prior3_rev = prior3[rev_col].sum()
+    # ---- 末6条连续/半数下滑判断（原 g.tail(6) + 逐对比较）----
+    gcount = g.cumcount()
+    gsize = g[rev_col].transform("size")
+    rev_rev = gsize - 1 - gcount  # 0 = 最新（过滤后按时间排序）
+    prev_rev = g[rev_col].shift(1)  # 时间上更早一行
+    t_dec = (prev_rev > filt[rev_col]).fillna(False)  # 与更早行相比收入下降
+    n_trans_row = np.minimum(5, gsize - 1)  # 窗口内相邻对数（每行）
+    is_trans = rev_rev < n_trans_row
+    t_sum = t_dec.where(is_trans, False).groupby(filt[prod_col], observed=True).sum()
+    t_sum = t_sum.reindex(f_size.index).fillna(0)
+    n_trans = np.minimum(5, f_size - 1)  # 每SKU窗口内相邻对数
+    consecutive_decline = (n_trans >= 2) & (t_sum == n_trans)
+    half_decline = (n_trans >= 2) & (t_sum >= 3)
 
-        # 连续下滑判断
-        rev_vals = g.tail(6)[rev_col].values
-        consecutive_decline = all(rev_vals[i] > rev_vals[i+1] for i in range(len(rev_vals)-1)) if len(rev_vals) >= 3 else False
-        half_decline = sum(1 for i in range(len(rev_vals)-1) if rev_vals[i] > rev_vals[i+1]) >= 3 if len(rev_vals) >= 3 else False
+    # ---- 优先级级联判定（与原有序 if/return 一致）----
+    in_months = f_size
+    last3 = last3_rev
+    prior3 = prior3_rev
+    idx = f_size.index
+    stage = np.full(len(idx), "导入试销", dtype=object)
+    i_intro = (in_months <= _sku_intro_max_months) & (total_qty < _sku_intro_min_qty)
+    i_exit = half_decline & (last3 < peak_rev * _sku_exit_ratio) & (total_rev > 0)
+    i_hidden = half_decline & (last3 > 0) & (prior3 > 0) & (last3 < prior3 * _sku_decline_ratio)
+    _pa = prior3_rev_avg.to_numpy(dtype="float64")
+    _ra = recent3_rev_avg.to_numpy(dtype="float64")
+    _gr = np.zeros_like(_pa)
+    np.divide(_ra - _pa, _pa, out=_gr, where=_pa > 0)
+    i_growth = (prior3_rev_avg > 0) & (_gr > growth_threshold)
+    i_mature = in_months >= min_months
 
-        # 规则判定
-        if in_months <= _sku_intro_max_months and total_qty < _sku_intro_min_qty:
-            return "导入试销"
+    stage[(~i_intro) & i_exit.to_numpy()] = "衰退出清"
+    stage[(~i_intro) & (~i_exit.to_numpy()) & i_hidden.to_numpy()] = "隐性衰退"
+    stage[(~i_intro) & (~i_exit.to_numpy()) & (~i_hidden.to_numpy()) & i_growth.to_numpy()] = "成长爬坡"
+    stage[(~i_intro) & (~i_exit.to_numpy()) & (~i_hidden.to_numpy()) & (~i_growth.to_numpy()) & i_mature.to_numpy()] = "平稳成熟"
+    # 其余（含 in_months < 2 的过滤后单行SKU）保持"导入试销"
 
-        if half_decline and last3_rev < peak_rev * _sku_exit_ratio and total_rev > 0:
-            return "衰退出清"
-
-        if half_decline and last3_rev > 0 and prior3_rev > 0 and last3_rev < prior3_rev * _sku_decline_ratio:
-            return "隐性衰退"
-
-        if prior3_rev_avg > 0 and (recent3_rev_avg - prior3_rev_avg) / prior3_rev_avg > growth_threshold:
-            return "成长爬坡"
-
-        if in_months >= min_months:
-            return "平稳成熟"
-
-        return "导入试销"
-
-    stages = prod_monthly.groupby(prod_col, group_keys=False).apply(
-        _stage_for_sku, include_groups=False
-    ).reset_index(name="SKU生命周期阶段")
+    # 原版输出覆盖 prod_monthly 全部产品（过滤后无行的产品 len(g)<2 → 导入试销）
+    all_prods = prod_monthly[prod_col].drop_duplicates().sort_values(kind="stable").reset_index(drop=True)
+    stage_map = dict(zip(idx, stage))
+    stages = pd.DataFrame({prod_col: all_prods,
+                           "SKU生命周期阶段": all_prods.map(stage_map).fillna("导入试销").to_numpy()})
 
     return stages
     def _stage_for_sku(group):
@@ -147,6 +172,10 @@ def calc_customer_lifecycle_stage(
 
     返回:
         DataFrame: 每客户的生命周期阶段
+
+    批次②.5 车道D（等价向量化）：原 _stage_for_cust 逐客户 groupby.apply + 有序状态机，
+    现改为一次性分组聚合计算全部谓词后按原优先级级联判定（流失→休眠→导入→爬坡→衰退→成熟）。
+    输出逐值与原版一致（浮点 1e-6 容差内）。
     """
     if latest_month is None:
         latest_month = customer_monthly[date_col].max()
@@ -158,57 +187,82 @@ def calc_customer_lifecycle_stage(
     # 爬坡期配置
     _ramp_threshold = float((thr or {}).get("爬坡期环比阈值", 0.05))
     _ramp_window = int((thr or {}).get("爬坡期_环比增长前N月均值", 3))
+    _decline_ratio = 1 - float((thr or {}).get("衰退期跌幅阈值", 0.15))
 
-    def _stage_for_cust(group):
-        g = group.sort_values(date_col, kind='stable')
-        total_months = len(g)
-        recent12 = g[g[date_col] > (latest_month - 12)]
-        last_month = g[date_col].max()
-        months_since_last = (latest_month - last_month).n if pd.notna(last_month) else 999
-        avg_rev = recent12[rev_col].mean()
+    cd = customer_monthly.sort_values([cust_col, date_col], kind="stable")
+    # observed=False：客户编号为 categorical 时保留全部分类（含空分类，空分类 → 流失期，
+    # 与原版 `groupby(cust_col).apply(_stage_for_cust)` 的 observed=False 行为一致）
+    g = cd.groupby(cust_col, observed=False)
 
-        # 连续3月是否低于均线15%
-        last3 = g.tail(3)
-        if len(last3) == 3 and avg_rev > 0:
-            _decline_ratio = 1 - float((thr or {}).get("衰退期跌幅阈值", 0.15))
-            all_below = all(r < avg_rev * _decline_ratio for r in last3[rev_col].values)
-        else:
-            all_below = False
+    # ---- 每客户基础量：距上次采购月数、客户月龄、近12月均收入、末3月是否全低于均线×衰减比 ----
+    last_month = g[date_col].max()
+    first_purchase = g[date_col].min()
+    cust_size = g[rev_col].size()
+    months_since_last = (latest_month.ordinal - last_month.astype("int64")).where(
+        last_month.notna(), 999)
+    age_months = latest_month.ordinal - first_purchase.astype("int64")
 
-        if months_since_last >= 18:
-            return "流失期"
-        if months_since_last >= 6:
-            return "休眠期"
+    mask12 = cd[date_col] > (latest_month - 12)
+    avg_rev = cd.loc[mask12, rev_col].groupby(
+        cd.loc[mask12, cust_col], observed=False).mean()
+    avg_rev = avg_rev.reindex(last_month.index)
 
-        first_purchase = g[date_col].min()
-        if (latest_month - first_purchase).n <= 12:
-            return "导入期"
+    # 末3月（组内时间排序后 rev_rev 0=最新）全部低于均线×衰减比 → 衰退期候选
+    gcount = g.cumcount()
+    gsize = g[rev_col].transform("size")
+    rev_rev = gsize - 1 - gcount
+    is_last3 = rev_rev <= 2
+    last3 = cd[is_last3]
+    if len(last3) > 0:
+        row_avg = avg_rev.reindex(last3[cust_col]).to_numpy()
+        below = last3[rev_col].to_numpy() < (row_avg * _decline_ratio)
+        below_all = pd.Series(below, index=last3.index).groupby(
+            last3[cust_col], observed=True).all()
+        below_all = below_all.reindex(last_month.index).fillna(False)
+    else:
+        below_all = pd.Series(False, index=last_month.index)
+    all_below = below_all & (cust_size >= 3) & (avg_rev > 0)
 
-        # 爬坡期判断：近N月环比 ≥ 阈值（N和阈值均可配置）
-        recent_n = g[g[date_col] > (latest_month - _ramp_window)]
-        prior_n = g[(g[date_col] <= (latest_month - _ramp_window)) & (g[date_col] > (latest_month - 2 * _ramp_window))]
-        recent_n_avg = recent_n[rev_col].mean() if len(recent_n) > 0 else 0
-        prior_n_avg = prior_n[rev_col].mean() if len(prior_n) > 0 else 0
+    # ---- 爬坡期：近N月均值环比（prior > 0 时才除，与原版 if prior_n_avg>0 一致）----
+    mask_recent_n = cd[date_col] > (latest_month - _ramp_window)
+    mask_prior_n = (cd[date_col] <= (latest_month - _ramp_window)) & (
+        cd[date_col] > (latest_month - 2 * _ramp_window))
+    recent_n_avg = cd.loc[mask_recent_n, rev_col].groupby(
+        cd.loc[mask_recent_n, cust_col], observed=False).mean().reindex(last_month.index).fillna(0.0)
+    prior_n_avg = cd.loc[mask_prior_n, rev_col].groupby(
+        cd.loc[mask_prior_n, cust_col], observed=False).mean().reindex(last_month.index).fillna(0.0)
+    _pa = prior_n_avg.to_numpy(dtype="float64")
+    _rn = recent_n_avg.to_numpy(dtype="float64")
+    _g = np.zeros_like(_pa)
+    np.divide(_rn - _pa, _pa, out=_g, where=_pa > 0)
+    is_ramp = (prior_n_avg > 0) & (_g > _ramp_threshold)
 
-        if prior_n_avg > 0 and (recent_n_avg - prior_n_avg) / prior_n_avg > _ramp_threshold:
-            return "爬坡期"
+    # ---- 优先级级联判定（与原有序 if/return 一致）----
+    msl = months_since_last.to_numpy()
+    age = age_months.to_numpy()
+    stage = np.full(len(last_month.index), "成熟期", dtype=object)
+    i_lost = msl >= 18
+    i_sleep = (~i_lost) & (msl >= 6)
+    i_intro = (~i_lost) & (msl < 6) & (age <= 12)
+    i_ramp = (~i_lost) & (~i_sleep) & (~i_intro) & is_ramp.to_numpy()
+    i_decline = (~i_lost) & (~i_sleep) & (~i_intro) & (~is_ramp.to_numpy()) & all_below.to_numpy()
+    stage[i_lost] = "流失期"
+    stage[i_sleep] = "休眠期"
+    stage[i_intro] = "导入期"
+    stage[i_ramp] = "爬坡期"
+    stage[i_decline] = "衰退期"
 
-        if all_below:
-            return "衰退期"
-
-        return "成熟期"
-
-    stages = customer_monthly.groupby(cust_col, group_keys=False).apply(
-        _stage_for_cust, include_groups=False
-    ).reset_index(name="客户生命周期")
+    # 客户编号保持 categorical（含全部分类），与原版 groupby.apply().reset_index() 一致
+    stages = pd.DataFrame({cust_col: last_month.index.values, "客户生命周期": stage})
 
     # 附加上置信度指标：数据覆盖月数 / 期望月数
     _expected = int((thr or {}).get("lifecycle_expected_months", 18))
     cust_months = customer_monthly.groupby(cust_col)[date_col].nunique().reset_index()
     cust_months.columns = [cust_col, "生命周期_覆盖月数"]
-    cust_months["生命周期_置信度"] = cust_months["生命周期_覆盖月数"].apply(
-        lambda n: "低" if n < 6 else ("中" if n < _expected else "高")
-    )
+    cust_months["生命周期_置信度"] = np.select(
+        [cust_months["生命周期_覆盖月数"] < 6,
+         cust_months["生命周期_覆盖月数"] < _expected],
+        ["低", "中"], default="高")
     stages = stages.merge(cust_months, on=cust_col, how="left")
 
     return stages

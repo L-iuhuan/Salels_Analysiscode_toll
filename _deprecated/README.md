@@ -15,4 +15,12 @@
 
 | 原路径 | 移入日期 | 移入原因 | 决策人 |
 |---|---|---|---|
-| （暂无） | | | |
+| processing/core/pipeline.py | 2026-08-19 | 半成本品 DI 编排器，生产不使用（run_all.py 的 --pipeline 分支已移除，批次②.5） | 批次②.5 council裁决 |
+| processing/core/config.py | 2026-08-19 | 独立配置系统，未与 config/settings.py 同步，仅 core/pipeline.py 使用 | 批次②.5 council裁决 |
+| processing/core/interfaces.py | 2026-08-19 | 5 个无实现 Protocol，纯死代码，无活引用 | 批次②.5 council裁决 |
+| processing/core/__init__.py | 2026-08-19 | core 包随 pipeline/config/interfaces 整体废弃 | 批次②.5 council裁决 |
+| processing/data_pipeline/loader.py | 2026-08-19 | DI 包装器，仅 core/pipeline.py 使用 | 批次②.5 council裁决 |
+| processing/data_pipeline/cleaner.py | 2026-08-19 | DI 包装器，仅 core/pipeline.py 使用 | 批次②.5 council裁决 |
+| processing/data_pipeline/aggregator.py | 2026-08-19 | DI 包装器，仅 core/pipeline.py 使用 | 批次②.5 council裁决 |
+| processing/analysis/b2b_adapters.py | 2026-08-19 | B2B 适配器无人使用，生产 gold.py 直接调 b2b_v2 | 批次②.5 council裁决 |
+| test/test_pipeline.py | 2026-08-19 | 测试 mock 而非真实契约；批次④b 补真实编排测试 | 批次②.5 council裁决 |

@@ -42,33 +42,35 @@ def calc_purchase_interval(
 
     返回:
         DataFrame: 每客户的采购间隔指标
+
+    批次②.5 车道D（等价向量化）：原 _avg_interval 按客户 apply 做逐月间隔均值，
+    现改为按 [客户, 月份] 排序后组内 shift 求相邻月间隔（天）并分组均值。
+    注意：必须与原始 `df.groupby(cust_col).apply(_avg_interval)` 一致使用
+    observed=False —— 客户编号为 categorical 时需保留全部分类（含无数据的空分类 → NaN）。
     """
     df = customer_monthly.copy()
     df = df.sort_values([cust_col, date_col], kind='stable')
 
     # 剔除前N个月
-    first_month = df.groupby(cust_col)[date_col].min().reset_index()
+    first_month = df.groupby(cust_col, observed=False)[date_col].min().reset_index()
     first_month.columns = [cust_col, "首购月"]
     df = df.merge(first_month, on=cust_col, how="left")
     df = df[df[date_col] >= df["首购月"] + exclude_first_months].copy()
 
-    def _avg_interval(group):
-        months = group[date_col].sort_values(kind='stable').unique()
-        if len(months) < 2:
-            return float("nan")
-        intervals = []
-        for i in range(1, len(months)):
-            t_i = months[i].to_timestamp() if hasattr(months[i], 'to_timestamp') else pd.Period(months[i]).to_timestamp()
-            t_prev = months[i-1].to_timestamp() if hasattr(months[i-1], 'to_timestamp') else pd.Period(months[i-1]).to_timestamp()
-            delta = t_i - t_prev
-            intervals.append(delta.days)
-        return np.mean(intervals) if intervals else float("nan")
+    # 每客户去重月份（与原 group[date_col].unique() 一致）
+    df = df.drop_duplicates(subset=[cust_col, date_col]).sort_values([cust_col, date_col], kind="stable")
+    df["_ts"] = df[date_col].dt.to_timestamp()
+    prev_ts = df.groupby(cust_col, observed=False)["_ts"].shift(1)
+    df["_间隔天"] = (df["_ts"] - prev_ts).dt.days  # 组内首行为 NaN
 
-    interval_data = df.groupby(cust_col, group_keys=False).apply(
-        _avg_interval, include_groups=False
-    ).reset_index(name="常规平均采购间隔")
+    # observed=False：保留全部客户分类（空分类 → 间隔 NaN，与原版 apply 行为一致）
+    has2 = df.groupby(cust_col, observed=False)[date_col].size()
+    means = df.dropna(subset=["_间隔天"]).groupby(cust_col, observed=False)["_间隔天"].mean()
 
-    return interval_data
+    result = pd.DataFrame({cust_col: has2.index.values})
+    result["常规平均采购间隔"] = result[cust_col].map(means).astype("float64")
+    result.loc[result[cust_col].map(has2) < 2, "常规平均采购间隔"] = float("nan")
+    return result
 
     def _avg_interval(group):
         months = group[date_col].sort_values(kind='stable').unique()
@@ -138,23 +140,27 @@ def calc_product_concentration(
 
     返回:
         DataFrame: 每客户的集中度指标
+
+    批次②.5 车道D（等价向量化）：原 _top_n_ratio 按客户 groupby.apply + nlargest，
+    现改为按 [客户, rev] 稳定降序排序后 head(top_n) 求和（nlargest keep='first' 语义一致）。
     """
-    customer_totals = cxp.groupby(cust_col)["rev_sum"].sum().reset_index()
+    customer_totals = cxp.groupby(cust_col, observed=True)["rev_sum"].sum().reset_index()
     customer_totals.columns = [cust_col, "总采购额"]
 
-    def _top_n_ratio(group):
-        top_n_rev = group.nlargest(top_n, "rev_sum")["rev_sum"].sum()
-        total = group["rev_sum"].sum()
-        return top_n_rev / total if total > 0 else 0
+    srt = cxp.sort_values([cust_col, "rev_sum"], ascending=[True, False], kind="stable")
+    top = srt.groupby(cust_col, observed=True).head(top_n)
+    top_sum = top.groupby(cust_col, observed=True)["rev_sum"].sum()
+    top_sum = top_sum.reindex(customer_totals[cust_col]).fillna(0.0)
 
-    top_n_ratios = cxp.groupby(cust_col, group_keys=False).apply(
-        _top_n_ratio, include_groups=False
-    ).reset_index(name=f"Top{top_n}集中度")
+    tot = customer_totals["总采购额"].to_numpy(dtype="float64")
+    top = top_sum.to_numpy(dtype="float64")
+    # 与原 `top_n_rev / total if total > 0 else 0` 一致：总采购额 ≤ 0（含负数）时不除
+    ratio = np.zeros_like(tot)
+    np.divide(top, tot, out=ratio, where=tot > 0)
+    customer_totals[f"Top{top_n}集中度"] = ratio.astype("float64")
+    customer_totals["强依赖标记"] = customer_totals[f"Top{top_n}集中度"] > threshold
 
-    result = customer_totals.merge(top_n_ratios, on=cust_col, how="left")
-    result["强依赖标记"] = result[f"Top{top_n}集中度"] > threshold
-
-    return result
+    return customer_totals
 
     def _top_n_ratio(group):
         top_n_rev = group.nlargest(top_n, "rev_sum")["rev_sum"].sum()
@@ -209,12 +215,17 @@ def calc_category_acceptance(
     all_cust_avg = cxp.groupby(category_col)["rev_sum"].sum() / cxp["rev_sum"].sum()
     high_penetration_categories = all_cust_avg[all_cust_avg > 0.10].index.tolist()
 
+    # 批次②.5 车道D（等价向量化）：原实现按客户 × 高渗透品类双重循环，
+    # 且每客户全表扫描 category_share 构建品类集合（O(客户×行数)）。
+    # 现改为一次性预构建 (客户,品类) 已购对集合（set），再按原循环顺序做成员判断，
+    # 语义与原版完全一致（含 categorical 客户编号），行序/列结构逐值一致。
     opportunity_rows = []
-    for cid in cxp[cust_col].unique():
-        c_categories = set(category_share[category_share[cust_col] == cid][category_col])
-        for cat in high_penetration_categories:
-            if cat not in c_categories:
-                opportunity_rows.append({cust_col: cid, "未打开品类机会": cat})
+    if high_penetration_categories:
+        pairs_set = set(zip(category_share[cust_col], category_share[category_col]))
+        for cid in cxp[cust_col].unique():
+            for cat in high_penetration_categories:
+                if (cid, cat) not in pairs_set:
+                    opportunity_rows.append({cust_col: cid, "未打开品类机会": cat})
 
     result = dominant.copy()
     if opportunity_rows:

@@ -862,7 +862,7 @@ for _, row in kaaa_gold.iterrows():
     if losses or gains:
         product_change_detail.append({
             "cid":str(row.get("客户编号","")),"name":name,"tier":tier,"owner":str(row.get("业务负责人","")),
-            "losses":sorted(losses,key=lambda x:-x["rev"]),"gains":sorted(gains,key=lambda x:-x["rev"]),
+            "losses":sorted(losses,key=lambda x:(-x["rev"], x["name"])),"gains":sorted(gains,key=lambda x:(-x["rev"], x["name"])),
             "lost_count":len(lost_items),"gained_count":len(gained_items),
             "total_lost_rev":round(sum(l["rev"] for l in losses),1),"total_gained_rev":round(sum(g["rev"] for g in gains),1),
         })
@@ -2002,7 +2002,7 @@ for _item in _major_items:
 
 # 构建产品列表
 f_product_list = []
-for _item in sorted(_major_items, key=lambda x: -(_prod_h1.get(x, {}).get(f"{_yy_latest}h1", {}).get("rev", 0))):
+for _item in sorted(_major_items, key=lambda x: (-(_prod_h1.get(x, {}).get(f"{_yy_latest}h1", {}).get("rev", 0)), str(x))):
     _d = _prod_h1.get(_item, {})
     _fd = _first_dates.get(_item, pd.Timestamp(f"{_y0}-01-01"))
     _days_since = (pd.Timestamp(latest) - _fd).days

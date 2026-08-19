@@ -39,46 +39,106 @@ def build_customer_product_profiles(
     rev_col = "rev_sum" if "rev_sum" in cxp.columns else "金额"
     profit_col = "profit_clip_sum" if "profit_clip_sum" in cxp.columns else "_利润_裁剪"
 
+    # 批次②.5车道B：原"逐客户 groupby 产品聚合"改为向量化。
+    # 注意：原实现对 categorical 产品列 groupby 默认 observed=False，展开"客户×全部产品类别"
+    # 的叉积（未采购产品 total_rev=0，product_count=全部类别数，top5 含 0 收入占位品）。
+    # 用 reindex 复现同样的叉积（含 0 占位），逐值等价（含 float32 求和顺序）。
+    actual = cxp.groupby([cust_col, prod_col], observed=True)[[rev_col, profit_col]].sum()
+    if isinstance(cxp[cust_col].dtype, pd.CategoricalDtype):
+        all_cids = list(cxp[cust_col].cat.categories)
+    else:
+        all_cids = list(actual.index.get_level_values(0).unique())
+    if isinstance(cxp[prod_col].dtype, pd.CategoricalDtype):
+        all_prods = sorted(cxp[prod_col].cat.categories)  # 与原 groupby 默认 sort=True 一致
+    else:
+        all_prods = sorted(actual.index.get_level_values(1).unique())
+    full_index = pd.MultiIndex.from_product([all_cids, all_prods], names=[cust_col, prod_col])
+    prod_agg = actual.reindex(full_index).fillna(0)
+    prod_agg = prod_agg.rename(columns={rev_col: "total_rev", profit_col: "total_profit"})
+    prod_agg["margin_pct"] = np.where(
+        prod_agg["total_rev"] > 0,
+        prod_agg["total_profit"] / prod_agg["total_rev"] * 100,
+        0
+    )
+
+    # 客户级合计：与原逐客户 prod_agg["total_rev"].sum()（Series.sum 按产品名排序全量求和）逐位一致
+    cust_rev = {c: g["total_rev"].sum() for c, g in prod_agg.groupby(cust_col, sort=False, observed=True)}
+    cust_profit = {c: g["total_profit"].sum() for c, g in prod_agg.groupby(cust_col, sort=False, observed=True)}
+    cust_agg = pd.DataFrame({"total_rev": cust_rev, "total_profit": cust_profit})
+    cust_agg["overall_margin"] = np.where(
+        cust_agg["total_rev"] > 0,
+        cust_agg["total_profit"] / cust_agg["total_rev"] * 100,
+        0
+    ).round(1)
+    cust_agg["product_count"] = len(all_prods)
+
+    # Top5 by revenue（每客户 rev 降序稳定；并列保持产品名顺序——等价于对全量叉积 nlargest(5)）
+    top5_df = (prod_agg.reset_index()
+               .sort_values([cust_col, "total_rev"], ascending=[True, False], kind="stable")
+               .groupby(cust_col, observed=True).head(5))
+    # Margin stars（利润>0，按利润降序）
+    star_df = (prod_agg[prod_agg["total_profit"] > 0].reset_index()
+               .sort_values([cust_col, "total_profit"], ascending=[True, False], kind="stable")
+               .groupby(cust_col, observed=True).head(5))
+    # Margin drains（利润<0，按利润升序=最负优先）
+    drain_df = (prod_agg[prod_agg["total_profit"] < 0].reset_index()
+                .sort_values([cust_col, "total_profit"], ascending=[True, True], kind="stable")
+                .groupby(cust_col, observed=True).head(5))
+
+    # 主导产品线：复现原版 grp.groupby(cat_col) observed=False 的完整 line_rev（未采购类别=0.0）。
+    # idxmax 在客户收入<=0 时返回排序后第一个 0.0 类别；空客户组同样得到第一个类别。
+    cat_col = None
+    for c in cxp.columns:
+        if c in ("产品一级分类", "型号_产品品类"):
+            cat_col = c
+            break
+    dominant = pd.Series(dtype=object)
+    all_nan_cats = set()  # 客户有行但 cat 全 NaN → 原版 line_rev 为空 → 主导为空串
+    if cat_col:
+        line_rev = cxp.groupby([cust_col, cat_col], observed=True)[rev_col].sum()
+        if isinstance(cxp[cat_col].dtype, pd.CategoricalDtype):
+            all_cats = sorted(cxp[cat_col].cat.categories)
+        else:
+            all_cats = sorted(line_rev.index.get_level_values(1).unique())
+        full_cat = pd.MultiIndex.from_product([all_cids, all_cats], names=[cust_col, cat_col])
+        line_rev_full = line_rev.reindex(full_cat).fillna(0)
+        dom_label = line_rev_full.groupby(cust_col, observed=True).idxmax()
+        dominant = pd.Series([t[1] for t in dom_label], index=dom_label.index, dtype=object)
+        in_line = set(line_rev.index.get_level_values(0).unique())
+        present_cids = set(cxp[cust_col].unique())
+        all_nan_cats = present_cids - in_line
+
     profiles = {}
+    top5_by_cid = {c: g for c, g in top5_df.groupby(cust_col, sort=False, observed=True)}
+    star_by_cid = {c: g for c, g in star_df.groupby(cust_col, sort=False, observed=True)}
+    drain_by_cid = {c: g for c, g in drain_df.groupby(cust_col, sort=False, observed=True)}
+    empty_slice = top5_df.iloc[0:0]
+    for cid in all_cids:
+        if cid not in cust_agg.index:
+            profiles[cid] = {
+                "top5_by_revenue": [], "margin_stars": [], "margin_drains": [],
+                "top1_product": ("无", 0, 0), "overall_margin": 0,
+                "total_revenue": 0, "total_profit": 0, "product_count": 0,
+                "dominant_line": "",
+            }
+            continue
+        # 用 .at 直接取原始标量（cust_agg.loc 行会因混合列 dtype 被提升为 float64）
+        total_rev = cust_agg.at[cid, "total_rev"]
+        total_profit = cust_agg.at[cid, "total_profit"]
 
-    for cid, grp in cxp.groupby(cust_col):
-        # Aggregate to product level
-        prod_agg = grp.groupby(prod_col).agg(
-            total_rev=(rev_col, "sum"),
-            total_profit=(profit_col, "sum"),
-        ).reset_index()
-        prod_agg["margin_pct"] = np.where(
-            prod_agg["total_rev"] > 0,
-            prod_agg["total_profit"] / prod_agg["total_rev"] * 100,
-            0
-        )
-
-        total_rev = prod_agg["total_rev"].sum()
-        total_profit = prod_agg["total_profit"].sum()
-        overall_margin = (total_profit / total_rev * 100) if total_rev > 0 else 0
-
-        # Top 5 by revenue
-        top5 = prod_agg.nlargest(5, "total_rev")
         top5_list = [
             (r[prod_col], r["total_rev"], r["margin_pct"])
-            for _, r in top5.iterrows()
+            for _, r in top5_by_cid.get(cid, empty_slice).iterrows()
         ]
-
-        # Margin stars (positive profit, high margin)
-        profit_pos = prod_agg[prod_agg["total_profit"] > 0].nlargest(5, "total_profit")
         margin_stars = [
             (r[prod_col], r["total_profit"], r["margin_pct"])
-            for _, r in profit_pos.iterrows()
+            for _, r in star_by_cid.get(cid, empty_slice).iterrows()
         ]
-
-        # Margin drains (negative profit)
-        profit_neg = prod_agg[prod_agg["total_profit"] < 0].nsmallest(5, "total_profit")
         margin_drains = [
             (r[prod_col], r["total_profit"], r["margin_pct"])
-            for _, r in profit_neg.iterrows()
+            for _, r in drain_by_cid.get(cid, empty_slice).iterrows()
         ]
 
-        # Top 1 product
         if len(top5_list) > 0:
             top1 = top5_list[0]
             top1_share = top1[1] / total_rev if total_rev > 0 else 0
@@ -86,27 +146,21 @@ def build_customer_product_profiles(
         else:
             top1_info = ("无", 0, 0)
 
-        # Category from portrait
-        dominant_line = ""
-        cat_col = None
-        for c in grp.columns:
-            if c in ("产品一级分类", "型号_产品品类"):
-                cat_col = c
-                break
-        if cat_col:
-            line_rev = grp.groupby(cat_col)[rev_col].sum()
-            if len(line_rev) > 0:
-                dominant_line = line_rev.idxmax()
+        # 客户有行但 cat 全 NaN → 原版 line_rev 空 → 主导为空串；其余取完整 line_rev 的 idxmax
+        if cid in all_nan_cats:
+            dominant_line = ""
+        else:
+            dominant_line = str(dominant.get(cid, "")) if len(dominant) else ""
 
         profiles[cid] = {
             "top5_by_revenue": top5_list,
             "margin_stars": margin_stars,
             "margin_drains": margin_drains,
             "top1_product": top1_info,
-            "overall_margin": round(overall_margin, 1),
+            "overall_margin": cust_agg.at[cid, "overall_margin"],
             "total_revenue": total_rev,
             "total_profit": total_profit,
-            "product_count": len(prod_agg),
+            "product_count": int(cust_agg.at[cid, "product_count"]),
             "dominant_line": dominant_line,
         }
 
@@ -123,46 +177,85 @@ def build_monthly_product_trend(
             "declining_products": [(产品, 近3月跌幅%, 损失额), ...],
             "decline_months_detail": int,  # 连续下降月数
         }
+
+    批次②.5车道B：原"逐客户×逐产品 isin+sum"双重循环（每客户每月每产品多次
+    boolean mask + Period isin，实测 536s）改为一次 groupby 向量化，输出逐值等价。
     """
     cxp = customer_x_product.copy()
     if "_月" not in cxp.columns:
         return {}
 
-    cxp = cxp.sort_values(["_月"], kind='stable')
     cust_col = "客户编号"
     prod_col = "产品品种"
     rev_col = "rev_sum" if "rev_sum" in cxp.columns else "金额"
     profit_col = "profit_clip_sum" if "profit_clip_sum" in cxp.columns else "_利润_裁剪"
 
+    # 每客户月份密集排名（0=最早）与客户总月数；仅保留 ≥4 个月的客户
+    cxp = cxp.sort_values([cust_col, "_月"], kind="stable")
+    cxp = cxp.assign(
+        _rank=cxp.groupby(cust_col, sort=False)["_月"].rank(method="dense") - 1,
+        _M=cxp.groupby(cust_col, sort=False)["_月"].transform("nunique"),
+    )
+    cxp = cxp[cxp["_M"] >= 4]
+    if len(cxp) == 0:
+        return {}
+
+    # recent_3 = 月末3个月（rank >= M-3）；prior_3 = 其前3个月（rank in [M-6, M-3)）
+    is_recent = cxp["_rank"] >= cxp["_M"] - 3
+    is_prior = (cxp["_rank"] >= cxp["_M"] - 6) & (cxp["_rank"] < cxp["_M"] - 3)
+
+    recent_sum = cxp.loc[is_recent].groupby([cust_col, prod_col], observed=True)[rev_col].sum()
+    prior_sum = cxp.loc[is_prior].groupby([cust_col, prod_col], observed=True)[rev_col].sum()
+    # 与原逐产品 Series.sum 逐位一致（groupby 内部约简在 float32 下差 1ULP，
+    # 会导致 round(跌幅,1)/round(损失,0) 在 .5 边界翻差）
+    recent_sum = pd.Series({k: g[rev_col].sum()
+                            for k, g in cxp.loc[is_recent].groupby([cust_col, prod_col], sort=False, observed=True)})
+    prior_sum = pd.Series({k: g[rev_col].sum()
+                           for k, g in cxp.loc[is_prior].groupby([cust_col, prod_col], sort=False, observed=True)})
+    recent_sum.index = pd.MultiIndex.from_tuples(recent_sum.index, names=[cust_col, prod_col])
+    prior_sum.index = pd.MultiIndex.from_tuples(prior_sum.index, names=[cust_col, prod_col])
+    pair = pd.concat([recent_sum.rename("recent"), prior_sum.rename("prior")], axis=1).fillna(0)
+    if len(pair) == 0:
+        return {}
+
+    pair = pair[(pair["prior"] > 0) & (pair["recent"] < pair["prior"])]
+    if len(pair) == 0:
+        return {}
+    pair["decline_pct"] = (pair["recent"] - pair["prior"]) / pair["prior"] * 100
+    pair["loss"] = pair["prior"] - pair["recent"]
+    pair = pair[pair["decline_pct"] < -20]
+    if len(pair) == 0:
+        return {}
+    pair["decline_pct"] = pair["decline_pct"].round(1)
+    pair["loss"] = pair["loss"].round(0)
+    # 每客户按跌幅升序（最负优先）；同跌幅保持产品名顺序（原版 grp.groupby(prod_col) 默认排序）
+    pair = pair.sort_index()  # 先把 (客户,产品) 索引排成产品名顺序，保证并列跌幅的稳定排序
+    pair = pair.sort_values([cust_col, "decline_pct"], kind="stable")
+
+    # 每客户 recent_3/prior_3 月份（字符串；observed=True 只保留有数据的客户）
+    m_df = cxp[["客户编号", "_月"]].drop_duplicates().sort_values(["客户编号", "_月"], kind="stable")
+    m_rank = m_df.groupby("客户编号", sort=False, observed=True).cumcount()
+    m_M = m_df.groupby("客户编号", sort=False, observed=True)["_月"].transform("size")
+    recent_m = (m_df[m_rank >= m_M - 3]
+                .groupby("客户编号", sort=False, observed=True)["_月"].agg(list)
+                .map(lambda x: [str(m) for m in x]))
+    prior_m = (m_df[(m_rank >= m_M - 6) & (m_rank < m_M - 3)]
+               .groupby("客户编号", sort=False, observed=True)["_月"].agg(list)
+               .map(lambda x: [str(m) for m in x]))
+
+    # 每客户下降产品列表（已按跌幅升序）
+    decl_by_cust = {}
+    for cid, grp in pair.groupby(cust_col, sort=False):
+        decl_by_cust[cid] = list(zip(grp.index.get_level_values(prod_col),
+                                     grp["decline_pct"], grp["loss"]))[:5]
+
     trends = {}
-
-    for cid, grp in cxp.groupby(cust_col):
-        months = sorted(grp["_月"].unique())
-        if len(months) < 4:
-            continue
-
-        # Compare last 3 months vs previous 3 months per product
-        recent_3 = months[-3:]
-        prior_3 = months[-6:-3]
-
-        declining = []
-        for prod, pgrp in grp.groupby(prod_col):
-            recent_rev = pgrp[pgrp["_月"].isin(recent_3)][rev_col].sum()
-            prior_rev = pgrp[pgrp["_月"].isin(prior_3)][rev_col].sum()
-            if prior_rev > 0 and recent_rev < prior_rev:
-                decline_pct = (recent_rev - prior_rev) / prior_rev * 100
-                loss = prior_rev - recent_rev
-                if decline_pct < -20:  # Significant decline
-                    declining.append((prod, round(decline_pct, 1), round(loss, 0)))
-
-        declining.sort(key=lambda x: x[1])  # Sort by decline % (most negative first)
-
+    for cid in recent_m.index:
         trends[cid] = {
-            "declining_products": declining[:5],
-            "recent_3_months": [str(m) for m in recent_3],
-            "prior_3_months": [str(m) for m in prior_3],
+            "declining_products": decl_by_cust.get(cid, []),
+            "recent_3_months": recent_m[cid],
+            "prior_3_months": prior_m[cid],
         }
-
     return trends
 
 

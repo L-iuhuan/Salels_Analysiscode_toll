@@ -389,7 +389,6 @@ def main():
     parser.add_argument("--skip-product", action="store_true", help="跳过产品生命周期分析")
     parser.add_argument("--skip-customer", action="store_true", help="跳过客户分析")
     parser.add_argument("--force-silver", action="store_true", help="强制重算Silver层")
-    parser.add_argument("--pipeline", action="store_true", help="使用 Pipeline DI 容器执行（P2-B）")
 
     args = parser.parse_args()
 
@@ -403,30 +402,6 @@ def main():
         print("[错误] 未找到源数据文件。请将数据放入 data/ 目录或通过 --data 指定。")
         sys.exit(1)
     print(f"源数据: {source_path}")
-
-    # --- P2-B: Pipeline DI 容器模式 ---
-    if args.pipeline:
-        from core.pipeline import Pipeline
-        from core.config import AppConfig
-
-        config = AppConfig.from_defaults()
-        config.skip_silver_if_exists = not args.force_silver
-
-        pipeline = Pipeline(config=config)
-
-        if args.skip_product:
-            stages = [s for s in args.stage.split(",") if s != "product"]
-        elif args.skip_customer:
-            stages = [s for s in args.stage.split(",") if s != "customer"]
-        else:
-            stages = [s.strip() for s in args.stage.split(",")]
-
-        results = pipeline.run(stages=stages, source_path=source_path)
-        print(f"\n{'=' * 60}")
-        print(f"Pipeline 执行完成")
-        print(f"{'=' * 60}")
-        print(f"已执行阶段: {list(results.keys())}")
-        return
 
     # 确定执行阶段
     if args.skip_product:
