@@ -21,7 +21,10 @@ PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
-from shared.data_cleaning import read_excel_auto, rename_erp_columns, SILVER_DTYPE_CUSTOMER_MONTHLY, SILVER_DTYPE_PRODUCT_MONTHLY, SILVER_DTYPE_CUSTOMER_X_PRODUCT
+from shared.data_cleaning import (
+    read_excel_auto, rename_erp_columns, build_cust_info,
+    SILVER_DTYPE_CUSTOMER_MONTHLY, SILVER_DTYPE_PRODUCT_MONTHLY, SILVER_DTYPE_CUSTOMER_X_PRODUCT,
+)
 from customer_analysis.silver import build_silver_layer
 from config.settings import DATA_SHEET_NAME
 from customer_analysis.portrait import calc_customer_portrait
@@ -96,25 +99,11 @@ def run(
         else:
             print(f"  客户属性数据使用预加载DataFrame ({len(raw_data)} 行)")
 
-        # 从raw_data构建cust_info（渠道类型 + 客户类别 + 客户等级）
+        # 从raw_data构建cust_info（统一 build_cust_info，与新鲜路径一致，批次① T2/P0-1）
         if cust_info_data is None and raw_data is not None:
-            cust_records = {}
-            if "销售模式" in raw_data.columns:
-                channel_map = {"经销": "代理", "直销": "直供"}
-                cust_records["渠道类型"] = raw_data.groupby("客户编号")["销售模式"].first().map(channel_map).fillna("未知")
-            if "终端客户名称_客户类别" in raw_data.columns:
-                cust_records["客户类别"] = raw_data.groupby("客户编号")["终端客户名称_客户类别"].first()
-                grade_map = {"KA": "A", "AA": "A", "KM": "B", "MM": "C"}
-                cust_records["客户等级"] = cust_records["客户类别"].map(
-                    lambda x: next((v for k, v in grade_map.items() if pd.notna(x) and k in str(x)), "未知")
-                )
-            # 实际业务员 → 业务负责人
-            if raw_data is not None and "实际业务员" in raw_data.columns:
-                cust_records["业务负责人"] = raw_data.groupby("客户编号")["实际业务员"].first()
-
-            if cust_records:
-                cust_info_data = pd.DataFrame(cust_records).reset_index()
-                print(f"  从ERP列构建客户信息: {len(cust_info_data)} 条")
+            cust_info_data = build_cust_info(raw_data)
+            if cust_info_data is not None:
+                print(f"  从ERP列构建客户信息: {len(cust_info_data)} 条（渠道+类别+等级）")
     else:
         if source_path is None:
             xlsx_files = [f for f in os.listdir(DATA_DIR) if f.endswith(".xlsx") and not f.startswith("~$")]
@@ -144,25 +133,11 @@ def run(
             if "终端客户简称" in raw_temp.columns:
                 raw_data["客户编号"] = raw_temp["终端客户简称"]
 
-        # 从raw_data构建cust_info（渠道类型 + 客户类别 + 客户等级）
+        # 从raw_data构建cust_info（统一 build_cust_info，与新鲜路径一致，批次① T2/P0-1）
         if cust_info_data is None and raw_data is not None:
-            cust_records = {}
-            if "销售模式" in raw_data.columns:
-                channel_map = {"经销": "代理", "直销": "直供"}
-                cust_records["渠道类型"] = raw_data.groupby("客户编号")["销售模式"].first().map(channel_map).fillna("未知")
-            if "终端客户名称_客户类别" in raw_data.columns:
-                cust_records["客户类别"] = raw_data.groupby("客户编号")["终端客户名称_客户类别"].first()
-                grade_map = {"KA": "A", "AA": "A", "KM": "B", "MM": "C"}
-                cust_records["客户等级"] = cust_records["客户类别"].map(
-                    lambda x: next((v for k, v in grade_map.items() if pd.notna(x) and k in str(x)), "未知")
-                )
-            # 实际业务员 → 业务负责人
-            if raw_data is not None and "实际业务员" in raw_data.columns:
-                cust_records["业务负责人"] = raw_data.groupby("客户编号")["实际业务员"].first()
-
-            if cust_records:
-                cust_info_data = pd.DataFrame(cust_records).reset_index()
-                print(f"  从ERP列构建客户信息: {len(cust_info_data)} 条")
+            cust_info_data = build_cust_info(raw_data)
+            if cust_info_data is not None:
+                print(f"  从ERP列构建客户信息: {len(cust_info_data)} 条（渠道+类别+等级）")
 
     _t1 = time.time()
     print(f"  [时间] 客户数据准备+Silver加载: {_t1 - _t0:.1f}s")

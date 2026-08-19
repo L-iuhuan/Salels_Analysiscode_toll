@@ -50,7 +50,7 @@ if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
 from config.settings import (
-    DATA_DIR, OUTPUT_SILVER, OUTPUT_GOLD, OUTPUT_REPORT,
+    DATA_DIR, OUTPUT_DIR, OUTPUT_SILVER, OUTPUT_GOLD, OUTPUT_REPORT,
     RUN_STAGES, SKIP_SILVER_IF_EXISTS, COL_MAP, ERP_COL_MAP,
     DATA_SHEET_NAME,
 )
@@ -75,41 +75,69 @@ def _silver_checksum_path() -> str:
     return os.path.join(OUTPUT_SILVER, ".silver_checksum")
 
 
-def _compute_silver_config_hash() -> str:
-    """对影响Silver输出的核心配置计算哈希。
+# 影响 Silver 产出的核心文件（T3/BLOCKER-4：三级指纹——settings*.py + 关键代码 + 源Excel身份）
+# 刻意不哈希全部源码：开发期修改 dashboard/ 等不影响 silver 缓存的代码不应使缓存失效。
+_SILVER_HASH_FILES = [
+    "config/settings.py",
+    "config/settings_product.py",
+    "config/settings_customer.py",
+    "shared/data_cleaning.py",
+    "customer_analysis/run_pipeline.py",
+    "product_lifecycle/run.py",
+]
+_SILVER_EXCEL_HASH_HEAD = 8 * 1024 * 1024  # 源Excel内容前8MB的sha256
 
-    配置更改（列映射、清洗阈值、窗口定义等）会自动使缓存失效。
+
+def _compute_silver_config_hash(source_path: str = None) -> str:
+    """对影响Silver输出的核心配置+代码+源Excel身份计算哈希。
+
+    批次①（T3/BLOCKER-4）：在 settings.py + data_cleaning.py 基础上，
+    扩展到 settings_product.py / settings_customer.py / run_pipeline.py /
+    product_lifecycle/run.py，并加入源Excel身份（文件名+大小+mtime+内容前8MB sha256）。
+    任一输入变化都会使缓存失效，避免"改配置→下月跑→仍用旧口径"的静默错误。
     """
     hash_src = []
-    # settings.py 配置
-    settings_path = os.path.join(os.path.dirname(__file__), "config", "settings.py")
-    if os.path.exists(settings_path):
-        with open(settings_path, "rb") as f:
-            hash_src.append(f.read())
-    # 数据清洗逻辑
-    cleaning_path = os.path.join(os.path.dirname(__file__), "shared", "data_cleaning.py")
-    if os.path.exists(cleaning_path):
-        with open(cleaning_path, "rb") as f:
-            hash_src.append(f.read())
+    base_dir = os.path.dirname(__file__)
+    for rel in _SILVER_HASH_FILES:
+        p = os.path.join(base_dir, rel)
+        if os.path.exists(p):
+            with open(p, "rb") as f:
+                content = f.read()
+            # 行尾归一化：先把 b'\r\n' 归一为 b'\n' 再参与哈希，
+            # 避免 git autocrlf 造成 LF/CRLF 落盘差异导致无谓的 silver 缓存失效
+            # （源 Excel 为二进制，不在此归一化范围）。
+            content = content.replace(b"\r\n", b"\n")
+            hash_src.append(content)
+    # 源Excel身份：文件名 + 大小 + mtime + 内容前8MB
+    if source_path and os.path.exists(source_path):
+        st = os.stat(source_path)
+        hash_src.append(
+            f"{os.path.basename(source_path)}|{st.st_size}|{st.st_mtime}".encode("utf-8")
+        )
+        with open(source_path, "rb") as f:
+            hash_src.append(f.read(_SILVER_EXCEL_HASH_HEAD))
     return hashlib.sha256(b"".join(hash_src)).hexdigest()
 
 
-def _save_silver_checksum():
+def _save_silver_checksum(source_path: str = None):
     """Silver生成完成后保存配置校验和。"""
-    checksum = _compute_silver_config_hash()
+    checksum = _compute_silver_config_hash(source_path)
     with open(_silver_checksum_path(), "w", encoding="utf-8") as f:
-        json.dump({"checksum": checksum, "files": ["config/settings.py", "shared/data_cleaning.py"]}, f)
+        json.dump({
+            "checksum": checksum,
+            "files": list(_SILVER_HASH_FILES) + ["源Excel(名+大小+mtime+内容前8MB sha256)"],
+        }, f)
 
 
-def _silver_cache_valid() -> bool:
-    """检查Silver缓存是否仍有效（配置未变）。"""
+def _silver_cache_valid(source_path: str = None) -> bool:
+    """检查Silver缓存是否仍有效（配置/代码/源Excel未变）。"""
     cs_path = _silver_checksum_path()
     if not os.path.exists(cs_path):
         return False
     try:
         with open(cs_path, "r", encoding="utf-8") as f:
             saved = json.load(f)
-        current = _compute_silver_config_hash()
+        current = _compute_silver_config_hash(source_path)
         return saved.get("checksum") == current
     except (json.JSONDecodeError, KeyError, OSError):
         return False
@@ -142,7 +170,7 @@ def stage_silver(source_path: str) -> tuple:
     if SKIP_SILVER_IF_EXISTS:
         all_exist = all(os.path.exists(os.path.join(OUTPUT_SILVER, f)) for f in silver_files)
         if all_exist:
-            if _silver_cache_valid():
+            if _silver_cache_valid(source_path):
                 print("  Silver层缓存有效，跳过（设置 SKIP_SILVER_IF_EXISTS=False 或修改配置强制重算）")
                 return True, None, None
             else:
@@ -151,6 +179,7 @@ def stage_silver(source_path: str) -> tuple:
     from shared.data_cleaning import (
         filter_negative_qty, winsorize_margins, monthly_aggregate_double_pass,
         rename_erp_columns, validate_required_columns, read_excel_auto,
+        build_cust_info,
     )
     from data_pipeline.validator import SimpleValidator
     _validator = SimpleValidator()
@@ -162,41 +191,23 @@ def stage_silver(source_path: str) -> tuple:
     raw = rename_erp_columns(raw)
     print(f"  原始行数: {len(raw)}")
 
-    # ── 从raw提取客户属性（客户信息表不存在时，用ERP列构建cust_info）──
+    # ── 从raw提取客户属性（客户信息表不存在时，统一用 build_cust_info() 从ERP列构建）──
     cust_info = None
     try:
         cust_info = read_excel_auto(source_path, sheet_name="客户信息表")
         raw = raw.merge(cust_info[["客户编号", "渠道类型", "客户等级", "所属区域"]], on="客户编号", how="left")
     except (ValueError, FileNotFoundError, KeyError):
-        # 客户信息表不存在 → 从ERP数据列构建cust_info（不merge到raw，避免干扰聚合）
-        cust_records = {}
-
-        # 渠道类型：从"销售模式"列映射（经销→代理，直销→直供）
-        if "销售模式" in raw.columns:
-            channel_map = {"经销": "代理", "直销": "直供"}
-            cust_records["渠道类型"] = raw.groupby("客户编号")["销售模式"].first().map(channel_map).fillna("未知")
+        # 客户信息表不存在 → 统一用 build_cust_info() 从ERP数据列构建 cust_info
+        # （批次① T2/P0-1：与缓存路径共用同一构建函数，保证两条路径客户属性一致；
+        #   含客户编号 fillna("未知客户") 与 客户类别列名归一）
+        cust_info = build_cust_info(raw)
+        # 保留 raw 上的默认渠道/等级列（silver_cleaned_rows 列口径，基线锁定）
         raw["渠道类型"] = "未知"
-
-        # 客户类别：从"客户类别"列获取（由"终端客户名称_客户类别"重命名而来）
-        if "客户类别" in raw.columns:
-            cust_records["客户类别"] = raw.groupby("客户编号")["客户类别"].first()
-            # 推导客户等级：KA/AA→A, KM→B, MM→C
-            grade_map = {"KA": "A", "AA": "A", "KM": "B", "MM": "C"}
-            cust_records["客户等级"] = cust_records["客户类别"].map(
-                lambda x: next((v for k, v in grade_map.items() if pd.notna(x) and k in str(x)), "未知")
-            )
         raw["客户等级"] = "未知"
-
-        # 实际业务员 → 业务负责人（直接从ERP列提取）
-        if "实际业务员" in raw.columns:
-            cust_records["业务负责人"] = raw.groupby("客户编号")["实际业务员"].first()
-
-        # 构建 cust_info DataFrame（延迟到聚合后使用）
-        if cust_records:
-            cust_info = pd.DataFrame(cust_records).reset_index()
+        if cust_info is not None:
             print(f"  从ERP列构建客户信息: {len(cust_info)} 条（渠道+类别+等级）")
         else:
-            cust_info = None
+            print("  从ERP列构建客户信息: 无可用客户属性列")
 
     # 确保利润裁剪列存在（不做钳制，保留真实毛利率）
     if '_利润_裁剪' not in raw.columns:
@@ -229,8 +240,8 @@ def stage_silver(source_path: str) -> tuple:
     raw.to_csv(os.path.join(OUTPUT_SILVER, "silver_cleaned_rows.csv"), index=False, encoding="utf-8-sig")
     print(f"  清洗行级数据: {len(raw)} 行")
 
-    # 保存校验和（标记缓存有效）
-    _save_silver_checksum()
+    # 保存校验和（标记缓存有效；T3：指纹含配置+关键代码+源Excel身份）
+    _save_silver_checksum(source_path)
 
     print(f"  [时间] silver 阶段: {time.time() - _t0:.1f}s")
     return True, raw, cust_info
@@ -288,6 +299,43 @@ def stage_cross_ref(source_path: str = None) -> bool:
     from cross_reference.run_cross_ref import run as run_cross
     result = run_cross()
     return len(result) > 0
+
+
+# ============================================================
+# 阶段关键产物校验（宪法 S4：缺关键产物 → 非零退出并阻断下游）
+# ============================================================
+
+# 各阶段关键产物（相对 output/ 目录；存在且非空视为通过）
+_STAGE_ARTIFACTS = {
+    "silver": [
+        os.path.join("silver", "silver_cleaned_rows.csv"),
+        os.path.join("silver", "silver_customer_monthly.csv"),
+        os.path.join("silver", "silver_product_monthly.csv"),
+        os.path.join("silver", "silver_customer_x_product.csv"),
+    ],
+    "product": [
+        os.path.join("gold", "gold_product_portrait.csv"),
+    ],
+    "customer": [
+        os.path.join("gold", "客户全景.csv"),
+    ],
+    "kpi": [
+        os.path.join("gold", "gold_kpi_daily.csv"),
+    ],
+    "cross_ref": [
+        os.path.join("gold", "cross_customer_portfolio_health.csv"),
+    ],
+}
+
+
+def _verify_stage_artifacts(stage: str) -> list:
+    """校验阶段关键产物文件存在且非空，返回缺失/空文件相对路径列表。"""
+    missing = []
+    for rel in _STAGE_ARTIFACTS.get(stage, []):
+        p = os.path.join(OUTPUT_DIR, rel)
+        if not (os.path.exists(p) and os.path.getsize(p) > 0):
+            missing.append(rel)
+    return missing
 
 
 # ============================================================
@@ -426,6 +474,15 @@ def main():
             sys.exit(1)
         else:
             print(f"  [警告] 阶段 '{stage}' 未产生完整输出，继续执行下一阶段")
+
+        # 关键产物校验（宪法 S4：缺关键产物 → 非零退出并阻断下游，不继续后续 stage）
+        missing = _verify_stage_artifacts(stage)
+        if missing:
+            print(f"\n{'='*60}")
+            print(f"[致命] 阶段 '{stage}' 关键产物缺失或为空: {missing}")
+            print(f"  已停止后续阶段（S4：阶段失败必须非零退出并阻断下游）")
+            print(f"{'='*60}")
+            sys.exit(1)
 
     # 打印汇总
     print(f"\n{'=' * 60}")

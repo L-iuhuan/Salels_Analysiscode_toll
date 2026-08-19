@@ -190,11 +190,15 @@ def _prepare_data(source_path, col_map, thr):
     else:
         order_col = None
     
-    # ---- 负销量过滤（与v2.8一致，在日期过滤之前） ----
-    neg_qty_before = (df[qty_col] < 0).sum()
-    if neg_qty_before > 0:
-        df = df[df[qty_col] > 0].copy()
-        print(f"  已剔除 {neg_qty_before} 行负销量/零销量（退货/红冲/空单）")
+    # ---- 负销量过滤（口径开关，默认关闭） ----
+    # 批次①（T1）：默认与生产链式路径（shared.data_cleaning，保留退货/红冲行自然冲减）
+    # 一致，不剔除负销量。历史 v2.8 行为（剔除负销量）由配置开关 _口径_负销量过滤 控制，
+    # 待批次③业务拍板（D-2）后按需启用。
+    if thr.get("_口径_负销量过滤", False):
+        neg_qty_before = (df[qty_col] < 0).sum()
+        if neg_qty_before > 0:
+            df = df[df[qty_col] > 0].copy()
+            print(f"  已剔除 {neg_qty_before} 行负销量/零销量（退货/红冲/空单）")
     
     # ---- 过滤日期范围（与v2.8一致） ----
     start_date = str(thr.get("data_start_date", "2020-01-01"))
@@ -202,21 +206,27 @@ def _prepare_data(source_path, col_map, thr):
     df = df.dropna(subset=[date_col])
     print(f"  过滤后行数（起始日期>={start_date}）: {len(df)}")
     
-    # ---- 毛利率清洗（行级Winsorization，与v2.8一致） ----
-    winsor_low = float(thr.get("Winsor下限", -0.50))
-    winsor_high = float(thr.get("Winsor上限", 0.75))
-    
-    df['_毛利率'] = np.where(
-        df[rev_col] > 0,
-        df[profit_col] / df[rev_col],
-        np.nan
-    )
-    df['_毛利率'] = df['_毛利率'].clip(winsor_low, winsor_high)
-    df['_利润_裁剪'] = np.where(
-        df[rev_col] > 0,
-        df['_毛利率'].fillna(0) * df[rev_col],
-        df[profit_col]
-    )
+    # ---- 毛利率（口径开关，默认不钳制） ----
+    # 批次①（T1）：默认与生产链式路径（shared.winsorize_margins，保留真实毛利率、
+    # _利润_裁剪=原始利润）一致。历史 v2.8 的 clip(-0.5,0.75) 行为由配置开关
+    # _口径_毛利率钳制 控制，待批次③业务拍板（D-1）后按需启用。
+    if thr.get("_口径_毛利率钳制", False):
+        winsor_low = float(thr.get("Winsor下限", -0.50))
+        winsor_high = float(thr.get("Winsor上限", 0.75))
+        df['_毛利率'] = np.where(
+            df[rev_col] > 0,
+            df[profit_col] / df[rev_col],
+            np.nan
+        )
+        df['_毛利率'] = df['_毛利率'].clip(winsor_low, winsor_high)
+        df['_利润_裁剪'] = np.where(
+            df[rev_col] > 0,
+            df['_毛利率'].fillna(0) * df[rev_col],
+            df[profit_col]
+        )
+    else:
+        df['_毛利率'] = df[profit_col] / df[rev_col].replace(0, float("nan"))
+        df['_利润_裁剪'] = df[profit_col]
     
     # ---- 构建时间窗口 ----
     df['_月'] = df[date_col].dt.to_period('M')
@@ -533,9 +543,12 @@ def run(source_path=None, skip_silver=False):
     if not skip_silver:
         build_silver_layer(source_path)
 
-    # 如果已存在silver_cleaned_rows，加载它避免重新读取Excel（198s性能优化）
+    # 统一入口：优先复用共享Silver产出的行级数据（与生产链式路径一致）
+    # 批次①（T1）：独立运行入口也走与链式相同的数据来源 silver_cleaned_rows.csv
+    # （或 shared.data_cleaning 的同一构建函数），不再进入 _prepare_data 的
+    # 私有过滤/钳制路径（该路径已由配置开关默认关闭，见 _prepare_data）。
     silver_rows_path = os.path.join(OUTPUT_SILVER, "silver_cleaned_rows.csv")
-    if skip_silver and os.path.exists(silver_rows_path):
+    if os.path.exists(silver_rows_path):
         print("  [复用] 从silver_cleaned_rows.csv加载，跳过Excel文件读取")
         cleaned_df = pd.read_csv(silver_rows_path, encoding="utf-8-sig", low_memory=False)
         # 补充_prepare_data所需的列：日期类型转换+_月时间窗口
@@ -546,6 +559,8 @@ def run(source_path=None, skip_silver=False):
             cleaned_df['_月'] = cleaned_df[date_col].dt.to_period('M')
         result = run_analysis(source_path, df=cleaned_df)
     else:
+        # 共享Silver产物缺失（罕见）时回退 _prepare_data；其负销量过滤/毛利率钳制
+        # 开关默认关闭，口径与生产链式路径一致（不剔除负销量、不钳制毛利率）。
         result = run_analysis(source_path)
     
     if result and result.get("output_file"):

@@ -146,6 +146,65 @@ def filter_negative_qty(
     return result
 
 
+def build_cust_info(raw_df: pd.DataFrame,
+                    cust_col: str = "客户编号",
+                    cat_col_raw: str = "终端客户名称_客户类别",
+                    cat_col: str = "客户类别",
+                    channel_col: str = "销售模式",
+                    sales_col: str = "实际业务员",
+                    channel_map: dict = None,
+                    grade_map: dict = None) -> pd.DataFrame:
+    """统一从行级数据构建客户信息 DataFrame（渠道/类别/等级/业务负责人）。
+
+    批次①（T2/P0-1）：run_all.py 新鲜路径与 run_pipeline.py 缓存重载路径
+    都通过本函数构建 cust_info，保证两条路径的客户属性标签一致。
+
+    口径（与生产链式路径一致，基线锁定）：
+      - 客户编号 fillna("未知客户")（空客户编号统一归并）
+      - 客户类别列名归一：缓存路径用原始列名"终端客户名称_客户类别"，
+        新鲜路径用重命名后"客户类别" → 统一为重命名后口径
+      - 渠道类型：销售模式映射（经销→代理，直销→直供），缺失填"未知"
+      - 客户等级：客户类别映射（KA/AA→A，KM→B，MM→C），缺失填"未知"
+      - 业务负责人：实际业务员首值
+
+    参数:
+        raw_df: 行级数据（可含原始列名或已重命名列名）
+        cust_col / cat_col_raw / cat_col / channel_col / sales_col: 相关列名
+        channel_map: 销售模式→渠道映射（默认 经销→代理/直销→直供）
+        grade_map: 客户类别→客户等级映射（默认 KA/AA→A/KM→B/MM→C）
+
+    返回:
+        cust_info DataFrame（含"客户编号"）；无可用属性列时返回 None。
+    """
+    df = raw_df.copy()
+    df[cust_col] = df[cust_col].fillna("未知客户")
+    # 列名归一：统一为重命名后口径"客户类别"
+    if cat_col_raw in df.columns and cat_col not in df.columns:
+        df = df.rename(columns={cat_col_raw: cat_col})
+
+    cust_records = {}
+    # 渠道类型：从"销售模式"列映射（经销→代理，直销→直供）
+    if channel_col in df.columns:
+        cm = channel_map or {"经销": "代理", "直销": "直供"}
+        cust_records["渠道类型"] = (
+            df.groupby(cust_col)[channel_col].first().map(cm).fillna("未知")
+        )
+    # 客户类别 + 客户等级（由客户类别推导：KA/AA→A, KM→B, MM→C）
+    if cat_col in df.columns:
+        cust_records["客户类别"] = df.groupby(cust_col)[cat_col].first()
+        gm = grade_map or {"KA": "A", "AA": "A", "KM": "B", "MM": "C"}
+        cust_records["客户等级"] = cust_records["客户类别"].map(
+            lambda x: next((v for k, v in gm.items() if pd.notna(x) and k in str(x)), "未知")
+        )
+    # 实际业务员 → 业务负责人
+    if sales_col in df.columns:
+        cust_records["业务负责人"] = df.groupby(cust_col)[sales_col].first()
+
+    if not cust_records:
+        return None
+    return pd.DataFrame(cust_records).reset_index()
+
+
 def monthly_aggregate_double_pass(
     df: pd.DataFrame,
     date_col: str = "发货日期",
@@ -212,7 +271,6 @@ def monthly_aggregate_double_pass(
         "cost_sum": (cost_col, "sum"),
         "profit_raw_sum": (profit_col, "sum"),
         "profit_clip_sum": ("_利润_裁剪", "sum"),
-        "avg_price": (rev_col, lambda x: x.sum() / df.loc[x.index, qty_col].sum() if df.loc[x.index, qty_col].sum() > 0 else float("nan")),
     }
     # 如果源数据有"新品标记"（来自ERP的"是否新品"列），携带至Silver层
     if "新品标记" in df.columns:
@@ -223,6 +281,18 @@ def monthly_aggregate_double_pass(
         .agg(**_prod_agg)
         .reset_index()
     )
+    # 批次①（T4）：avg_price 向量化——sum(金额)/sum(数量)，等价于原逐组 lambda，
+    # 避免逐组索引切片（大表下收益数十秒）；qty_sum<=0 时同样为 NaN（与原逻辑一致）。
+    prod_monthly["avg_price"] = (
+        prod_monthly["rev_sum"] / prod_monthly["qty_sum"].replace(0, float("nan"))
+    )
+    prod_monthly.loc[prod_monthly["qty_sum"] <= 0, "avg_price"] = float("nan")
+    # 保持列顺序与历史 schema 一致：avg_price 位于 profit_clip_sum 与 新品标记 之间
+    _prod_base_cols = ["_月", prod_col, "qty_sum", "rev_sum", "cost_sum",
+                       "profit_raw_sum", "profit_clip_sum"]
+    _prod_extra_cols = [c for c in prod_monthly.columns
+                        if c not in _prod_base_cols and c != "avg_price"]
+    prod_monthly = prod_monthly[_prod_base_cols + ["avg_price"] + _prod_extra_cols]
     prod_monthly["毛利率%"] = (
         prod_monthly["profit_clip_sum"] / prod_monthly["rev_sum"].replace(0, float("nan")) * 100
     )

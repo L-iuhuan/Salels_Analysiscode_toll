@@ -55,6 +55,15 @@ def build_kpi(source_path: str = None, raw_df: pd.DataFrame = None) -> pd.DataFr
         print(f"[KPI] 读取数据: {source_path} (sheet={DATA_SHEET_NAME})")
         raw = read_excel_auto(source_path, sheet_name=DATA_SHEET_NAME)
         raw = rename_erp_columns(raw)
+        # 批次① P0-1 同源修复：与 run_all.py 新鲜路径的 raw["客户编号"].fillna("未知客户")
+        # 完全同口径。缓存路径（raw_df=None）重读 Excel 后必须补 fillna，否则下方
+        # groupby nunique("客户编号") 默认丢弃 NaN → 每天少计"未知客户"这个客户，
+        # 与 force 路径（raw_data 已带 fillna）不一致。列存在性做防御判断。
+        if "客户编号" in raw.columns:
+            null_cust = raw["客户编号"].isna().sum()
+            if null_cust > 0:
+                raw["客户编号"] = raw["客户编号"].fillna("未知客户")
+                print(f"  客户编号空值填充: {null_cust} 行 -> 未知客户")
     raw["发货日期"] = pd.to_datetime(raw["发货日期"])
     raw = filter_negative_qty(raw, qty_col="数量")
 
