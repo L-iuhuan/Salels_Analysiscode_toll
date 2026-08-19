@@ -179,7 +179,7 @@ def stage_silver(source_path: str) -> tuple:
     from shared.data_cleaning import (
         filter_negative_qty, winsorize_margins, monthly_aggregate_double_pass,
         rename_erp_columns, validate_required_columns, read_excel_auto,
-        build_cust_info,
+        build_cust_info, write_silver_csv_parquet,
     )
     from data_pipeline.validator import SimpleValidator
     _validator = SimpleValidator()
@@ -233,11 +233,15 @@ def stage_silver(source_path: str) -> tuple:
 
     for key, df in silver.items():
         path = os.path.join(OUTPUT_SILVER, f"silver_{key}.csv")
-        df.to_csv(path, index=False, encoding="utf-8-sig")
+        # 批次② 车道C：customer_x_product 同步双写同名 .parquet（补充格式，写失败仅警告）
+        if key == "customer_x_product":
+            write_silver_csv_parquet(df, path)
+        else:
+            df.to_csv(path, index=False, encoding="utf-8-sig")
         print(f"  输出: {path} ({len(df)} 行)")
 
-    # 保存清洗后行级数据（供v2.8使用）
-    raw.to_csv(os.path.join(OUTPUT_SILVER, "silver_cleaned_rows.csv"), index=False, encoding="utf-8-sig")
+    # 保存清洗后行级数据（供v2.8使用；批次② 车道C：同步双写同名 .parquet）
+    write_silver_csv_parquet(raw, os.path.join(OUTPUT_SILVER, "silver_cleaned_rows.csv"))
     print(f"  清洗行级数据: {len(raw)} 行")
 
     # 保存校验和（标记缓存有效；T3：指纹含配置+关键代码+源Excel身份）

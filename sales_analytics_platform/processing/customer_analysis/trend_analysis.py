@@ -50,86 +50,87 @@ def calc_monthly_revenue_trend(
 
     返回:
         DataFrame
+
+    批次②车道B：原双重循环（客户×月份，L58-L109）已改为向量化实现，
+    输出与逐行版逐值等价（浮点 1e-6 容差内）。
     """
     df = cust_monthly.copy()
-    df = df.sort_values(["客户编号", "_月"], kind='stable')
+    df = df.sort_values(["客户编号", "_月"], kind="stable")
 
-    results = []
-    for cid, grp in df.groupby("客户编号"):
-        grp = grp.sort_values("_月", kind='stable').reset_index(drop=True)
+    has_profit = "profit_clip_sum" in df.columns
+    has_orders = "order_count" in df.columns
 
-        for i in range(len(grp)):
-            row = {"客户编号": cid, "月份": str(grp.loc[i, "_月"])}
-            row["月收入"] = round(grp.loc[i, "rev_sum"], 2)
-            row["月毛利"] = round(grp.loc[i, "profit_clip_sum"], 2) if "profit_clip_sum" in grp.columns else 0
-            row["月数量"] = int(grp.loc[i, "qty_sum"])
-            row["月订单数"] = int(grp.loc[i, "order_count"]) if "order_count" in grp.columns else 0
+    out = pd.DataFrame(index=df.index)
+    out["客户编号"] = df["客户编号"].astype(object)
+    out["月份"] = df["_月"].astype(str)
+    out["月收入"] = df["rev_sum"].round(2)
+    out["月毛利"] = df["profit_clip_sum"].round(2) if has_profit else 0
+    out["月数量"] = df["qty_sum"].astype("int64")
+    out["月订单数"] = df["order_count"].astype("int64") if has_orders else 0
 
-            # MA3 (前3月含本月) — 窗口大小来自 settings.py:TREND_MA_WINDOWS
-            ma3_cfg = TREND_MA_WINDOWS.get("MA3", {"window": 3, "min_pts": 2})
-            ma3_win = grp.loc[max(0, i - ma3_cfg["window"] + 1):i, "rev_sum"]
-            row["MA3"] = round(ma3_win.mean(), 2) if len(ma3_win) >= ma3_cfg["min_pts"] else None
+    # ---- MA3 / MA6（窗口参数来自 settings.py:TREND_MA_WINDOWS） ----
+    ma3_cfg = TREND_MA_WINDOWS.get("MA3", {"window": 3, "min_pts": 2})
+    ma6_cfg = TREND_MA_WINDOWS.get("MA6", {"window": 6, "min_pts": 3})
+    g = df.groupby("客户编号", sort=False)
+    # 注意：rolling().mean()/apply(np.mean) 会对窗口做 float64 计算，与原逐窗口 float32 均值有 1ULP 差异；
+    # 必须把窗口显式转回 float32 再用 np.mean 复现逐行版的 Series.mean()。
+    ma3 = g["rev_sum"].transform(
+        lambda s: s.rolling(ma3_cfg["window"], min_periods=ma3_cfg["min_pts"])
+        .apply(lambda a: np.mean(a.astype("float32")), raw=True)
+    ).astype("float32").round(2).astype("float64")
+    ma6 = g["rev_sum"].transform(
+        lambda s: s.rolling(ma6_cfg["window"], min_periods=ma6_cfg["min_pts"])
+        .apply(lambda a: np.mean(a.astype("float32")), raw=True)
+    ).astype("float32").round(2).astype("float64")
+    out["MA3"] = ma3
+    out["MA6"] = ma6
 
-            # MA6
-            ma6_cfg = TREND_MA_WINDOWS.get("MA6", {"window": 6, "min_pts": 3})
-            ma6_win = grp.loc[max(0, i - ma6_cfg["window"] + 1):i, "rev_sum"]
-            row["MA6"] = round(ma6_win.mean(), 2) if len(ma6_win) >= ma6_cfg["min_pts"] else None
+    # ---- 月环比%（本月 vs 上月），钳制防止极端值 ----
+    _clip_cfg = TREND_GROWTH_CLIP
+    _mom_upper = _clip_cfg.get("月环比上限", 999.0)
+    _mom_lower = _clip_cfg.get("月环比下限", -999.0)
+    _yoy_upper = _clip_cfg.get("月同比上限", 999.0)
+    _yoy_lower = _clip_cfg.get("月同比下限", -999.0)
+    prev_rev = g["rev_sum"].shift(1)
+    mom_raw = (df["rev_sum"] - prev_rev) / prev_rev * 100
+    mom = np.round(np.clip(mom_raw, _mom_lower, _mom_upper), 1)
+    mom = mom.where(prev_rev.notna() & (prev_rev > 1.0))
+    out["月环比%"] = mom.astype("float64")
 
-            # 月环比 (本月 vs 上月)，钳制防止极端值
-            _clip_cfg = TREND_GROWTH_CLIP
-            _mom_upper = _clip_cfg.get("月环比上限", 999.0)
-            _mom_lower = _clip_cfg.get("月环比下限", -999.0)
-            if i > 0 and grp.loc[i - 1, "rev_sum"] > 1.0:
-                raw_mom = (grp.loc[i, "rev_sum"] - grp.loc[i - 1, "rev_sum"]) / grp.loc[i - 1, "rev_sum"] * 100
-                row["月环比%"] = round(max(_mom_lower, min(_mom_upper, raw_mom)), 1)
-            else:
-                row["月环比%"] = None
+    # ---- 月同比%（本月 vs 去年同月），钳制防止极端值 ----
+    rev_lookup = df.set_index(["客户编号", "_月"])["rev_sum"]
+    yoy_target = pd.MultiIndex.from_arrays([df["客户编号"], df["_月"] - 12])
+    yoy_prev = pd.Series(rev_lookup.reindex(yoy_target).values, index=df.index)
+    yoy_raw = (df["rev_sum"] - yoy_prev) / yoy_prev * 100
+    yoy = np.round(np.clip(yoy_raw, _yoy_lower, _yoy_upper), 1)
+    yoy = yoy.where(yoy_prev.notna() & (yoy_prev > 1.0))
+    out["月同比%"] = yoy.astype("float64")
 
-            # 月同比 (本月 vs 去年同月)，钳制防止极端值
-            _yoy_upper = _clip_cfg.get("月同比上限", 999.0)
-            _yoy_lower = _clip_cfg.get("月同比下限", -999.0)
-            current_month = grp.loc[i, "_月"]
-            target_month = current_month - 12
-            match = grp[grp["_月"] == target_month]
-            if len(match) > 0 and match.iloc[0]["rev_sum"] > 1.0:
-                prev_rev = match.iloc[0]["rev_sum"]
-                raw_yoy = (grp.loc[i, "rev_sum"] - prev_rev) / prev_rev * 100
-                row["月同比%"] = round(max(_yoy_lower, min(_yoy_upper, raw_yoy)), 1)
-            else:
-                row["月同比%"] = None
+    # ---- 收入斜率（近6月线性回归，最小历史 min_history） ----
+    # 与原版 calc_slope(np.polyfit) 逐位一致：逐窗口 polyfit（float64），
+    # 闭式解在 6 位四舍五入边界（如 ...1234375 中点）可能与 polyfit 差 1ULP，故直接复用 calc_slope。
+    slope = g["rev_sum"].transform(
+        lambda s: s.rolling(6, min_periods=min_history)
+        .apply(lambda a: calc_slope(a, min_pts=min_history), raw=True)
+    )
+    # 数据不足（rolling min_periods 未满足）→ NaN；斜率恰为 0 → 0.0；否则保留 6 位小数
+    slope = np.where(slope == 0.0, 0.0, np.round(slope, 6))
+    out["收入斜率"] = slope.astype("float64")
 
-            # 收入斜率（近6月线性回归）
-            slope_win = grp.loc[max(0, i - 5):i, "rev_sum"].values
-            if len(slope_win) >= min_history:
-                slope_val = calc_slope(slope_win, min_pts=min_history)
-                row["收入斜率"] = round(slope_val, 6) if slope_val != 0.0 else 0.0
-            else:
-                row["收入斜率"] = None
+    # ---- 趋势方向判定（阈值来自 settings.py:TREND_SLOPE_THRESHOLDS） ----
+    _slope_cfg = TREND_SLOPE_THRESHOLDS
+    _up = _slope_cfg.get("上升阈值", 0.02)
+    _down = _slope_cfg.get("下降阈值", -0.02)
+    _flat = _slope_cfg.get("默认方向", "平稳")
+    _unknown = _slope_cfg.get("未知方向", "未知")
+    sk = out["收入斜率"]
+    out["趋势方向"] = np.select(
+        [sk.isna(), sk > _up, sk < _down],
+        [_unknown, "上升", "下降"],
+        default=_flat,
+    )
 
-            results.append(row)
-
-    result_df = pd.DataFrame(results)
-
-    # 趋势方向判定（阈值来自 settings.py:TREND_SLOPE_THRESHOLDS）
-    if "收入斜率" in result_df.columns:
-        _slope_cfg = TREND_SLOPE_THRESHOLDS
-        _up = _slope_cfg.get("上升阈值", 0.02)
-        _down = _slope_cfg.get("下降阈值", -0.02)
-        _flat = _slope_cfg.get("默认方向", "平稳")
-        _unknown = _slope_cfg.get("未知方向", "未知")
-
-        def _trend_dir(x):
-            if pd.isna(x):
-                return _unknown
-            if x > _up:
-                return "上升"
-            elif x < _down:
-                return "下降"
-            return _flat
-
-        result_df["趋势方向"] = result_df["收入斜率"].apply(_trend_dir)
-
-    return result_df
+    return out.reset_index(drop=True)
 
 
 # ============================================================

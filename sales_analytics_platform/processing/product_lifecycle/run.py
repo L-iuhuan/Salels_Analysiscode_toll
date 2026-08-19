@@ -22,7 +22,7 @@ from config.settings import (
 )
 from shared.data_cleaning import (
     winsorize_margins, filter_negative_qty, monthly_aggregate_double_pass,
-    rename_erp_columns, read_excel_auto,
+    rename_erp_columns, read_excel_auto, load_silver_table,
 )
 import shared.timing as timing
 from product_lifecycle.profiling import run_profiling
@@ -547,10 +547,11 @@ def run(source_path=None, skip_silver=False):
     # 批次①（T1）：独立运行入口也走与链式相同的数据来源 silver_cleaned_rows.csv
     # （或 shared.data_cleaning 的同一构建函数），不再进入 _prepare_data 的
     # 私有过滤/钳制路径（该路径已由配置开关默认关闭，见 _prepare_data）。
+    # 批次②（车道C）：存在同名 .parquet（不早于 CSV）时优先读 parquet（快 3-5 倍）。
     silver_rows_path = os.path.join(OUTPUT_SILVER, "silver_cleaned_rows.csv")
     if os.path.exists(silver_rows_path):
-        print("  [复用] 从silver_cleaned_rows.csv加载，跳过Excel文件读取")
-        cleaned_df = pd.read_csv(silver_rows_path, encoding="utf-8-sig", low_memory=False)
+        print("  [复用] 从silver_cleaned_rows加载，跳过Excel文件读取")
+        cleaned_df = load_silver_table(silver_rows_path, low_memory=False)
         # 补充_prepare_data所需的列：日期类型转换+_月时间窗口
         col_map, _, _, _ = load_config_from_dict()
         date_col = col_map.get("发货日期列", "发货日期")

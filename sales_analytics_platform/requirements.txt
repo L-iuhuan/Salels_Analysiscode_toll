@@ -14,3 +14,4 @@ matplotlib>=3.7,<4.0
 scikit-learn>=1.3,<2.0
 python-calamine>=0.2,<1.0  # 必需：前后段Excel读取引擎，缺失会报 Unknown engine: calamine
 xlsxwriter>=3.1,<4.0       # 必需：gold 报告 Excel 导出(reports/gold_exporter.py)，漏装会在客户分析阶段崩溃
+pyarrow>=14,<21            # 必需：Silver层 Parquet 双写/读取(shared/data_cleaning.py,批次② 车道C；生产验证版本 20.0.0)

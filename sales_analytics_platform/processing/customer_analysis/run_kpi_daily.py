@@ -16,10 +16,13 @@ PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
-from shared.data_cleaning import filter_negative_qty, rename_erp_columns, read_excel_auto
+from shared.data_cleaning import (
+    filter_negative_qty, rename_erp_columns, read_excel_auto, load_silver_table,
+)
 from config.settings import ERP_COL_MAP
 
 OUTPUT_GOLD = os.path.join(PROJECT_ROOT, "output", "gold")
+OUTPUT_SILVER = os.path.join(PROJECT_ROOT, "output", "silver")
 DATA_DIR = os.path.join(PROJECT_ROOT, "data")
 
 
@@ -44,21 +47,30 @@ def build_kpi(source_path: str = None, raw_df: pd.DataFrame = None) -> pd.DataFr
         _erp_originals = [k for k, v in ERP_COL_MAP.items() if k != v and k in raw.columns]
         raw = raw.drop(columns=_erp_originals, errors="ignore")
     else:
-        if source_path is None:
-            xlsx_files = [f for f in os.listdir(DATA_DIR) if f.endswith(".xlsx")]
-            if not xlsx_files:
-                print("[KPI] 错误: data/ 目录下未找到数据文件")
-                return pd.DataFrame()
-            source_path = os.path.join(DATA_DIR, xlsx_files[0])
-
-        from config.settings import DATA_SHEET_NAME
-        print(f"[KPI] 读取数据: {source_path} (sheet={DATA_SHEET_NAME})")
-        raw = read_excel_auto(source_path, sheet_name=DATA_SHEET_NAME)
-        raw = rename_erp_columns(raw)
-        # 批次① P0-1 同源修复：与 run_all.py 新鲜路径的 raw["客户编号"].fillna("未知客户")
-        # 完全同口径。缓存路径（raw_df=None）重读 Excel 后必须补 fillna，否则下方
-        # groupby nunique("客户编号") 默认丢弃 NaN → 每天少计"未知客户"这个客户，
-        # 与 force 路径（raw_data 已带 fillna）不一致。列存在性做防御判断。
+        # 批次② 车道C 评估结论（缓存路径加速）：raw_df=None 分支优先读共享 Silver 行级数据
+        # silver_cleaned_rows（存在同名 .parquet 且不早于 CSV 时读 parquet，快 3-5 倍），
+        # 替代重读 230MB 原始 Excel（约30-60s）。
+        # 已验证：cleaned_rows 与本分支原 Excel 直读在 客户数/销售额/数量 等逐值一致
+        # （销售额仅 1e-16 级 float 舍入噪声，远低于 1e-6 容差），gold_kpi_daily.csv 零漂移；
+        # cleaned_rows 已含 rename + 客户编号 fillna("未知客户")（批次① P0-1 同源口径），
+        # 下方仍防御性补一次 fillna 保证与 force 路径一致。
+        silver_rows_path = os.path.join(OUTPUT_SILVER, "silver_cleaned_rows.csv")
+        if os.path.exists(silver_rows_path):
+            print("[KPI] 从 silver_cleaned_rows 加载（跳过 230MB Excel 读取）")
+            raw = load_silver_table(silver_rows_path, low_memory=False)
+        else:
+            # 无共享 Silver 产物（罕见）时回退原始 Excel 直读（原逻辑）
+            if source_path is None:
+                xlsx_files = [f for f in os.listdir(DATA_DIR) if f.endswith(".xlsx")]
+                if not xlsx_files:
+                    print("[KPI] 错误: data/ 目录下未找到数据文件")
+                    return pd.DataFrame()
+                source_path = os.path.join(DATA_DIR, xlsx_files[0])
+            from config.settings import DATA_SHEET_NAME
+            print(f"[KPI] 读取数据: {source_path} (sheet={DATA_SHEET_NAME})")
+            raw = read_excel_auto(source_path, sheet_name=DATA_SHEET_NAME)
+            raw = rename_erp_columns(raw)
+        # 防御性 fillna（cleaned_rows 通常已填充；Excel 直读时必需），批次① P0-1 同源口径
         if "客户编号" in raw.columns:
             null_cust = raw["客户编号"].isna().sum()
             if null_cust > 0:

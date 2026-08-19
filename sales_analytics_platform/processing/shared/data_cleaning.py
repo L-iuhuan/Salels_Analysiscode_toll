@@ -205,6 +205,54 @@ def build_cust_info(raw_df: pd.DataFrame,
     return pd.DataFrame(cust_records).reset_index()
 
 
+# ============================================================
+# Silver 层 Parquet 双写/读取（批次② 车道C）
+# ------------------------------------------------------------
+# Parquet 只是 CSV 的**补充**格式：CSV 仍是人可检查的权威副本。
+# 双写失败 / parquet 缺失 / parquet 陈旧时，一律回退 CSV，主流程不受影响。
+# 读侧只在本目录存在"不早于 CSV"的同名 .parquet 时才改读 parquet（快 3-5 倍），
+# 并做 dtype 归一（parquet 往返后 dtypes 可能与 read_csv 推断不同），保证下游计算一致。
+# ============================================================
+
+def write_silver_csv_parquet(df: pd.DataFrame, csv_path: str) -> None:
+    """写 CSV + 同步写同名 .parquet（同目录）。
+
+    参数:
+        df: 要落盘的 DataFrame
+        csv_path: CSV 完整路径（parquet 取同 basename、后缀 .parquet）
+    """
+    df.to_csv(csv_path, index=False, encoding="utf-8-sig")
+    pq_path = os.path.splitext(csv_path)[0] + ".parquet"
+    try:
+        df.to_parquet(pq_path, index=False)
+    except Exception as e:  # noqa: BLE001 —— Parquet 是补充格式，写失败只警告不阻断
+        print(f"  [警告] parquet 双写失败（不影响主流程）: {os.path.basename(pq_path)}: "
+              f"{type(e).__name__}: {e}")
+
+
+def load_silver_table(csv_path: str, dtype: dict = None,
+                      low_memory: bool = True, encoding: str = "utf-8-sig") -> pd.DataFrame:
+    """加载 Silver 表：优先同名 .parquet（存在且 mtime>=CSV），否则读 CSV。
+
+    parquet 读取后按 dtype 做归一，使 dtypes 与 read_csv(dtype=...) 一致；
+    dtype 中不存在的列自动忽略（避免 astype 缺列报错）。
+    """
+    pq_path = os.path.splitext(csv_path)[0] + ".parquet"
+    if os.path.exists(pq_path) and os.path.exists(csv_path) \
+            and os.path.getmtime(pq_path) >= os.path.getmtime(csv_path):
+        try:
+            df = pd.read_parquet(pq_path)
+            if dtype:
+                _dtype = {k: v for k, v in dtype.items() if k in df.columns}
+                if _dtype:
+                    df = df.astype(_dtype)
+            print(f"  [读取] {os.path.basename(csv_path)} ← parquet ({len(df)} 行)")
+            return df
+        except Exception as e:  # noqa: BLE001 —— parquet 异常一律回退 CSV
+            print(f"  [警告] parquet 读取失败，回退 CSV: {type(e).__name__}: {e}")
+    return pd.read_csv(csv_path, encoding=encoding, dtype=dtype, low_memory=low_memory)
+
+
 def monthly_aggregate_double_pass(
     df: pd.DataFrame,
     date_col: str = "发货日期",
@@ -482,18 +530,21 @@ def build_silver_layer(
                 prod_to_newline, on=prod_col, how="left"
             )
 
-    # ---- 9. 写出 CSV ----
+    # ---- 9. 写出 CSV（批次② 车道C：customer_x_product 同步写同名 .parquet）----
     out_dir = output_dir or OUTPUT_SILVER
     os.makedirs(out_dir, exist_ok=True)
     for key, df in silver.items():
         path = os.path.join(out_dir, f"silver_{key}.csv")
-        df.to_csv(path, index=False, encoding="utf-8-sig")
+        if key == "customer_x_product":
+            write_silver_csv_parquet(df, path)  # 双写 CSV + parquet（补充格式）
+        else:
+            df.to_csv(path, index=False, encoding="utf-8-sig")
         print(f"  写入 {path} ({len(df)} 行)")
 
-    # ---- 10. 保存清理后行级数据（产品管道复用优化） ----
+    # ---- 10. 保存清理后行级数据（产品管道复用优化；批次② 同步写同名 .parquet）----
     if save_cleaned_rows:
         rows_path = os.path.join(out_dir, "silver_cleaned_rows.csv")
-        raw.to_csv(rows_path, index=False, encoding="utf-8-sig")
+        write_silver_csv_parquet(raw, rows_path)  # 双写 CSV + parquet（补充格式）
         print(f"  清洗行级数据: {len(raw)} 行")
 
     return silver

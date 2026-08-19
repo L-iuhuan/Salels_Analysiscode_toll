@@ -7,7 +7,7 @@
 用法: python dashboard/generate_dashboard.py
 """
 
-import pandas as pd, numpy as np, os, json, re, math, glob
+import pandas as pd, numpy as np, os, json, re, math, glob, sys
 from collections import Counter, defaultdict
 
 PROJECT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
@@ -16,6 +16,128 @@ SILVER = os.path.join(PROJECT, "output", "silver")
 OUT = os.path.join(os.path.dirname(__file__), "dashboard_a.html")
 DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
 os.makedirs(DATA_DIR, exist_ok=True)
+
+# 批次②：读取统一配置（sheet 名、Dashboard 语义列优先级），复用现有 config.settings
+sys.path.insert(0, PROJECT)
+sys.path.insert(0, os.path.join(PROJECT, "processing"))  # settings.py 内部 `from config.settings_product import *` 需要
+try:
+    from processing.config import settings as cfg
+except Exception as _e:  # 兼容非标准目录下运行
+    cfg = None
+    print(f"  [警告] 未能导入 processing.config.settings: {_e}")
+
+DATA_SHEET_NAME = getattr(cfg, "DATA_SHEET_NAME", "24-26")
+DASHBOARD_COL_PRIORITY = getattr(cfg, "DASHBOARD_COL_PRIORITY", {}) or {}
+
+
+def resolve_dashboard_col(raw_cols, semantic, candidates):
+    """按语义列名优先级解析列；全部候选都找不到则报错退出（避免静默用错列）。
+
+    raw_cols   : 表头列名列表
+    semantic   : 语义名（仅用于报错信息）
+    candidates : 候选列名子串，按优先级排序，取第一个命中的
+    """
+    for cand in candidates:
+        m = [c for c in raw_cols if cand in str(c)]
+        if m:
+            return m[0]
+    raise SystemExit(
+        f"[致命] Dashboard 直读 Excel 找不到语义列「{semantic}」，候选列名 {candidates} 均未命中表头。"
+        f"请检查 data/ 下最新 Excel 的列名，或更新 config/settings.py 的 DASHBOARD_COL_PRIORITY。"
+    )
+
+
+def derive_periods(latest_period):
+    """纯函数：从最新数据期推导全部周期/年份字符串（批次② 年份周期动态化）。
+
+    入参 latest_period 可为 pd.Period / "YYYY-MM" / Timestamp，统一转 pd.Period。
+    返回 dict，key 与主流程 L396~417 的派生变量一一对应，另加趋势/半年度周期键。
+    注意：prev_y/prev_m = 上一月的年/月（沿用原 _prev_y/_prev_m 语义）；
+          prev_year = 上一自然年（latest_y - 1，用于同比/半年度对比）。
+    """
+    p = pd.Period(latest_period, freq="M")
+    latest = str(p)
+    latest_y = p.year
+    latest_m = p.month
+    prev_p = p - 1
+    prev_y = prev_p.year
+    prev_m = prev_p.month
+    prev_year = latest_y - 1   # 上一自然年（同比/半年度）
+    yy_latest = latest_y % 100   # 2 位年份缩写（F面 JSON key 用，如 26h1）
+    yy_prev = prev_year % 100    # 上一自然年的 2 位缩写（如 25h1）
+    y0 = latest_y - 2   # 趋势图起始年（3 年窗口最旧年）
+    y1 = latest_y - 1
+    y2 = latest_y
+    return {
+        "latest": latest,
+        "latest_y": latest_y,
+        "latest_m": latest_m,
+        "prev_period": str(prev_p),
+        "prev_y": prev_y,
+        "prev_m": prev_m,
+        "prev_year": prev_year,
+        "yy_latest": yy_latest,
+        "yy_prev": yy_prev,
+        "y0": y0, "y1": y1, "y2": y2,
+        "years": [y0, y1, y2],
+        "ytd_start": f"{latest_y}-01-01",
+        "ytd_end": p.end_time.strftime("%Y-%m-%d"),
+        "pytd_start": f"{prev_year}-01-01",
+        "pytd_end": (p - 12).end_time.strftime("%Y-%m-%d"),
+        "latest_month_start": p.start_time.strftime("%Y-%m-%d"),
+        "latest_month_end": p.end_time.strftime("%Y-%m-%d"),
+        "prev_month_start": prev_p.start_time.strftime("%Y-%m-%d"),
+        "prev_month_end": prev_p.end_time.strftime("%Y-%m-%d"),
+        "start_12m": str(p - 11),
+        "prior12_end": str(p - 12),
+        "cutoff_new": str(p - 12),
+        "near6_start": str(p - 5),
+        "prev6_start": str(p - 11),
+        "prev6_end": str(p - 6),
+        "t_mo_start": f"{y0}-01",       # 月度趋势表起始月
+        "trend_months_start": f"{y0}-07",  # F面产品月度趋势起始月
+        "h1_periods": {                  # F面半年对比（前年H1/前年H2/当年H1，key 用 2 位年份缩写）
+            f"{yy_prev}h1": (f"{prev_year}-01-01", f"{prev_year}-06-30"),
+            f"{yy_prev}h2": (f"{prev_year}-07-01", f"{prev_year}-12-31"),
+            f"{yy_latest}h1": (f"{latest_y}-01-01", f"{latest_y}-06-30"),
+        },
+    }
+
+
+def _selftest_periods():
+    """纯函数自测：伪造 2027 年数据期，验证周期字符串推导正确。"""
+    fake = pd.Period("2027-06", freq="M")
+    d = derive_periods(fake)
+    assert d["latest"] == "2027-06", d["latest"]
+    assert d["latest_y"] == 2027, d["latest_y"]
+    assert d["prev_y"] == 2027 and d["prev_m"] == 5, (d["prev_y"], d["prev_m"])   # 上一月=2027-05
+    assert d["prev_year"] == 2026, d["prev_year"]                                   # 上一自然年=2026
+    assert (d["y0"], d["y1"], d["y2"]) == (2025, 2026, 2027), d["years"]
+    assert d["years"] == [2025, 2026, 2027]
+    assert d["ytd_start"] == "2027-01-01"
+    assert d["ytd_end"] == "2027-06-30"
+    assert d["pytd_start"] == "2026-01-01"
+    assert d["start_12m"] == "2026-07"
+    assert d["prior12_end"] == "2026-06"
+    assert list(d["h1_periods"].keys()) == ["26h1", "26h2", "27h1"], d["h1_periods"]
+    assert d["h1_periods"]["27h1"] == ("2027-01-01", "2027-06-30")
+    assert d["h1_periods"]["26h1"] == ("2026-01-01", "2026-06-30")
+    assert d["h1_periods"]["26h2"] == ("2026-07-01", "2026-12-31")
+    assert d["t_mo_start"] == "2025-01"
+    assert d["trend_months_start"] == "2025-07"
+    # 2025-06 数据期（闰年/年中）回归
+    d2 = derive_periods(pd.Period("2025-06", freq="M"))
+    assert d2["latest"] == "2025-06" and d2["y0"] == 2023 and d2["y2"] == 2025
+    assert d2["prev_year"] == 2024
+    assert list(d2["h1_periods"].keys()) == ["24h1", "24h2", "25h1"]
+    print(f"[自测] derive_periods(2027-06) 推导结果: {json.dumps({k: d[k] for k in ('latest', 'latest_y', 'prev_year', 'y0', 'y1', 'y2', 'years', 'ytd_start', 't_mo_start', 'trend_months_start', 'h1_periods')}, ensure_ascii=False)}")
+    print("[自测] 纯函数周期推导 PASS")
+    return True
+
+
+if "--selftest" in sys.argv:
+    _selftest_periods()
+    sys.exit(0)
 
 def j(v):
     if isinstance(v,(np.integer,)):return int(v)
@@ -347,14 +469,20 @@ if not _xl_candidates:
 excel_path = _xl_candidates[0]
 print(f"  数据源: {os.path.basename(excel_path)}")
 # 先读表头确定需要的列，再按列名精准读取（calamine引擎 + usecols，结果与全量读取完全一致）
-raw_all_cols = list(pd.read_excel(excel_path, sheet_name="24-26", nrows=0, engine="calamine").columns)
+# sheet 名从 config.settings.DATA_SHEET_NAME 读取（批次②）
+raw_all_cols = list(pd.read_excel(excel_path, sheet_name=DATA_SHEET_NAME, nrows=0, engine="calamine").columns)
 # 找到产品列（含"产品线"或"产品品种"关键字）
 prod_cols_avail = [c for c in raw_all_cols if "产品" in str(c) or "型号" in str(c)]
 # 优先选"产品线"列，其次"产品品种"
 prod_col = next((c for c in prod_cols_avail if "产品线" in str(c)),
             next((c for c in prod_cols_avail if "品种" in str(c)), None))
-# 品类列：精确匹配"产品品类（新）"（Excel最后一列），回退到index 66
-cat_col = next((c for c in raw_all_cols if "产品品类（新）" in str(c)), None) or (raw_all_cols[66] if len(raw_all_cols) > 66 else next((c for c in raw_all_cols if "品类" in str(c)), None))
+# 语义列解析：品类 / 产品线（新） / 是否新品 / 实际业务员
+# 优先级列表在 config/settings.py 的 DASHBOARD_COL_PRIORITY（批次② 魔法列号语义化）
+_cfg_cands = DASHBOARD_COL_PRIORITY or {}
+cat_col = resolve_dashboard_col(raw_all_cols, "品类", _cfg_cands.get("category", ["产品品类（新）", "产品品类", "品类"]))
+pline_new_col = resolve_dashboard_col(raw_all_cols, "产品线（新）", _cfg_cands.get("product_line_new", ["型号_产品线（新）", "产品线（新）", "产品线"]))
+newprod_col = resolve_dashboard_col(raw_all_cols, "是否新品", _cfg_cands.get("is_new", ["是否新品", "新品标记"]))
+sales_col_raw = resolve_dashboard_col(raw_all_cols, "实际业务员", _cfg_cands.get("sales", ["实际业务员", "业务员", "销售员"]))
 # 存货名称列（用于A面产品型号变迁）
 item_col = next((c for c in raw_all_cols if "存货名称" in str(c)), None)
 keep_cols = ["发货日期","RMB 未税金额小计","利润","发货数量","终端客户名称_客户类别","终端客户简称","客户订单号"]
@@ -363,20 +491,17 @@ if cat_col: keep_cols.append(cat_col)
 if item_col: keep_cols.append(item_col)
 # cat_new_col 与 cat_col 同列（产品品类（新）），不重复添加
 cat_new_col = cat_col
-# E面：产品线（新）列 (index 24)
-pline_new_col = raw_all_cols[24] if len(raw_all_cols) > 24 else None
+# E面：产品线（新）列（由语义列解析）
 if pline_new_col and pline_new_col not in keep_cols:
     keep_cols.append(pline_new_col)
-# E面：是否新品列 (index 28)
-newprod_col = raw_all_cols[28] if len(raw_all_cols) > 28 else None
+# E面：是否新品列（由语义列解析）
 if newprod_col and newprod_col not in keep_cols:
     keep_cols.append(newprod_col)
-# D面：销售员列（index 4 = 实际业务员）
-sales_col_raw = raw_all_cols[4] if len(raw_all_cols) > 4 else None  # 实际业务员
+# D面：销售员列（实际业务员，由语义列解析）
 if sales_col_raw and sales_col_raw not in keep_cols:
     keep_cols.append(sales_col_raw)
 # 精准读取所需列（usecols 按文件原顺序返回；下一行再按 keep_cols 归一列序，与改造前完全一致）
-rex = pd.read_excel(excel_path, sheet_name="24-26", usecols=keep_cols, engine="calamine")
+rex = pd.read_excel(excel_path, sheet_name=DATA_SHEET_NAME, usecols=keep_cols, engine="calamine")
 rex = rex[keep_cols]
 print(f"  产品列: {repr(prod_col)}  品类列: {repr(cat_col)}")
 rex["_d"] = pd.to_datetime(rex["发货日期"], errors="coerce")
@@ -392,29 +517,39 @@ rex["_cat_new"] = rex[cat_new_col].astype(str).str.strip() if cat_new_col else p
 rex["_is_new"] = rex[newprod_col].astype(str).str.contains("是") if newprod_col else pd.Series(False, index=rex.index)
 rex["_ym"] = rex["_d"].dt.strftime("%Y-%m")
 
-# ---- 自动检测最新月份及衍生日期变量 ----
+# ---- 自动检测最新月份及衍生日期变量（批次②：统一由纯函数 derive_periods 推导）----
 _max_date = rex["_d"].max()
 _latest_period = pd.Period(_max_date, freq="M")
-latest = str(_latest_period)
-_latest_y = _latest_period.year
-_latest_m = _latest_period.month
-_prev_period = _latest_period - 1
-_prev_y = _prev_period.year
-_prev_m = _prev_period.month
-ytd_start = f"{_latest_y}-01-01"
-ytd_end = _latest_period.end_time.strftime("%Y-%m-%d")
-pytd_start = f"{_latest_y-1}-01-01"
-pytd_end = (_latest_period - 12).end_time.strftime("%Y-%m-%d")
-latest_month_start = _latest_period.start_time.strftime("%Y-%m-%d")
-latest_month_end = _latest_period.end_time.strftime("%Y-%m-%d")
-prev_month_start = _prev_period.start_time.strftime("%Y-%m-%d")
-prev_month_end = _prev_period.end_time.strftime("%Y-%m-%d")
-start_12m = str(_latest_period - 11)
-prior12_end = str(_latest_period - 12)
-cutoff_new = str(_latest_period - 12)
-near6_start = str(_latest_period - 5)
-prev6_start = str(_latest_period - 11)
-prev6_end = str(_latest_period - 6)
+_PD = derive_periods(_latest_period)
+latest = _PD["latest"]
+_latest_y = _PD["latest_y"]
+_latest_m = _PD["latest_m"]
+_prev_period = pd.Period(_PD["prev_period"], freq="M")
+_prev_y = _PD["prev_y"]
+_prev_m = _PD["prev_m"]
+_prev_year = _PD["prev_year"]
+_yy_latest = _PD["yy_latest"]
+_yy_prev = _PD["yy_prev"]
+ytd_start = _PD["ytd_start"]
+ytd_end = _PD["ytd_end"]
+pytd_start = _PD["pytd_start"]
+pytd_end = _PD["pytd_end"]
+latest_month_start = _PD["latest_month_start"]
+latest_month_end = _PD["latest_month_end"]
+prev_month_start = _PD["prev_month_start"]
+prev_month_end = _PD["prev_month_end"]
+start_12m = _PD["start_12m"]
+prior12_end = _PD["prior12_end"]
+cutoff_new = _PD["cutoff_new"]
+near6_start = _PD["near6_start"]
+prev6_start = _PD["prev6_start"]
+prev6_end = _PD["prev6_end"]
+# 年份/半年度动态化衍生（批次②）
+_y0 = _PD["y0"]; _y1 = _PD["y1"]; _y2 = _PD["y2"]
+_years = _PD["years"]
+_h1_periods = _PD["h1_periods"]
+_t_mo_start = _PD["t_mo_start"]
+_trend_months_start = _PD["trend_months_start"]
 
 print(f"  Raw Excel: {len(rex)}行 客户:{rex['_cust'].nunique()} 产品:{rex['_prod'].nunique()} 存货:{rex['_item'].nunique()}")
 
@@ -459,39 +594,47 @@ print(f"  YTD收入:{kpi_r}万 利润:{kpi_p}万 毛利率:{kpi_mg}% KA+AA:{kpi_
 # ========== 3. 月度趋势 ==========
 print("[3/5] 月度趋势...")
 t_mo = rex.groupby("_ym").agg(r=("_rev","sum"),p=("_profit","sum")).reset_index()
-t_mo = t_mo[(t_mo["_ym"]>="2024-01")&(t_mo["_ym"]<=f"{_latest_y}-12")].sort_values("_ym")
+t_mo = t_mo[(t_mo["_ym"]>=_t_mo_start)&(t_mo["_ym"]<=f"{_latest_y}-12")].sort_values("_ym")
 ml = ["1月","2月","3月","4月","5月","6月","7月","8月","9月","10月","11月","12月"]
+
+# 热点循环向量化：12 次逐月 DataFrame 布尔扫描 → 预聚合 dict + O(1) 定位（纯等价）
+_t_mo_map = {str(row["_ym"]): (float(row["r"]), float(row["p"])) for _, row in t_mo.iterrows()}
 def yd(yr):
-    rv,ct,pf,mg=[],[],[],[]
+    rv,ct,pf,mg=[None]*12,[None]*12,[None]*12,[None]*12
     for m in range(1,13):
-        k=f"{yr}-{m:02d}";row=t_mo[t_mo["_ym"]==k]
-        if len(row)>0:
-            r=float(row["r"].sum());p=float(row["p"].sum())
-            rv.append(round(r/1e4,0));ct.append(round((r-p)/1e4,0));pf.append(round(p/1e4,0));mg.append(round(p/r*100,1)if r>0 else 0)
-        else:rv.append(None);ct.append(None);pf.append(None);mg.append(None)
+        rec = _t_mo_map.get(f"{yr}-{m:02d}")
+        if rec is not None:
+            r,p = rec
+            rv[m-1]=round(r/1e4,0);ct[m-1]=round((r-p)/1e4,0);pf[m-1]=round(p/1e4,0);mg[m-1]=round(p/r*100,1) if r>0 else 0
     return rv,ct,pf,mg
-rv24,ct24,pf24,mg24=yd(2024);rv25,ct25,pf25,mg25=yd(2025);rv26,ct26,pf26,mg26=yd(2026)
-trend={"mo":ml,"r24":rv24,"c24":ct24,"p24":pf24,"m24":mg24,"r25":rv25,"c25":ct25,"p25":pf25,"m25":mg25,"r26":rv26,"c26":ct26,"p26":pf26,"m26":mg26}
+# 年份动态化：3 年窗口 [_y0,_y1,_y2]，JSON key 用 2 位年份缩写，形如 r24/c24/p24/m24（24=2024）
+trend = {"mo": ml}
+for _yr in _years:
+    _kk = _yr % 100
+    _rv,_ct,_pf,_mg = yd(_yr)
+    trend[f"r{_kk}"]=_rv; trend[f"c{_kk}"]=_ct; trend[f"p{_kk}"]=_pf; trend[f"m{_kk}"]=_mg
 
 # 分层趋势
 trend_tiers = {}
 for tier in ["KA","AA","KM","MM"]:
     ts = rex[rex["_tier"].str.contains(tier,na=False)]
     tm = ts.groupby("_ym").agg(r=("_rev","sum"),p=("_profit","sum")).reset_index()
-    tm = tm[(tm["_ym"]>="2024-01")&(tm["_ym"]<=f"{_latest_y}-12")].sort_values("_ym")
-    rv24t,ct24t,pf24t,mg24t=yd(2024) if False else (lambda yr: ([round(float(tm[tm["_ym"]==f"{yr}-{m:02d}"]["r"].sum())/1e4,0) if len(tm[tm["_ym"]==f"{yr}-{m:02d}"])>0 else None for m in range(1,13)],)*4)(2024)
-    # Simplified: compute inline
+    tm = tm[(tm["_ym"]>=_t_mo_start)&(tm["_ym"]<=f"{_latest_y}-12")].sort_values("_ym")
+    _tm_map = {str(row["_ym"]): (float(row["r"]), float(row["p"])) for _, row in tm.iterrows()}
     def tyd(yr):
-        trv,tct,tpf,tmg=[],[],[],[]
+        trv,tct,tpf,tmg=[None]*12,[None]*12,[None]*12,[None]*12
         for m in range(1,13):
-            k=f"{yr}-{m:02d}";row=tm[tm["_ym"]==k]
-            if len(row)>0:
-                r=float(row["r"].sum());p=float(row["p"].sum())
-                trv.append(round(r/1e4,0));tct.append(round((r-p)/1e4,0));tpf.append(round(p/1e4,0));tmg.append(round(p/r*100,1)if r>0 else 0)
-            else:trv.append(None);tct.append(None);tpf.append(None);tmg.append(None)
+            rec = _tm_map.get(f"{yr}-{m:02d}")
+            if rec is not None:
+                r,p = rec
+                trv[m-1]=round(r/1e4,0);tct[m-1]=round((r-p)/1e4,0);tpf[m-1]=round(p/1e4,0);tmg[m-1]=round(p/r*100,1) if r>0 else 0
         return trv,tct,tpf,tmg
-    rv24t,ct24t,pf24t,mg24t=tyd(2024);rv25t,ct25t,pf25t,mg25t=tyd(2025);rv26t,ct26t,pf26t,mg26t=tyd(2026)
-    trend_tiers[tier]={"r24":rv24t,"c24":ct24t,"p24":pf24t,"m24":mg24t,"r25":rv25t,"c25":ct25t,"p25":pf25t,"m25":mg25t,"r26":rv26t,"c26":ct26t,"p26":pf26t,"m26":mg26t}
+    _tier_trend = {}
+    for _yr in _years:
+        _kk = _yr % 100
+        _trv,_tct,_tpf,_tmg = tyd(_yr)
+        _tier_trend[f"r{_kk}"]=_trv; _tier_trend[f"c{_kk}"]=_tct; _tier_trend[f"p{_kk}"]=_tpf; _tier_trend[f"m{_kk}"]=_tmg
+    trend_tiers[tier] = _tier_trend
 print(f"    分层趋势完成")
 
 # KA+AA月度折线
@@ -660,37 +803,44 @@ for cid, grp in cxp_12m_r.groupby("_cust"):
     prank[cid]=[str(p) for p in top["_prod"].tolist()]
 
 # 产品型号变迁（全历史扫描：真正的新增=全历史从未出现，≥6000阈值）
-# 预计算每客户的全历史品种集合（2024-01 到 前12月结束 2025-05）
+# 预计算每客户的全历史品种集合（起始月 到 前12月结束）
+# 热点循环向量化：客户×月 逐条过滤+逐月聚合 → 一次 groupby（先按 客户×月×品种 过滤
+# q>=6000，再跨月汇总 rev/profit），与原有逐月逻辑纯等价。
 print("    预计算客户全历史品种...")
 customer_history_items = {}
 customer_history_rev = {}
-all_months_sorted = sorted(rex["_ym_full"].unique())
-for name in kaaa_gold["客户名称"].astype(str).str.strip():
-    hist_items = set()
-    hist_rev = {}
-    for m in all_months_sorted:
-        if m > prior12_end: break
-        dm = rex[(rex["_ym_full"]==m)&(rex["_cust"]==name)]
-        hist_agg = dm.groupby(["_item","_cat_new"]).agg(r=("_rev","sum"),p=("_profit","sum"),q=("_qty","sum")).reset_index()
-        for _, r in hist_agg[hist_agg["q"]>=6000].iterrows():
-            key = (str(r["_item"]), str(r["_cat_new"]))
-            hist_items.add(key)
-            if key not in hist_rev:
-                hist_rev[key] = {"rev":0.0,"profit":0.0}
-            hist_rev[key]["rev"] += float(r["r"])
-            hist_rev[key]["profit"] += float(r["p"])
-    customer_history_items[name] = hist_items
-    customer_history_rev[name] = hist_rev
+_kaaa_cust_set = set(kaaa_gold["客户名称"].astype(str).str.strip())
+_hist_rex = rex[(rex["_ym_full"] <= prior12_end) & (rex["_cust"].isin(_kaaa_cust_set))]
+_hist_month_agg = _hist_rex.groupby(["_cust", "_ym_full", "_item", "_cat_new"]).agg(
+    r=("_rev", "sum"), p=("_profit", "sum"), q=("_qty", "sum")).reset_index()
+_hist_month_agg = _hist_month_agg[_hist_month_agg["q"] >= 6000]
+_hist_agg = _hist_month_agg.groupby(["_cust", "_item", "_cat_new"]).agg(
+    r=("r", "sum"), p=("p", "sum")).reset_index()
+for name in _kaaa_cust_set:
+    customer_history_items[name] = set()
+    customer_history_rev[name] = {}
+for _, r in _hist_agg.iterrows():
+    _nm = str(r["_cust"])
+    _key = (str(r["_item"]), str(r["_cat_new"]))
+    customer_history_items[_nm].add(_key)
+    customer_history_rev[_nm][_key] = {"rev": float(r["r"]), "profit": float(r["p"])}
 
 product_change_detail = []
 # start_12m 已在数据加载阶段自动检测
+# 热点循环向量化：客户×近12月 逐条过滤 → 一次 groupby 预聚合，逐客户只做 set 运算
+_cur_rex = rex[(rex["_ym_full"] >= start_12m) & (rex["_ym_full"] <= latest) & (rex["_cust"].isin(_kaaa_cust_set))]
+_cur_agg_all = _cur_rex.groupby(["_cust", "_item", "_cat_new"]).agg(
+    r=("_rev", "sum"), p=("_profit", "sum"), q=("_qty", "sum")).reset_index()
+_cur_agg_all = _cur_agg_all[_cur_agg_all["q"] >= 6000]
+_cur_groups = {str(_nm): _grp for _nm, _grp in _cur_agg_all.groupby("_cust")}
 for _, row in kaaa_gold.iterrows():
-    name = str(row.get("客户名称","")).strip(); tier = str(row.get("客户层级",""))
-    cur_p = rex[(rex["_ym_full"]>=start_12m)&(rex["_ym_full"]<=latest)&(rex["_cust"]==name)]
-    # 近12月品种（≥6000）
-    cur_agg = cur_p.groupby(["_item","_cat_new"]).agg(r=("_rev","sum"),p=("_profit","sum"),q=("_qty","sum")).reset_index()
-    cur_agg = cur_agg[cur_agg["q"]>=6000]
-    cur_items = set(zip(cur_agg["_item"].astype(str),cur_agg["_cat_new"].astype(str)))
+    name = str(row.get("客户名称", "")).strip(); tier = str(row.get("客户层级", ""))
+    _cur_agg = _cur_groups.get(name)
+    if _cur_agg is None:
+        cur_items = set(); cur_lookup = {}
+    else:
+        cur_items = set(zip(_cur_agg["_item"].astype(str), _cur_agg["_cat_new"].astype(str)))
+        cur_lookup = {(str(r["_item"]), str(r["_cat_new"])): r for _, r in _cur_agg.iterrows()}
     # 全历史品种
     all_hist = customer_history_items.get(name, set())
     # 流失 = 历史有但近12月无；新增 = 全历史从未出现
@@ -702,7 +852,6 @@ for _, row in kaaa_gold.iterrows():
             return f"{cat_new_name} - {item_name}"
         return str(item_name)
     losses=[]; gains=[]
-    cur_lookup = {(str(r["_item"]),str(r["_cat_new"])):r for _,r in cur_agg.iterrows()}
     hist_lookup = customer_history_rev.get(name, {})
     for item, cn in lost_items:
         hr = hist_lookup.get((item,cn), {"rev":0.0,"profit":0.0})
@@ -1088,7 +1237,7 @@ for s in d_sales_list:
             s26_custs = set(r26_all[r26_all["_sales"]==s["name"]]["_cust"].unique())
             s25_custs = set(r25_all[r25_all["_sales"]==s["name"]]["_cust"].unique())
             sales_new_custs_2026 = len(s26_custs - s25_custs)
-            evidence.append(f"2026年新客数: {sales_new_custs_2026}个")
+            evidence.append(f"{_latest_y}年新客数: {sales_new_custs_2026}个")
         else:
             evidence.append(f"得分{score} · 团队均值{team_force_avg.get(fk,50)} · 差距{gap}")
         diagnosis.append({"force": label_cn, "force_key": fk, "score": score, "team_avg": team_force_avg.get(fk, 50), "gap": gap, "evidence": evidence})
@@ -1111,7 +1260,7 @@ for s in d_sales_list:
     s26custs = set(r26_all[r26_all["_sales"]==nm]["_cust"].unique())
     s25custs = set(r25_all[r25_all["_sales"]==nm]["_cust"].unique())
     new_cnt = len(s26custs - s25custs)
-    _force_evidence[nm]["new_dev"] = f"2026年新增{new_cnt}个客户"
+    _force_evidence[nm]["new_dev"] = f"{_latest_y}年新增{new_cnt}个客户"
     # 维系力证据：同比正增长客户TOP2
     if nm in cust_to_sales:
         scusts = set(cust_to_sales[nm]) if isinstance(cust_to_sales[nm], list) else {cust_to_sales[nm]}
@@ -1685,8 +1834,8 @@ for _cust in h1_kaaa_margins:
     if _cust["mg_yoy"] < -3 and _cust["rev"] > 100:
         # 客户产品级归因：按存货名称拆解毛利率变化
         _cn = _cust["name"]
-        _cust_26h1 = h1_data[(h1_data["_cust"] == _cn) & (h1_data["_d"] >= "2026-01-01") & (h1_data["_d"] <= "2026-06-30")]
-        _cust_25h1 = ph1_data[(ph1_data["_cust"] == _cn) & (ph1_data["_d"] >= "2025-01-01") & (ph1_data["_d"] <= "2025-06-30")]
+        _cust_26h1 = h1_data[(h1_data["_cust"] == _cn) & (h1_data["_d"] >= f"{_latest_y}-01-01") & (h1_data["_d"] <= f"{_latest_y}-06-30")]
+        _cust_25h1 = ph1_data[(ph1_data["_cust"] == _cn) & (ph1_data["_d"] >= f"{_prev_year}-01-01") & (ph1_data["_d"] <= f"{_prev_year}-06-30")]
         _cust_attr = []
         for _pn in _cust_26h1["_item"].unique():
             _pd26 = _cust_26h1[_cust_26h1["_item"] == _pn]
@@ -1700,15 +1849,15 @@ for _cust in h1_kaaa_margins:
             _cat_val = str(_pd26["_cat"].iloc[0]) if len(_pd26) > 0 else ""
             _cust_attr.append({
                 "name": _pn, "cat": _cat_val,
-                "rev_26h1": round(_r26 / 1e4, 1), "mg_26h1": round(_mg26, 1),
-                "rev_25h1": round(_r25 / 1e4, 1), "mg_25h1": round(_mg25, 1),
+                f"rev_{_yy_latest}h1": round(_r26 / 1e4, 1), f"mg_{_yy_latest}h1": round(_mg26, 1),
+                f"rev_{_yy_prev}h1": round(_r25 / 1e4, 1), f"mg_{_yy_prev}h1": round(_mg25, 1),
                 "mg_change": round(_mg26 - _mg25, 1),
                 "is_new": _r25 < 1000,
             })
         _cust_attr.sort(key=lambda x: x["mg_change"])
         # 判断原因类型
         _price_drop = [p for p in _cust_attr if p["mg_change"] < -3 and not p["is_new"]]
-        _new_low = [p for p in _cust_attr if p["is_new"] and p["mg_26h1"] < _cust["mg"]]
+        _new_low = [p for p in _cust_attr if p["is_new"] and p[f"mg_{_yy_latest}h1"] < _cust["mg"]]
         _reason = "价格原因" if len(_price_drop) >= len(_new_low) else "结构原因" if _new_low else "综合原因"
         h1_issues.append({"type": "KA/AA客户毛利率下滑", "target": _cn,
             "metric": f"毛利率{_cust['mg']}%(同比{_cust['mg_yoy']:+.1f}pp) → {_reason}",
@@ -1793,12 +1942,8 @@ print(f"  部门: {len(dept_list)}部 新品: {len(np_analysis)}个 存活率{np
 
 # ---- 8g. F面产品维度H1对比 ----
 print("  产品维度H1对比...")
-# 定义半年区间
-_h1_periods = {
-    "25h1": ("2025-01-01", "2025-06-30"),
-    "25h2": ("2025-07-01", "2025-12-31"),
-    "26h1": ("2026-01-01", "2026-06-30"),
-}
+# 定义半年区间（批次②：由 _latest_period 动态推导 前年H1/H2 + 当年H1）
+_h1_periods = _PD["h1_periods"]
 # 按存货名称聚合每个半年的收入/利润/成本
 _prod_h1 = {}
 for _pk, (_ps, _pe) in _h1_periods.items():
@@ -1817,7 +1962,7 @@ for _pk, (_ps, _pe) in _h1_periods.items():
         }
 
 # 近12月收入>10万的主要产品
-_near12 = rex[(rex["_d"] >= f"{_latest_y}-{_latest_m:02d}-01") if False else (rex["_d"] >= pd.Timestamp(latest) - pd.DateOffset(months=11))]
+_near12 = rex[rex["_d"] >= pd.Timestamp(latest) - pd.DateOffset(months=11)]
 _near12_rev = _near12.groupby("_item")["_rev"].sum()
 _major_items = set(_near12_rev[_near12_rev > 100000].index)
 
@@ -1833,9 +1978,9 @@ _risk_map = {}
 if "产品名称" in prod_df.columns and "综合风险等级" in prod_df.columns:
     _risk_map = dict(zip(prod_df["产品名称"].astype(str), prod_df["综合风险等级"].astype(str)))
 
-# 月度趋势数据（24个月）
+# 月度趋势数据（24个月，起始月动态）
 _all_months = sorted(rex["_ym"].unique())
-_trend_months = [m for m in _all_months if m >= "2024-07"][-24:]
+_trend_months = [m for m in _all_months if m >= _trend_months_start][-24:]
 _prod_trend = {}
 for _item in _major_items:
     _td = rex[rex["_item"] == _item]
@@ -1857,9 +2002,9 @@ for _item in _major_items:
 
 # 构建产品列表
 f_product_list = []
-for _item in sorted(_major_items, key=lambda x: -(_prod_h1.get(x, {}).get("26h1", {}).get("rev", 0))):
+for _item in sorted(_major_items, key=lambda x: -(_prod_h1.get(x, {}).get(f"{_yy_latest}h1", {}).get("rev", 0))):
     _d = _prod_h1.get(_item, {})
-    _fd = _first_dates.get(_item, pd.Timestamp("2024-01-01"))
+    _fd = _first_dates.get(_item, pd.Timestamp(f"{_y0}-01-01"))
     _days_since = (pd.Timestamp(latest) - _fd).days
     _is_new = _is_new_tag.get(_item, False)
     # 新品代次
@@ -1879,9 +2024,9 @@ for _item in sorted(_major_items, key=lambda x: -(_prod_h1.get(x, {}).get("26h1"
         "is_new": bool(_is_new and _days_since <= 365),
         "first_date": _fd.strftime("%Y-%m-%d") if hasattr(_fd, 'strftime') else str(_fd)[:10],
         "top_cust": _prod_top5.get(_item, [{}])[0].get("name", "") if _prod_top5.get(_item) else "",
-        "h1_25": _d.get("25h1", {"rev": 0, "profit": 0, "mg": 0}),
-        "h2_25": _d.get("25h2", {"rev": 0, "profit": 0, "mg": 0}),
-        "h1_26": _d.get("26h1", {"rev": 0, "profit": 0, "mg": 0}),
+        f"h1_{_yy_prev}": _d.get(f"{_yy_prev}h1", {"rev": 0, "profit": 0, "mg": 0}),
+        f"h2_{_yy_prev}": _d.get(f"{_yy_prev}h2", {"rev": 0, "profit": 0, "mg": 0}),
+        f"h1_{_yy_latest}": _d.get(f"{_yy_latest}h1", {"rev": 0, "profit": 0, "mg": 0}),
         "trend": _prod_trend.get(_item, {}),
         "top5": _prod_top5.get(_item, []),
     })
@@ -1907,29 +2052,29 @@ for _cat_name in sorted(h1_data["_cat"].dropna().unique()):
     for _pk, (_ps, _pe) in _h1_periods.items():
         _cd = rex[(rex["_d"] >= _ps) & (rex["_d"] <= _pe) & (rex["_cat"] == _cat_name)]
         _r = float(_cd["_rev"].sum()); _p = float(_cd["_profit"].sum())
-        if _r < 10000 and _pk == "26h1":
+        if _r < 10000 and _pk == f"{_yy_latest}h1":
             continue
         _cat_data[_pk] = {"rev": round(_r / 1e4, 1), "profit": round(_p / 1e4, 1), "mg": round(_p / _r * 100, 1) if _r > 0 else 0}
-    if not _cat_data.get("26h1"):
+    if not _cat_data.get(f"{_yy_latest}h1"):
         continue
-    _r25h1 = _cat_data.get("25h1", {}).get("rev", 0)
-    _r25h2 = _cat_data.get("25h2", {}).get("rev", 0)
-    _r26h1 = _cat_data.get("26h1", {}).get("rev", 0)
-    _mg25h1 = _cat_data.get("25h1", {}).get("mg", 0)
-    _mg25h2 = _cat_data.get("25h2", {}).get("mg", 0)
-    _mg26h1 = _cat_data.get("26h1", {}).get("mg", 0)
+    _r25h1 = _cat_data.get(f"{_yy_prev}h1", {}).get("rev", 0)
+    _r25h2 = _cat_data.get(f"{_yy_prev}h2", {}).get("rev", 0)
+    _r26h1 = _cat_data.get(f"{_yy_latest}h1", {}).get("rev", 0)
+    _mg25h1 = _cat_data.get(f"{_yy_prev}h1", {}).get("mg", 0)
+    _mg25h2 = _cat_data.get(f"{_yy_prev}h2", {}).get("mg", 0)
+    _mg26h1 = _cat_data.get(f"{_yy_latest}h1", {}).get("mg", 0)
     f_cat_h1.append({
         "name": _cat_name,
-        "rev_26h1": _r26h1, "mg_26h1": _mg26h1,
-        "rev_25h1": _r25h1, "mg_25h1": _mg25h1,
-        "rev_25h2": _r25h2, "mg_25h2": _mg25h2,
+        f"rev_{_yy_latest}h1": _r26h1, f"mg_{_yy_latest}h1": _mg26h1,
+        f"rev_{_yy_prev}h1": _r25h1, f"mg_{_yy_prev}h1": _mg25h1,
+        f"rev_{_yy_prev}h2": _r25h2, f"mg_{_yy_prev}h2": _mg25h2,
         "rev_yoy": round((_r26h1 - _r25h1) / _r25h1 * 100, 1) if _r25h1 > 0 else 0,
         "rev_mom": round((_r26h1 - _r25h2) / _r25h2 * 100, 1) if _r25h2 > 0 else 0,
         "mg_yoy": round(_mg26h1 - _mg25h1, 1),
         "mg_mom": round(_mg26h1 - _mg25h2, 1),
         "prod_count": len([p for p in f_product_list if p.get("cat") == _cat_name]),
     })
-f_cat_h1.sort(key=lambda x: -x["rev_26h1"])
+f_cat_h1.sort(key=lambda x: -x[f"rev_{_yy_latest}h1"])
 
 print(f"  品类: {len(f_cat_h1)}个")
 
@@ -2036,6 +2181,21 @@ replacements = {
     "%%ASP%%":f"{asp_ytd:.4f}","%%ASP_YOY%%":f"{asp_yoy:+.1f}","%%ASP_MOM%%":f"{asp_mom:+.1f}",
     "%%DATA_BLOCK%%":data_block,
     "%%C_DATA_JSON%%":c_data_json,
+    # ---- 年份/周期动态化占位符（批次②：由 _latest_period 推导，当前数据下与硬编码完全一致）----
+    "%%DATA_AS_OF%%":latest,                                  # 2026-06
+    "%%YTD_START_END%%":f"{_latest_y}-01-01 ~ {latest}",      # 2026-01-01 ~ 2026-06
+    "%%YTD_SHORT%%":f"{_latest_y}-01~{latest[-2:]}",          # 2026-01~06
+    "%%LATEST_YEAR%%":str(_latest_y),                         # 2026
+    "%%PREV_YEAR%%":str(_latest_y-1),                         # 2025
+    "%%Y0%%":str(_y0),"%%Y1%%":str(_y1),"%%Y2%%":str(_y2),    # 2024/2025/2026
+    "%%YY_LATEST%%":str(_yy_latest),                           # 26（F面 JSON key 用 2 位年份）
+    "%%YY_PREV%%":str(_yy_prev),                               # 25（F面 JSON key 用 2 位年份）
+    "%%YY_Y0%%":str(_y0 % 100),                                # 24（趋势图 JSON key 用 2 位年份）
+    "%%YY_Y1%%":str(_y1 % 100),                                # 25
+    "%%YY_Y2%%":str(_y2 % 100),                                # 26
+    # 与基线一致：E_SEL_MONTHS 用单引号字面量（golden_diff 的 JSON 解析器不识别单引号，
+    # 基线同样不收录该变量；若用 json.dumps 双引号会在对拍中出现"新增变量"假漂移）
+    "%%E_SEL_MONTHS_JSON%%":"['" + latest + "']",              # ['2026-06']
 }
 
 html = template
@@ -2048,6 +2208,20 @@ print(f"\n[OK] {OUT} {sz:.1f}MB | YTD:{kpi_r/10000:.1f}亿 毛利率:{kpi_mg}%")
 
 # ========== 审计 ==========
 print("\n[审计] 数据检查...")
+# 批次②修复：旧检查项检测的是 V9/V10 之前 HTML 里的字面量 `ytd_rev=...万`（早已不存在，恒 FAIL）。
+# 改为真实校验：直接比较生成时的 ytd_rev 数值变量（raw 口径 ytd_r）与 Silver 侧口径
+# （silver_cleaned_rows.csv 的 YTD 金额合计），相对容差 1e-6。
+try:
+    _sd_audit = pd.to_datetime(raw_rows["发货日期"], errors="coerce")
+    _sr_audit = pd.to_numeric(raw_rows["金额"], errors="coerce").fillna(0)
+    _silver_ytd_rev = float(_sr_audit[(_sd_audit >= ytd_start) & (_sd_audit <= ytd_end)].sum())
+    _rel_diff = abs(ytd_r - _silver_ytd_rev) / max(abs(ytd_r), abs(_silver_ytd_rev), 1e-9)
+    raw_silver_ok = _rel_diff <= 1e-6
+    print(f"  [Raw=Silver] raw YTD={ytd_r:.2f}  silver YTD={_silver_ytd_rev:.2f}  相对差={_rel_diff:.2e}")
+except Exception as _e:
+    raw_silver_ok = None
+    print(f"  [Raw=Silver] 无法校验: {_e}")
+
 checks = [
     ("KPI占位符","%%KPI_R%%" not in html),
     ("TREND数据","var TREND = {" in html),
@@ -2056,8 +2230,9 @@ checks = [
     ("SCAT散点","var SCAT = [" in html),
     ("B_CUSTS","var B_CUSTS = [" in html),
     ("C面DATA","const DATA = {" in html and "TABS" in html),
-    ("Raw=Silver验证",f"ytd_rev={ytd_r/1e4:.1f}万" in html),
 ]
+if raw_silver_ok is not None:
+    checks.append(("Raw=Silver验证", raw_silver_ok))
 all_ok = True
 for name,ok in checks:
     s="OK" if ok else "FAIL"

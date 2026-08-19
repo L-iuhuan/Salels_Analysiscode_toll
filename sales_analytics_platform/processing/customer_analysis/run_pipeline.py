@@ -22,7 +22,7 @@ if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
 from shared.data_cleaning import (
-    read_excel_auto, rename_erp_columns, build_cust_info,
+    read_excel_auto, rename_erp_columns, build_cust_info, load_silver_table,
     SILVER_DTYPE_CUSTOMER_MONTHLY, SILVER_DTYPE_PRODUCT_MONTHLY, SILVER_DTYPE_CUSTOMER_X_PRODUCT,
 )
 from customer_analysis.silver import build_silver_layer
@@ -73,7 +73,8 @@ def run(
         }
         for key in ["customer_monthly", "customer_x_product", "product_monthly"]:
             fpath = os.path.join(OUTPUT_SILVER, f"silver_{key}.csv")
-            df = pd.read_csv(fpath, encoding="utf-8-sig", dtype=_dtype_map.get(key, {}))
+            # 批次② 车道C：优先读同名 .parquet（存在且不早于 CSV），否则读 CSV
+            df = load_silver_table(fpath, dtype=_dtype_map.get(key, {}))
             df["_月"] = pd.PeriodIndex(df["_月"], freq="M")
             df = rename_erp_columns(df)
             silver[key] = df
