@@ -25,6 +25,7 @@
 | S5 | **看板只消费预聚合数据**（批次③起生效）——`--dashboard-only` 模式下对 `data/*.xlsx` 读取次数必须为 0 | 文件访问审计：`--dashboard-only` 运行期间无 `data/*.xlsx` 读取 |
 | S6 | **文件放置纪律**——工程文档入 `project_analysis\`，平台文档入 `sales_analytics_platform\`；产出文件不散落根目录；每批开工打 `pre-batch-N` tag、验收通过打 `batch-N-done` tag 并推送 | 每批验收时检查根目录无新增散件；`git tag` 有对应记录 |
 | S7 | **废弃文件不直接删除**——一律移入 `_deprecated\`（保留原相对路径）并在 `_deprecated\README.md` 登记表记录（原路径/日期/原因/决策人）；`_deprecated\` 内文件**禁止后续开发参考、引用、复制、import**；物理删除须"确认不可逆废弃"后单独 commit | grep 代码无 `_deprecated` 引用；登记表与实际文件一致 |
+| S8 | **等价性验证必须用生产数据路径做 before/after 对拍**——重构/向量化的对拍输入必须经 `load_silver_table`（生产 dtype 语义：categorical/float32/observed=False）加载；禁止用 read_csv 默认推断的临时数据做对拍输入（批次②.5 曾因此漏过 6 处漂移，被 golden_diff 门禁拦截） | 对拍脚本注明输入来源；抽查 dtype 与生产一致 |
 
 ## 三、建议（默认遵守，可不阻塞，5 条）
 
