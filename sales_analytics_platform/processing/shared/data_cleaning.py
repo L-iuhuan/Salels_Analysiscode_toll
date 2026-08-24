@@ -26,6 +26,7 @@
   - 列映射字典 ERP_COL_MAP 在 config/settings.py 中定义
 """
 
+import json
 import os
 import pandas as pd
 import numpy as np
@@ -54,11 +55,66 @@ def get_excel_engine():
         return None
 
 
+def is_encrypted_excel(path) -> bool:
+    """W1 快照仓：检测 Excel 是否被 DSE 等加密。
+
+    明文 xlsx 以 ZIP 魔数 `PK\\x03\\x04` 开头；DSE 加密文件头为 `00 00 5b 00` 等非 PK。
+    calamine / openpyxl 均无法读取非 ZIP 头文件。
+    """
+    try:
+        with open(path, "rb") as f:
+            head = f.read(4)
+        return head != b"PK\x03\x04"
+    except OSError:
+        return False
+
+
+def find_matching_snapshot(xlsx_path, warehouse_root):
+    """W1 快照仓：在 data_warehouse 下找与源 Excel（name+mtime）匹配的快照。
+
+    返回 (parquet_path, manifest) 或 None。
+    匹配条件：manifest.source.name == basename(xlsx_path) 且
+    manifest.source.mtime == xlsx_path 的 mtime（mtime 一致即同一文件版本）。
+    xlsx_path 不存在时（如已移走但 mtime 无法校验）仅按 name 匹配。
+    """
+    if not os.path.isdir(warehouse_root):
+        return None
+    name = os.path.basename(xlsx_path)
+    cur_mtime = None
+    if os.path.exists(xlsx_path):
+        cur_mtime = os.stat(xlsx_path).st_mtime
+    for ym in sorted(os.listdir(warehouse_root), reverse=True):
+        mf = os.path.join(warehouse_root, ym, "manifest.json")
+        if not os.path.isfile(mf):
+            continue
+        try:
+            with open(mf, "r", encoding="utf-8") as f:
+                man = json.load(f)
+        except (json.JSONDecodeError, OSError):
+            continue
+        src = man.get("source", {}) if isinstance(man, dict) else {}
+        if src.get("name") != name:
+            continue
+        if cur_mtime is not None and src.get("mtime") != cur_mtime:
+            continue  # 源文件已变化，快照过期
+        pq = os.path.join(warehouse_root, ym, "erp_snapshot.parquet")
+        if os.path.isfile(pq):
+            return pq, man
+    return None
+
+
 def read_excel_auto(*args, **kwargs):
     """pd.read_excel wrapper — 自动选择最快可用引擎 (calamine > openpyxl)。
 
-    calamine 读取速度是 openpyxl 的 5-10 倍，适用于大文件。
+    W1 快照仓加固：若目标文件已被 DSE 加密（文件头非 ZIP/PK），calamine/openpyxl 均读不了，
+    直接抛明确中文错误引导先跑 scripts/ingest_snapshot.py（避免引擎报晦涩英文 traceback）。
     """
+    if args and isinstance(args[0], (str, os.PathLike)) and os.path.isfile(str(args[0])):
+        if is_encrypted_excel(str(args[0])):
+            raise RuntimeError(
+                "数据文件已被 DSE 加密（文件头非 ZIP/PK，calamine/openpyxl 均无法读取）。\n"
+                "请在明文窗口先运行：python scripts\\ingest_snapshot.py 生成 data_warehouse 快照后再跑批。"
+            )
     if 'engine' not in kwargs:
         engine = get_excel_engine()
         if engine:

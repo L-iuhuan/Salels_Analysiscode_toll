@@ -184,8 +184,23 @@ def stage_silver(source_path: str) -> tuple:
     from data_pipeline.validator import SimpleValidator
     _validator = SimpleValidator()
 
-    print(f"  读取: {source_path}")
-    raw = read_excel_auto(source_path, sheet_name=DATA_SHEET_NAME)
+    # ── 数据源选择（W1 快照仓）：优先 data_warehouse 匹配快照，否则直读 Excel；加密且无快照→报错 ──
+    from shared.data_cleaning import find_matching_snapshot, is_encrypted_excel
+    warehouse_root = os.path.join(PROJECT_ROOT, "..", "data_warehouse")
+    _snap = find_matching_snapshot(source_path, warehouse_root)
+    if _snap is not None:
+        _pq_path, _man = _snap
+        print(f"  数据源: data_warehouse 快照（{os.path.basename(os.path.dirname(_pq_path))}/erp_snapshot.parquet，"
+              f"源: {_man.get('source', {}).get('name', '')}）")
+        raw = pd.read_parquet(_pq_path)
+    else:
+        if is_encrypted_excel(source_path):
+            print("[错误] 数据文件已被 DSE 加密（文件头非 ZIP/PK，calamine/openpyxl 均无法读取），"
+                  "且 data_warehouse 无匹配快照。")
+            print("       请先在明文窗口运行：python scripts\\ingest_snapshot.py 生成快照，再跑批。")
+            sys.exit(1)
+        print(f"  读取: {source_path}")
+        raw = read_excel_auto(source_path, sheet_name=DATA_SHEET_NAME)
     _validator.validate_raw(raw)  # V1: 源数据验证
 
     raw = rename_erp_columns(raw)

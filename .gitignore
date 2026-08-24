@@ -17,6 +17,7 @@ __pycache__/
 
 # â”€â”€ æ•°æ®/äº§å‡ºç›®å½• â”€â”€
 data/
+data_warehouse/
 output/
 outputs/
 test_output/
@@ -37,8 +38,8 @@ nul_
 Thumbs.db
 .DS_Store
 
-# unified ¶¨°æ¶Ô±ÈÊÕ¸îµÄ´óĞÍCSV(´ÅÅÌÁôÖ¤,²»Èë¿â)
+# unified ï¿½ï¿½ï¿½ï¿½Ô±ï¿½ï¿½Õ¸ï¿½Ä´ï¿½ï¿½ï¿½CSV(ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö¤,ï¿½ï¿½ï¿½ï¿½ï¿½)
 project_analysis/unified_compare/**/*.csv
 
-# kanban Îª¶ÀÁ¢ git ²Ö¿â£¨º¬±ãĞ¯ Python »·¾³£©£¬²»ÄÉÈë±¾²Ö¿â
+# kanban Îªï¿½ï¿½ï¿½ï¿½ git ï¿½Ö¿â£¨ï¿½ï¿½ï¿½ï¿½Ğ¯ Python ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ë±¾ï¿½Ö¿ï¿½
 kanban/
