@@ -26,3 +26,5 @@
 | test/test_pipeline.py | 2026-08-19 | 测试 mock 而非真实契约；批次④b 补真实编排测试 | 批次②.5 council裁决 |
 | 长库龄存货明细.xlsx（根目录散件） | 2026-08-24 | 未注册散件，非平台输入；如后续需要长库龄分析，从封存取回 | 用户拍板（仓库卫生整理） |
 | 2026年7月销售经营分析_数据附件.xlsx（根目录散件） | 2026-08-24 | 未注册散件；文件名与流水线输入（财务分析-x月.xlsx）不同构。若为7月跑批输入，从封存取回放入 `sales_analytics_platform\data\` 并核对列结构（注意 data\ 多文件时自动探测取字母序第一个的风险） | 用户拍板（仓库卫生整理） |
+| CoStrict\（根目录，30文件/1.6MB） | 2026-08-24 | 用户拍板"删除"（按 S7 封存）。外部工具数据目录（cache/settings/tasks），与本仓库无耦合；robocopy /MOVE 移入 | 用户拍板 |
+| forecasting\quarterly\ 报告产物5个（3×html/pdf/png 报告 + Chart_Data xlsx + Sales_Forecast html，~6.8MB） | 2026-08-24 | 报告产物散落代码目录（违反 R2 精神）；forecasting 暂时不用，产物封存。取回路径：`_deprecated\forecasting\quarterly\` | 用户拍板（仓库卫生整理） |
