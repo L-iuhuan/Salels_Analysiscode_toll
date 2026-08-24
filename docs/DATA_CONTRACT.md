@@ -958,3 +958,4 @@ dashboard/dashboard_a.html（内嵌 JSON 看板，A~F 六面）
 | 日期 | 事件 | 说明 |
 |---|---|---|
 | 2026-08-19 | **接口契约冻结**（批次②.5 收官里程碑） | 以本文件当前状态 + `baseline\20260818_batch1` 为批次④a 列迁移基线。冻结期内改动任何 Silver/Gold/Dashboard 输入 schema，必须先改本文件再改代码（宪法 A2 配套） |
+| 2026-08-24 | 批次④a 收口：看板加载底座切换至 silver_cleaned_rows（优先 parquet，零 Excel 直读）；本文Dashboard直读Excel列专节自此转为历史记录 |
