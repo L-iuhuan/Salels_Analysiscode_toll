@@ -23,7 +23,7 @@
 | S3 | **清洗口径全链路唯一**——`build_silver_layer()` 是唯一 Silver 构建入口；链式运行与单模块独立运行必须产出一致结果 | 分别用 run_chain 与单跑 run_pipeline 跑同一月数据，关键合计差异 < 0.01% |
 | S4 | **阶段失败必须非零退出并阻断下游**——任一 stage 缺关键产物，`run_chain.py` 返回非 0，禁止继续生成看板 | 破坏性测试：删必要列，断言退出码 ≠ 0 且 dashboard_a.html 未更新 |
 | S5 | **看板只消费预聚合数据**（批次③起生效）——`--dashboard-only` 模式下对 `data/*.xlsx` 读取次数必须为 0 | 文件访问审计：`--dashboard-only` 运行期间无 `data/*.xlsx` 读取 |
-| S6 | **文件放置纪律**——工程文档入 `project_analysis\`，平台文档入 `sales_analytics_platform\`；产出文件不散落根目录；每批开工打 `pre-batch-N` tag、验收通过打 `batch-N-done` tag 并推送 | 每批验收时检查根目录无新增散件；`git tag` 有对应记录 |
+| S6 | **文件放置与发布纪律**——工程文档入 `project_analysis\`，平台文档入 `sales_analytics_platform\`；产出文件不散落根目录；每批开工打 `pre-batch-N` tag、验收通过打 `batch-N-done` tag 并推送；**改了 `sales_analytics_platform\` 代码/配置，收工必须跑 publish（`kanban\tools\publish_to_share.ps1`）或在台账登记未同步原因**；共享盘只出核心代码（看板产物/数据/快照仓不上盘） | 每批验收时检查根目录无新增散件；`git tag` 有对应记录；publish 自检报告落后版本数 |
 | S7 | **废弃文件不直接删除**——一律移入 `_deprecated\`（保留原相对路径）并在 `_deprecated\README.md` 登记表记录（原路径/日期/原因/决策人）；`_deprecated\` 内文件**禁止后续开发参考、引用、复制、import**；物理删除须"确认不可逆废弃"后单独 commit | grep 代码无 `_deprecated` 引用；登记表与实际文件一致 |
 | S8 | **等价性验证必须用生产数据路径做 before/after 对拍**——重构/向量化的对拍输入必须经 `load_silver_table`（生产 dtype 语义：categorical/float32/observed=False）加载；禁止用 read_csv 默认推断的临时数据做对拍输入（批次②.5 曾因此漏过 6 处漂移，被 golden_diff 门禁拦截） | 对拍脚本注明输入来源；抽查 dtype 与生产一致 |
 
@@ -45,6 +45,7 @@
 |---|---|---|
 | 根目录 | `使用说明.md`、`PROJECT_CHARTER.md`、`.gitignore`、登记保留的 rar | 新增任何散件（脚本/文档/数据/截图） |
 | `sales_analytics_platform\` | 平台代码、`data\`（输入）、`output\`（产出，gitignore）、平台 README/说明、bat | 工程文档（应入 project_analysis） |
+| `sales_analytics_platform\data_warehouse\` | 月度 ERP 明文快照仓（`YYYYMM\erp_snapshot.parquet` + `manifest.json`，W1 快照仓，gitignore，不进共享盘） | 源文件/加密件、手工编辑快照 |
 | `forecasting\` | 预测系统代码与其归档 `_archive\` | 平台相关文件 |
 | `project_analysis\` | 全部工程文档：诊断/裁决/计划/台账/验证报告 | 数据文件、产出文件 |
 | `_archive_source\` | 只读源副本 | 任何修改（只读封存） |
