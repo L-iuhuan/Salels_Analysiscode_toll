@@ -14,6 +14,7 @@ output/ 里的中间结果（gold/silver CSV、产品报告Excel）也可直接�
 用法：
   python run_chain.py                        # 全流程（数据处理 + 生成看板）
   python run_chain.py --skip-processing      # 数据没变，只用现有 output/ 重新生成看板（快）
+  python run_chain.py --dashboard-only       # 只看板快速模式：要求预聚合缓存(output/dashboard/preagg.json)指纹新鲜，过期/缺失则报错退出
   python run_chain.py --force-silver         # 强制重算Silver层（改了清洗配置后）
   python run_chain.py --data "D:/path/数据.xlsx"   # 临时指定原始Excel（默认自动找 data/ 里最新的）
 
@@ -21,12 +22,23 @@ output/ 里的中间结果（gold/silver CSV、产品报告Excel）也可直接�
 """
 
 import argparse
+import io
 import json
 import os
 import shutil
 import subprocess
 import sys
 import time
+
+# GBK/UTF-8 控制台兼容：防止非 GBK 字符（如 banner 里的 ▶ U+25B6）在 print 时抛
+# UnicodeEncodeError 中断流程（[STAGE]/[n/m] 协议行文本不受影响，仅错误替换显示）。
+try:
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer,
+                                  encoding=sys.stdout.encoding or "utf-8", errors="replace")
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer,
+                                  encoding=sys.stderr.encoding or "utf-8", errors="replace")
+except (AttributeError, OSError, ValueError):
+    pass
 
 # 本脚本所在目录 = 便携包根目录（一切路径的锚点，保证可移植）
 PKG = os.path.dirname(os.path.abspath(__file__))
@@ -139,10 +151,49 @@ def ensure_output_junction():
                      "processing\\data    →  data\\")
 
 
+def _gate_dashboard_only(raw_path):
+    """--dashboard-only 严格门禁：output/dashboard/preagg.json 必须存在且指纹新鲜，否则报错退出。
+
+    批次③拍板（台账未决#3）：--dashboard-only 下预聚合数据过期必须报错退出，不得静默用旧数据。
+    指纹契约见 processing/shared/fingerprint.py（车道D 与 车道P 共享）。
+    """
+    preagg_path = os.path.join(DIR_OUT, "dashboard", "preagg.json")
+    # 与 processing 各模块一致的 sys.path 注入方式（processing/ 为共享模块根）
+    proc_dir = os.path.join(PKG, "processing")
+    if proc_dir not in sys.path:
+        sys.path.insert(0, proc_dir)
+    try:
+        from shared.fingerprint import compute_dashboard_fingerprint, fingerprints_equal
+    except Exception as e:  # noqa: BLE001
+        print(f"[错误] 无法加载指纹模块 shared/fingerprint.py: {type(e).__name__}: {e}")
+        sys.exit(1)
+
+    if not os.path.exists(preagg_path):
+        print("[错误] --dashboard-only：未找到预聚合缓存 output/dashboard/preagg.json。")
+        print("       数据/配置/代码已变化，请先全量跑：python run_chain.py --data ...")
+        sys.exit(1)
+    try:
+        with open(preagg_path, "r", encoding="utf-8") as f:
+            preagg = json.load(f)
+    except (json.JSONDecodeError, OSError) as e:
+        print(f"[错误] --dashboard-only：预聚合缓存损坏（读取失败: {e}）。")
+        print("       数据/配置/代码已变化，请先全量跑：python run_chain.py --data ...")
+        sys.exit(1)
+    stored = preagg.get("fingerprint") if isinstance(preagg, dict) else None
+    current = compute_dashboard_fingerprint(PKG, raw_path)
+    if not fingerprints_equal(stored, current):
+        print("[错误] --dashboard-only：数据/配置/代码已变化，预聚合缓存过期。")
+        print("       请先全量跑：python run_chain.py --data ...")
+        sys.exit(1)
+    print("[OK] 预聚合缓存新鲜（指纹一致），进入看板快速路径")
+
+
 def main():
     ap = argparse.ArgumentParser(description="看板流水线 · 一键编排器")
     ap.add_argument("--data", default=None, help="原始Excel路径（默认自动找 data/ 最新）")
     ap.add_argument("--skip-processing", action="store_true", help="跳过数据处理，直接用 output/ 现有结果生成看板")
+    ap.add_argument("--dashboard-only", action="store_true",
+                    help="只看板快速模式：跳过数据处理，要求预聚合缓存 output/dashboard/preagg.json 指纹新鲜，过期/缺失则报错退出")
     ap.add_argument("--skip-dashboard", action="store_true", help="只做数据处理，不生成看板")
     ap.add_argument("--force-silver", action="store_true", help="强制重算Silver层")
     ap.add_argument("--stages", default=None, help="前段阶段（逗号分隔），默认用配置")
@@ -195,6 +246,7 @@ def main():
     ensure_output_junction()
 
     # ── 跳过数据处理的前置校验:无缓存产出时中文报错,避免后段炸英文 traceback ──
+    # （--skip-processing 原行为不变；--dashboard-only 由预聚合指纹门禁把关）
     if args.skip_processing:
         gold_dir = os.path.join(DIR_OUT, "gold")
         if not (os.path.isdir(gold_dir) and any(f.endswith(".csv") for f in os.listdir(gold_dir))):
@@ -202,8 +254,9 @@ def main():
             print("       请取消勾选,先完整运行一次数据处理。")
             sys.exit(1)
 
-    # ── 步骤 1/2：数据处理（前段，产出直接写 output/）──
-    if not args.skip_processing:
+    # ── 步骤 1/2：数据处理（前段，产出直接写 output/；--dashboard-only 同样跳过处理）──
+    skip_proc = args.skip_processing or args.dashboard_only
+    if not skip_proc:
         fe = [sys.executable, os.path.join(DIR_PROC, "run_all.py"),
               "--data", raw_path, "--stage", cfg["stages"]]
         if args.force_silver:
@@ -213,10 +266,16 @@ def main():
             print(f"\n[错误] 数据处理失败(exit={rc})，已停止。请先看上面的报错。")
             sys.exit(rc)
     else:
-        print("\n[跳过] 数据处理（--skip-processing），直接用 output/ 现有结果")
+        if args.dashboard_only:
+            print("\n[跳过] 数据处理（--dashboard-only），要求预聚合缓存新鲜")
+        else:
+            print("\n[跳过] 数据处理（--skip-processing），直接用 output/ 现有结果")
 
     # ── 步骤 2/2：生成看板（后段，从 output/ 和 data/ 取数）──
     if not args.skip_dashboard:
+        # --dashboard-only 严格门禁：预聚合缓存过期/缺失必须报错退出（台账未决#3）
+        if args.dashboard_only:
+            _gate_dashboard_only(raw_path)
         print("[STAGE 6/6] 生成看板", flush=True)
         be = [sys.executable, os.path.join(DIR_DASH, "generate_dashboard.py")]
         rc, _ = run_subprocess(be, DIR_DASH, "步骤 2/2 · 生成看板 (generate_dashboard.py)")

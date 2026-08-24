@@ -28,6 +28,87 @@ except Exception as _e:  # 兼容非标准目录下运行
 
 DATA_SHEET_NAME = getattr(cfg, "DATA_SHEET_NAME", "24-26")
 DASHBOARD_COL_PRIORITY = getattr(cfg, "DASHBOARD_COL_PRIORITY", {}) or {}
+DASHBOARD_AXIS_CLIP = getattr(cfg, "DASHBOARD_AXIS_CLIP", {"margin_pct": [1, 99], "asp_pct": [1, 99]})
+
+# ========== 批次③ 车道D：看板自缓存（preagg.json）+ 展示层分位截断 ==========
+import time as _time_mod
+try:
+    from shared import fingerprint as _fp
+except Exception as _e:  # 兼容非标准目录下运行
+    _fp = None
+    print(f"  [警告] 未能导入 processing.shared.fingerprint: {_e}")
+
+PREAGG_DIR = os.path.join(PROJECT, "output", "dashboard")
+PREAGG_PATH = os.path.join(PREAGG_DIR, "preagg.json")
+_NO_CACHE = ("--no-cache" in sys.argv)
+_DASH_TIMING = os.environ.get("DASH_TIMING", "0") == "1"
+_PROG_START = _time_mod.time()
+
+
+def _timed(label, t0):
+    """耗时打点（DASH_TIMING=1 时输出各段耗时）。"""
+    dt = _time_mod.time() - t0
+    if _DASH_TIMING:
+        print(f"  [计时] {label}: {dt:.1f}s")
+    return _time_mod.time()
+
+
+def _fmt_axis(v):
+    """轴边界格式化：保留 2 位小数（与预演报告口径一致）。"""
+    return f"{float(v):.2f}"
+
+
+def _compute_percentile_bounds(vals, pct):
+    """对数值列表求 [低分位, 高分位]；空列表/非有限值安全回退。"""
+    arr = [float(v) for v in vals if v is not None and v == v]  # 过滤 None/NaN
+    arr = [v for v in arr if v != float("inf") and v != float("-inf")]
+    if not arr:
+        return 0.0, 0.0
+    lo, hi = pct
+    lo_v = float(np.percentile(arr, lo))
+    hi_v = float(np.percentile(arr, hi))
+    return lo_v, hi_v
+
+
+def _margin_axis_bounds(c_data):
+    """从 C面 table 的 近12月毛利率%（全产品群体）计算截断边界。
+
+    注意：用全量产品群体（而非 DATA.scatter 的 x——后者会剔除增长率缺失的产品，
+    导致 p1/p99 偏窄），与预演报告(impact_rehearsal)口径一致
+    （raw[-662.56,100] -> p1~p99[-17.66,80.83]）。
+    """
+    _mpct = DASHBOARD_AXIS_CLIP.get("margin_pct", [1, 99])
+    _vals = []
+    for _r in (c_data.get("table") or []):
+        _v = _r.get("近12月毛利率%")
+        if _v is None:
+            continue
+        try:
+            _fv = float(_v)
+        except (TypeError, ValueError):
+            continue
+        if _fv == _fv:  # 非 NaN
+            _vals.append(_fv)
+    _lo, _hi = _compute_percentile_bounds(_vals, _mpct)
+    return {"min": _fmt_axis(_lo), "max": _fmt_axis(_hi), "raw_min": _lo, "raw_max": _hi,
+            "raw_abs_min": (min(_vals) if _vals else 0), "raw_abs_max": (max(_vals) if _vals else 0)}
+
+
+def _asp_axis_bounds(prod_trend):
+    """从 F面产品月度 ASP 趋势数组计算截断边界（正 ASP 值）。"""
+    _apct = DASHBOARD_AXIS_CLIP.get("asp_pct", [1, 99])
+    _vals = []
+    for _td in (prod_trend or {}).values():
+        for _v in (_td.get("asp") or []):
+            try:
+                _fv = float(_v)
+            except (TypeError, ValueError):
+                continue
+            if _fv > 0:
+                _vals.append(_fv)
+    _lo, _hi = _compute_percentile_bounds(_vals, _apct)
+    return {"min": _fmt_axis(_lo), "max": _fmt_axis(_hi), "raw_min": _lo, "raw_max": _hi,
+            "raw_abs_min": (min(_vals) if _vals else 0), "raw_abs_max": (max(_vals) if _vals else 0)}
 
 
 def resolve_dashboard_col(raw_cols, semantic, candidates):
@@ -451,8 +532,113 @@ def build_c_data(prod_df, hist_df=None, data_month=None, insuff_count=0):
         print(f"  数据月份: {data_month}")
     return data
 
+# ========== 批次③ 车道D：看板自缓存（preagg.json）判定 ==========
+# 指纹新鲜且缓存存在 → 走缓存路径（跳过全部重算，直接渲染），否则全算并写缓存。
+_fp_cur = None
+_excel_for_fp = None
+_cache_hit = False
+_cached_obj = None
+if not _NO_CACHE and _fp is not None:
+    try:
+        _xl_c = sorted(
+            [f for f in glob.glob(os.path.join(PROJECT, "data", "*.xlsx"))
+             if not os.path.basename(f).startswith("~$")],
+            key=os.path.getmtime, reverse=True)
+        if _xl_c:
+            _excel_for_fp = _xl_c[0]
+    except Exception:
+        _excel_for_fp = None
+    try:
+        _fp_cur = _fp.compute_dashboard_fingerprint(PROJECT, excel_path=_excel_for_fp)
+    except Exception as _e:
+        _fp_cur = None
+        print(f"  [缓存] 指纹计算失败: {_e}")
+    if _fp_cur is not None and os.path.exists(PREAGG_PATH):
+        try:
+            with open(PREAGG_PATH, "r", encoding="utf-8") as _f:
+                _cached_obj = json.load(_f)
+            if _fp.fingerprints_equal(_cached_obj.get("fingerprint"), _fp_cur):
+                _cache_hit = True
+        except Exception as _e:
+            _cached_obj = None
+            print(f"  [缓存] preagg.json 读取/比对失败: {_e}")
+
+if _cache_hit and _cached_obj:
+    # ---- 缓存命中：跳过全部重算，直接进 JSON 注入 + 渲染 ----
+    _T_CACHE0 = _time_mod.time()
+    print("[缓存] preagg.json 命中，跳过重算，直接渲染")
+    # Tauri 壳依赖的子阶段标记：原格式原样打印
+    for _mk in [
+        "[1/5] 加载数据...", "[2/5] YTD KPI...", "[3/5] 月度趋势...",
+        "[4/5] 饼图+散点...", "[5/5] 客户列表+B面...",
+        "[6/6] D面 销售能力...", "[7/7] E面 月度作战雷达...", "[8/8] F面H1汇总 + 部门级次 + 新品分析...",
+    ]:
+        print(_mk)
+
+    _pl_c = _cached_obj.get("payload", {})
+    _cached_replacements = _pl_c.get("replacements", {}) or {}
+    _cached_data_block = _pl_c.get("data_block", "")
+    _cached_asp_axis = _pl_c.get("asp_axis", {}) or {}
+
+    # 重建 C面（轻量：读报告 + 构建 DATA，与全算路径同源；报告缺失回退 gold 快照）
+    import pathlib as _pl_mod
+    try:
+        _prod_df_cache = pd.read_csv(os.path.join(GOLD, "gold_product_portrait.csv"))
+    except Exception:
+        _prod_df_cache = None
+    _snap_df_c, _hist_df_c, _data_month_c, _insuff_c = load_product_report()
+    _c_src_c = _snap_df_c if _snap_df_c is not None else _prod_df_cache
+    c_data = build_c_data(_c_src_c, hist_df=_hist_df_c, data_month=_data_month_c, insuff_count=_insuff_c)
+    c_data_json = json.dumps(c_data, ensure_ascii=False, separators=(",", ":"))
+    print(f"  C_DATA JSON大小: {len(c_data_json):,} 字符")
+
+    # 展示层截断：毛利率轴始终由当前 C面 scatter 现算（保证与全算路径一致）
+    _mb = _margin_axis_bounds(c_data)
+    print(f"  [截断] 毛利率轴: raw[{_mb['raw_abs_min']:.2f}, {_mb['raw_abs_max']:.2f}] "
+          f"-> p{DASHBOARD_AXIS_CLIP.get('margin_pct', [1,99])[0]}~p{DASHBOARD_AXIS_CLIP.get('margin_pct', [1,99])[1]}[{_mb['min']}, {_mb['max']}]")
+
+    _replacements = dict(_cached_replacements)
+    _replacements["%%DATA_BLOCK%%"] = _cached_data_block
+    _replacements["%%C_DATA_JSON%%"] = c_data_json
+    _replacements["%%MARGIN_AXIS_MIN%%"] = _mb["min"]
+    _replacements["%%MARGIN_AXIS_MAX%%"] = _mb["max"]
+    _replacements["%%ASP_AXIS_MIN%%"] = _fmt_axis(_cached_asp_axis.get("min", 0))
+    _replacements["%%ASP_AXIS_MAX%%"] = _fmt_axis(_cached_asp_axis.get("max", 0))
+
+    # 渲染
+    _template_c = _pl_mod.Path(__file__).parent / "template.html"
+    _html_c = _template_c.read_text(encoding="utf-8")
+    for _k_c, _v_c in _replacements.items():
+        _html_c = _html_c.replace(_k_c, _v_c)
+    with open(OUT, "w", encoding="utf-8") as _f_c:
+        _f_c.write(_html_c)
+    _sz_c = os.path.getsize(OUT) / (1024 * 1024)
+    print(f"\n[OK] {OUT} {_sz_c:.1f}MB | [缓存命中] 数据直接来自 preagg.json")
+    print(f"  [缓存] 命中路径总耗时: {_time_mod.time() - _T_CACHE0:.1f}s (进程累计 {_time_mod.time() - _PROG_START:.1f}s)")
+
+    # 轻量审计（HTML 内容检查；Raw=Silver 需 rex/silver，缓存路径跳过）
+    _checks_c = [
+        ("KPI占位符", "%%KPI_R%%" not in _html_c),
+        ("TREND数据", "var TREND = {" in _html_c),
+        ("SA列表", "var SA = [" in _html_c),
+        ("PIE饼图", "var PIE = [" in _html_c),
+        ("SCAT散点", "var SCAT = [" in _html_c),
+        ("B_CUSTS", "var B_CUSTS = [" in _html_c),
+        ("C面DATA", "const DATA = {" in _html_c and "TABS" in _html_c),
+    ]
+    _all_ok_c = True
+    for _n_c, _ok_c in _checks_c:
+        _s_c = "OK" if _ok_c else "FAIL"
+        if not _ok_c:
+            _all_ok_c = False
+        print(f"  [{_s_c}] {_n_c}")
+    print("  [SKIP] Raw=Silver验证（缓存命中，跳过真实数值校验）")
+    print(f"{'全部通过' if _all_ok_c else '有检查失败'}")
+    sys.exit(0)
+
 # ========== 1. 加载 ==========
 print("[1/5] 加载数据...")
+_t_seg0 = _time_mod.time()  # 计时打点（DASH_TIMING=1 时输出各段耗时）
 # Gold CSV（客户属性）
 df = pd.read_csv(os.path.join(GOLD,"客户全景.csv"))
 # C面产品数据
@@ -554,6 +740,7 @@ _trend_months_start = _PD["trend_months_start"]
 print(f"  Raw Excel: {len(rex)}行 客户:{rex['_cust'].nunique()} 产品:{rex['_prod'].nunique()} 存货:{rex['_item'].nunique()}")
 
 # ========== 2. KPI ==========
+_timed("加载数据+rex构建", _t_seg0); _t_seg0 = _time_mod.time()
 print("[2/5] YTD KPI...")
 r26 = rex[(rex["_d"]>=ytd_start)&(rex["_d"]<=ytd_end)]
 r25 = rex[(rex["_d"]>=pytd_start)&(rex["_d"]<=pytd_end)]
@@ -592,6 +779,7 @@ print(f"  ASP:{asp_ytd}元 同比:{asp_yoy}% 环比:{asp_mom}%")
 print(f"  YTD收入:{kpi_r}万 利润:{kpi_p}万 毛利率:{kpi_mg}% KA+AA:{kpi_sc}个")
 
 # ========== 3. 月度趋势 ==========
+_timed("KPI/KA散点准备", _t_seg0); _t_seg0 = _time_mod.time()
 print("[3/5] 月度趋势...")
 t_mo = rex.groupby("_ym").agg(r=("_rev","sum"),p=("_profit","sum")).reset_index()
 t_mo = t_mo[(t_mo["_ym"]>=_t_mo_start)&(t_mo["_ym"]<=f"{_latest_y}-12")].sort_values("_ym")
@@ -643,6 +831,7 @@ kaa_rev = {}
 for _,r in kaaa_mo.iterrows(): kaa_rev[str(r["_ym"])]=round(float(r["r"])/1e4,2)
 
 # ========== 4. 饼图+散点 ==========
+_timed("月度趋势/分层趋势", _t_seg0); _t_seg0 = _time_mod.time()
 print("[4/5] 饼图+散点...")
 # 饼图：K类客户（使用Excel raw数据中的有交易客户数）
 # 统计有交易的客户数（按层级去重）
@@ -678,6 +867,7 @@ for _,r in ka_s.iterrows():
         scat.append({"n":info.get("n",name),"g":round(j(r["g"]),1),"mg":round(j(r["mg"]),1),"rev":round(float(r["ytd_rev"])/1e4,2),"d":info.get("d","")})
 
 # ========== 5. 客户列表+B面 ==========
+_timed("饼图+散点", _t_seg0); _t_seg0 = _time_mod.time()
 print("[5/5] 客户列表+B面...")
 
 # A面客户列表（KA+AA）
@@ -949,6 +1139,7 @@ for _,row in all_sorted.iterrows():
     })
 
 # ========== 6. D面 销售能力 ==========
+_timed("A面客户列表+B面(含产品变迁)", _t_seg0); _t_seg0 = _time_mod.time()
 print("[6/6] D面 销售能力...")
 
 # 6a. 定位销售员列（使用加载阶段读到的 sales_col_raw）
@@ -1364,6 +1555,7 @@ for s in d_sales_list:
 print(f"    客户热力图(利润): {len(top33_custs)}客户 x {len(d_sales_list)}销售员")
 
 # ========== 7. E面 月度作战雷达 ==========
+_timed("D面销售能力(含客户热力图)", _t_seg0); _t_seg0 = _time_mod.time()
 print("[7/7] E面 月度作战雷达...")
 
 # 7a. 全量月度KPI（所有月份 + 所有客户）
@@ -1598,6 +1790,7 @@ e_import_summary["rev"] = round(sum(fi["rev"] for fi in fi_latest), 2)
 e_import_summary["month"] = latest_month
 
 # ========== 8. F面 H1半年度汇总 + D面部门级次 + 新品分析 ==========
+_timed("E面月度作战雷达(含量利拆解)", _t_seg0); _t_seg0 = _time_mod.time()
 print("[8/8] F面H1汇总 + 部门级次 + 新品分析...")
 
 # ---- 8a. 部门映射 ----
@@ -1993,6 +2186,12 @@ for _item in _major_items:
         "asp": [round(float(_monthly["r"].iloc[i]) / float(_monthly["q"].iloc[i]), 4) if float(_monthly["q"].iloc[i]) > 0 else 0 for i in range(len(_trend_months))],
     }
 
+# 展示层截断：ASP 轴边界（F面产品月度ASP趋势；从 fingerprinted 的 rex 数据派生，可入缓存）
+_asp_bounds = _asp_axis_bounds(_prod_trend)
+print(f"  [截断] ASP轴: raw[{_asp_bounds['raw_abs_min']:.2f}, {_asp_bounds['raw_abs_max']:.2f}] "
+      f"-> p{DASHBOARD_AXIS_CLIP.get('asp_pct', [1,99])[0]}~p{DASHBOARD_AXIS_CLIP.get('asp_pct', [1,99])[1]}[{_asp_bounds['min']}, {_asp_bounds['max']}]")
+_asp_axis_cache = {"min": _asp_bounds["raw_min"], "max": _asp_bounds["raw_max"]}
+
 # Top5客户
 _prod_top5 = {}
 for _item in _major_items:
@@ -2155,7 +2354,13 @@ c_data = build_c_data(_c_src, hist_df=_hist_df, data_month=_data_month, insuff_c
 c_data_json = json.dumps(c_data, ensure_ascii=False, separators=(",", ":"))
 print(f"  C_DATA JSON大小: {len(c_data_json):,} 字符")
 
+# 展示层截断：毛利率轴边界（始终由当前 C面 scatter 现算，保证缓存/全算两路径一致）
+_margin_bounds = _margin_axis_bounds(c_data)
+print(f"  [截断] 毛利率轴: raw[{_margin_bounds['raw_abs_min']:.2f}, {_margin_bounds['raw_abs_max']:.2f}] "
+      f"-> p{DASHBOARD_AXIS_CLIP.get('margin_pct', [1,99])[0]}~p{DASHBOARD_AXIS_CLIP.get('margin_pct', [1,99])[1]}[{_margin_bounds['min']}, {_margin_bounds['max']}]")
+
 # ========== HTML ==========
+_timed("F面H1汇总+C面DATA构建", _t_seg0); _t_seg0 = _time_mod.time()
 print("[HTML] 生成...")
 import pathlib
 template_path = pathlib.Path(__file__).parent / "template.html"
@@ -2196,6 +2401,11 @@ replacements = {
     # 与基线一致：E_SEL_MONTHS 用单引号字面量（golden_diff 的 JSON 解析器不识别单引号，
     # 基线同样不收录该变量；若用 json.dumps 双引号会在对拍中出现"新增变量"假漂移）
     "%%E_SEL_MONTHS_JSON%%":"['" + latest + "']",              # ['2026-06']
+    # ---- 批次③ D-1：展示层分位截断轴边界（内嵌 JSON 数据不变，仅可视范围截断）----
+    "%%MARGIN_AXIS_MIN%%":_margin_bounds["min"],
+    "%%MARGIN_AXIS_MAX%%":_margin_bounds["max"],
+    "%%ASP_AXIS_MIN%%":_asp_bounds["min"],
+    "%%ASP_AXIS_MAX%%":_asp_bounds["max"],
 }
 
 html = template
@@ -2246,3 +2456,30 @@ print(f"  KPI: rev={kpi_r}万 profit={kpi_p}万 mg={kpi_mg}%")
 print(f"  KA YTD: rev={ka_rev_ytd/1e4:.1f}万 profit={ka_profit_ytd/1e4:.1f}万")
 print(f"  SA客户: {len(csa)}个 B面客户: {len(call)}个 趋势: {len(ctr)}个 品类: {len(cid_12m_data)}个")
 print(f"{'全部通过' if all_ok else '有检查失败'}")
+
+# ========== 批次③ 车道D：写 preagg.json 缓存 ==========
+_timed("HTML渲染+审计", _t_seg0)
+print(f"\n[缓存] 全算路径总耗时: {_time_mod.time() - _PROG_START:.1f}s")
+if not _NO_CACHE and _fp is not None and _fp_cur is not None:
+    try:
+        os.makedirs(PREAGG_DIR, exist_ok=True)
+        _cache_payload = {
+            "data_block": data_block,
+            # 缓存除 DATA_BLOCK / C_DATA_JSON / 毛利率轴（现算）外的全部占位符值
+            "replacements": {k: v for k, v in replacements.items()
+                             if k not in ("%%DATA_BLOCK%%", "%%C_DATA_JSON%%",
+                                          "%%MARGIN_AXIS_MIN%%", "%%MARGIN_AXIS_MAX%%")},
+            # ASP 轴边界源自 fingerprinted 的 rex 数据，缓存原始浮点值
+            "asp_axis": _asp_axis_cache,
+        }
+        _cache_obj = {"fingerprint": _fp_cur, "payload": _cache_payload}
+        with open(PREAGG_PATH, "w", encoding="utf-8") as _f:
+            json.dump(_cache_obj, _f, ensure_ascii=False)
+        print(f"  [缓存] 已写入 {PREAGG_PATH}")
+    except Exception as _e:
+        print(f"  [缓存] 写入失败: {_e}")
+else:
+    if _NO_CACHE:
+        print("  [缓存] 已通过 --no-cache 跳过（不读不写）")
+    elif _fp is None:
+        print("  [缓存] fingerprint 模块不可用，跳过缓存")
