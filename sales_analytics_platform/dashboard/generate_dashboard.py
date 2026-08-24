@@ -111,6 +111,21 @@ def _asp_axis_bounds(prod_trend):
             "raw_abs_min": (min(_vals) if _vals else 0), "raw_abs_max": (max(_vals) if _vals else 0)}
 
 
+def _load_silver_rows(csv_path, usecols):
+    """读 silver_cleaned_rows（批次④a 看板底座）：优先同名 .parquet（存在且 mtime>=CSV），否则 CSV（仅 usecols）。"""
+    pq = os.path.splitext(csv_path)[0] + ".parquet"
+    if os.path.exists(pq) and os.path.exists(csv_path) and os.path.getmtime(pq) >= os.path.getmtime(csv_path):
+        try:
+            df = pd.read_parquet(pq, columns=usecols)
+            print(f"  [Silver] silver_cleaned_rows ← parquet ({len(df)} 行)")
+            return df
+        except Exception as _e:
+            print(f"  [警告] parquet 读取失败，回退 CSV: {type(_e).__name__}: {_e}")
+    df = pd.read_csv(csv_path, encoding="utf-8-sig", usecols=usecols, low_memory=False)
+    print(f"  [Silver] silver_cleaned_rows ← CSV ({len(df)} 行)")
+    return df
+
+
 def resolve_dashboard_col(raw_cols, semantic, candidates):
     """按语义列名优先级解析列；全部候选都找不到则报错退出（避免静默用错列）。
 
@@ -535,21 +550,15 @@ def build_c_data(prod_df, hist_df=None, data_month=None, insuff_count=0):
 # ========== 批次③ 车道D：看板自缓存（preagg.json）判定 ==========
 # 指纹新鲜且缓存存在 → 走缓存路径（跳过全部重算，直接渲染），否则全算并写缓存。
 _fp_cur = None
-_excel_for_fp = None
 _cache_hit = False
 _cached_obj = None
 if not _NO_CACHE and _fp is not None:
+    # 批次④a 集成修复：两侧（generate_dashboard 与 run_chain --dashboard-only 门禁）统一纳入 Excel 身份。
+    # 恢复默认自动探测（excel_path=None → _latest_excel 自动取 data/ 最新 xlsx，8MB 头部 sha256 仅 ~50ms）。
+    # 语义：用户放入新月份 Excel 但未全量跑时，--dashboard-only 必须报"请先全量跑"（台账未决#3 拍板结论）；
+    # dashboard 数据源来自 silver 的事实由指纹 outputs 键表达，excel 键表达"输入是否已变"，两者不冲突。
     try:
-        _xl_c = sorted(
-            [f for f in glob.glob(os.path.join(PROJECT, "data", "*.xlsx"))
-             if not os.path.basename(f).startswith("~$")],
-            key=os.path.getmtime, reverse=True)
-        if _xl_c:
-            _excel_for_fp = _xl_c[0]
-    except Exception:
-        _excel_for_fp = None
-    try:
-        _fp_cur = _fp.compute_dashboard_fingerprint(PROJECT, excel_path=_excel_for_fp)
+        _fp_cur = _fp.compute_dashboard_fingerprint(PROJECT)
     except Exception as _e:
         _fp_cur = None
         print(f"  [缓存] 指纹计算失败: {_e}")
@@ -643,65 +652,90 @@ _t_seg0 = _time_mod.time()  # 计时打点（DASH_TIMING=1 时输出各段耗时
 df = pd.read_csv(os.path.join(GOLD,"客户全景.csv"))
 # C面产品数据
 prod_df = pd.read_csv(os.path.join(GOLD,"gold_product_portrait.csv"))
-# Raw Excel 全量（客户视角+产品视角统一数据源）—— 自动检测最新xlsx
+# 批次④a：看板零 Excel 收口。默认读 silver_cleaned_rows（优先 parquet，生产 dtype 语义）；
+# --from-excel 显式回退到原始 Excel 直读（行为与批次③完全一致）。
 import glob as _glob
-_xl_candidates = sorted(
-    [f for f in _glob.glob(os.path.join(PROJECT, "data", "*.xlsx"))
-     if not os.path.basename(f).startswith("~$")],
-    key=os.path.getmtime, reverse=True
-)
-if not _xl_candidates:
-    raise FileNotFoundError("data/ 目录下未找到 .xlsx 文件")
-excel_path = _xl_candidates[0]
-print(f"  数据源: {os.path.basename(excel_path)}")
-# 先读表头确定需要的列，再按列名精准读取（calamine引擎 + usecols，结果与全量读取完全一致）
-# sheet 名从 config.settings.DATA_SHEET_NAME 读取（批次②）
-raw_all_cols = list(pd.read_excel(excel_path, sheet_name=DATA_SHEET_NAME, nrows=0, engine="calamine").columns)
-# 找到产品列（含"产品线"或"产品品种"关键字）
-prod_cols_avail = [c for c in raw_all_cols if "产品" in str(c) or "型号" in str(c)]
-# 优先选"产品线"列，其次"产品品种"
-prod_col = next((c for c in prod_cols_avail if "产品线" in str(c)),
-            next((c for c in prod_cols_avail if "品种" in str(c)), None))
-# 语义列解析：品类 / 产品线（新） / 是否新品 / 实际业务员
-# 优先级列表在 config/settings.py 的 DASHBOARD_COL_PRIORITY（批次② 魔法列号语义化）
-_cfg_cands = DASHBOARD_COL_PRIORITY or {}
-cat_col = resolve_dashboard_col(raw_all_cols, "品类", _cfg_cands.get("category", ["产品品类（新）", "产品品类", "品类"]))
-pline_new_col = resolve_dashboard_col(raw_all_cols, "产品线（新）", _cfg_cands.get("product_line_new", ["型号_产品线（新）", "产品线（新）", "产品线"]))
-newprod_col = resolve_dashboard_col(raw_all_cols, "是否新品", _cfg_cands.get("is_new", ["是否新品", "新品标记"]))
-sales_col_raw = resolve_dashboard_col(raw_all_cols, "实际业务员", _cfg_cands.get("sales", ["实际业务员", "业务员", "销售员"]))
-# 存货名称列（用于A面产品型号变迁）
-item_col = next((c for c in raw_all_cols if "存货名称" in str(c)), None)
-keep_cols = ["发货日期","RMB 未税金额小计","利润","发货数量","终端客户名称_客户类别","终端客户简称","客户订单号"]
-if prod_col: keep_cols.append(prod_col)
-if cat_col: keep_cols.append(cat_col)
-if item_col: keep_cols.append(item_col)
-# cat_new_col 与 cat_col 同列（产品品类（新）），不重复添加
-cat_new_col = cat_col
-# E面：产品线（新）列（由语义列解析）
-if pline_new_col and pline_new_col not in keep_cols:
-    keep_cols.append(pline_new_col)
-# E面：是否新品列（由语义列解析）
-if newprod_col and newprod_col not in keep_cols:
-    keep_cols.append(newprod_col)
-# D面：销售员列（实际业务员，由语义列解析）
-if sales_col_raw and sales_col_raw not in keep_cols:
-    keep_cols.append(sales_col_raw)
-# 精准读取所需列（usecols 按文件原顺序返回；下一行再按 keep_cols 归一列序，与改造前完全一致）
-rex = pd.read_excel(excel_path, sheet_name=DATA_SHEET_NAME, usecols=keep_cols, engine="calamine")
-rex = rex[keep_cols]
-print(f"  产品列: {repr(prod_col)}  品类列: {repr(cat_col)}")
-rex["_d"] = pd.to_datetime(rex["发货日期"], errors="coerce")
-rex["_rev"] = pd.to_numeric(rex["RMB 未税金额小计"], errors="coerce").fillna(0)
-rex["_profit"] = pd.to_numeric(rex["利润"], errors="coerce").fillna(0)
-rex["_qty"] = pd.to_numeric(rex["发货数量"], errors="coerce").fillna(0)
-rex["_cust"] = rex["终端客户简称"].astype(str).str.strip()
-rex["_tier"] = rex["终端客户名称_客户类别"].astype(str)
-rex["_prod"] = rex[prod_col].astype(str) if prod_col else pd.Series("未知", index=rex.index)
-rex["_cat"] = rex[cat_col].astype(str).str.strip() if cat_col else pd.Series("未知", index=rex.index)
-rex["_item"] = rex[item_col].astype(str).str.strip() if item_col else pd.Series("未知", index=rex.index)
-rex["_cat_new"] = rex[cat_new_col].astype(str).str.strip() if cat_new_col else pd.Series("", index=rex.index)
-rex["_is_new"] = rex[newprod_col].astype(str).str.contains("是") if newprod_col else pd.Series(False, index=rex.index)
-rex["_ym"] = rex["_d"].dt.strftime("%Y-%m")
+_FROM_EXCEL = ("--from-excel" in sys.argv)
+if _FROM_EXCEL:
+    # ── 原始 Excel 直读路径（显式回退开关，默认不走）──
+    _xl_candidates = sorted(
+        [f for f in _glob.glob(os.path.join(PROJECT, "data", "*.xlsx"))
+         if not os.path.basename(f).startswith("~$")],
+        key=os.path.getmtime, reverse=True
+    )
+    if not _xl_candidates:
+        raise FileNotFoundError("data/ 目录下未找到 .xlsx 文件")
+    excel_path = _xl_candidates[0]
+    print(f"  数据源: {os.path.basename(excel_path)} (--from-excel 直读)")
+    raw_all_cols = list(pd.read_excel(excel_path, sheet_name=DATA_SHEET_NAME, nrows=0, engine="calamine").columns)
+    # 找到产品列（含"产品线"或"产品品种"关键字）
+    prod_cols_avail = [c for c in raw_all_cols if "产品" in str(c) or "型号" in str(c)]
+    # 优先选"产品线"列，其次"产品品种"
+    prod_col = next((c for c in prod_cols_avail if "产品线" in str(c)),
+                next((c for c in prod_cols_avail if "品种" in str(c)), None))
+    # 语义列解析：品类 / 产品线（新） / 是否新品 / 实际业务员（优先级在 settings.DASHBOARD_COL_PRIORITY）
+    _cfg_cands = DASHBOARD_COL_PRIORITY or {}
+    cat_col = resolve_dashboard_col(raw_all_cols, "品类", _cfg_cands.get("category", ["产品品类（新）", "产品品类", "品类"]))
+    pline_new_col = resolve_dashboard_col(raw_all_cols, "产品线（新）", _cfg_cands.get("product_line_new", ["型号_产品线（新）", "产品线（新）", "产品线"]))
+    newprod_col = resolve_dashboard_col(raw_all_cols, "是否新品", _cfg_cands.get("is_new", ["是否新品", "新品标记"]))
+    sales_col_raw = resolve_dashboard_col(raw_all_cols, "实际业务员", _cfg_cands.get("sales", ["实际业务员", "业务员", "销售员"]))
+    # 存货名称列（用于A面产品型号变迁）
+    item_col = next((c for c in raw_all_cols if "存货名称" in str(c)), None)
+    keep_cols = ["发货日期","RMB 未税金额小计","利润","发货数量","终端客户名称_客户类别","终端客户简称","客户订单号"]
+    if prod_col: keep_cols.append(prod_col)
+    if cat_col: keep_cols.append(cat_col)
+    if item_col: keep_cols.append(item_col)
+    cat_new_col = cat_col
+    if pline_new_col and pline_new_col not in keep_cols:
+        keep_cols.append(pline_new_col)
+    if newprod_col and newprod_col not in keep_cols:
+        keep_cols.append(newprod_col)
+    if sales_col_raw and sales_col_raw not in keep_cols:
+        keep_cols.append(sales_col_raw)
+    rex = pd.read_excel(excel_path, sheet_name=DATA_SHEET_NAME, usecols=keep_cols, engine="calamine")
+    rex = rex[keep_cols]
+    print(f"  产品列: {repr(prod_col)}  品类列: {repr(cat_col)}")
+    rex["_d"] = pd.to_datetime(rex["发货日期"], errors="coerce")
+    rex["_rev"] = pd.to_numeric(rex["RMB 未税金额小计"], errors="coerce").fillna(0)
+    rex["_profit"] = pd.to_numeric(rex["利润"], errors="coerce").fillna(0)
+    rex["_qty"] = pd.to_numeric(rex["发货数量"], errors="coerce").fillna(0)
+    rex["_cust"] = rex["终端客户简称"].astype(str).str.strip()
+    rex["_tier"] = rex["终端客户名称_客户类别"].astype(str)
+    rex["_prod"] = rex[prod_col].astype(str) if prod_col else pd.Series("未知", index=rex.index)
+    rex["_cat"] = rex[cat_col].astype(str).str.strip() if cat_col else pd.Series("未知", index=rex.index)
+    rex["_item"] = rex[item_col].astype(str).str.strip() if item_col else pd.Series("未知", index=rex.index)
+    rex["_cat_new"] = rex[cat_new_col].astype(str).str.strip() if cat_new_col else pd.Series("", index=rex.index)
+    rex["_is_new"] = rex[newprod_col].astype(str).str.contains("是") if newprod_col else pd.Series(False, index=rex.index)
+    rex["_ym"] = rex["_d"].dt.strftime("%Y-%m")
+else:
+    # ── Silver 底座（默认）：读 silver_cleaned_rows，列名已是 ERP_COL_MAP 归一后的标准名 ──
+    _keep = ["发货日期","金额","利润","数量","客户类别","客户编号","客户订单号",
+             "产品一级分类","产品品类","产品品种","型号_产品线（新）","新品标记","实际业务员"]
+    _keep = [c for c in _keep if c in pd.read_csv(os.path.join(SILVER, "silver_cleaned_rows.csv"), nrows=0, encoding="utf-8-sig").columns]
+    rex = _load_silver_rows(os.path.join(SILVER, "silver_cleaned_rows.csv"), _keep)
+    # 语义列变量（与 --from-excel 路径同名，供下游 D面6a/E面7c 等使用）
+    prod_col = "产品一级分类" if "产品一级分类" in rex.columns else None
+    cat_col = "产品品类" if "产品品类" in rex.columns else None
+    cat_new_col = cat_col
+    item_col = "产品品种" if "产品品种" in rex.columns else None
+    pline_new_col = "型号_产品线（新）" if "型号_产品线（新）" in rex.columns else None
+    newprod_col = "新品标记" if "新品标记" in rex.columns else None
+    sales_col_raw = "实际业务员" if "实际业务员" in rex.columns else None
+    print(f"  产品列: {repr(prod_col)}  品类列: {repr(cat_col)}")
+    rex["_d"] = pd.to_datetime(rex["发货日期"], errors="coerce")
+    rex["_rev"] = pd.to_numeric(rex["金额"], errors="coerce").fillna(0)
+    rex["_profit"] = pd.to_numeric(rex["利润"], errors="coerce").fillna(0)
+    rex["_qty"] = pd.to_numeric(rex["数量"], errors="coerce").fillna(0)
+    # 客户编号：silver 已将空客户 fillna("未知客户")；为与 --from-excel 路径（空客户→"nan"）逐字节一致，
+    # 将"未知客户"映射回 "nan"（Step 0 已证：仅 1799 行空客户被 fillna，无真实客户叫"未知客户"）
+    rex["_cust"] = rex["客户编号"].astype(str).str.strip().str.replace("未知客户", "nan")
+    rex["_tier"] = rex["客户类别"].astype(str)
+    rex["_prod"] = rex["产品一级分类"].astype(str) if "产品一级分类" in rex.columns else pd.Series("未知", index=rex.index)
+    rex["_cat"] = rex["产品品类"].astype(str).str.strip() if "产品品类" in rex.columns else pd.Series("未知", index=rex.index)
+    rex["_item"] = rex["产品品种"].astype(str).str.strip() if "产品品种" in rex.columns else pd.Series("未知", index=rex.index)
+    rex["_cat_new"] = rex["产品品类"].astype(str).str.strip() if "产品品类" in rex.columns else pd.Series("", index=rex.index)
+    rex["_is_new"] = rex["新品标记"].astype(str).str.contains("是") if "新品标记" in rex.columns else pd.Series(False, index=rex.index)
+    rex["_ym"] = rex["_d"].dt.strftime("%Y-%m")
 
 # ---- 自动检测最新月份及衍生日期变量（批次②：统一由纯函数 derive_periods 推导）----
 _max_date = rex["_d"].max()
@@ -1226,8 +1260,20 @@ for name, grp in sc_agg.groupby("_sales"):
                 "qty": round(float(r["cat_qty"]) / 1e4, 2),
             })
 
-# 擅长产品线（从Raw Excel 产品线列聚合，每人Top2）
-prod_line_col = next((c for c in rex.columns if "产品线" in str(c)), None)
+# 擅长产品线（从"产品线"列聚合，每人Top2）
+# 批次④a 集成修复：silver 的"产品线"已归一为"产品一级分类"，而"型号_产品线（新）"是另一维度（E面）；
+# 原先 `"产品线" in str(c)` 子串匹配在 silver 下会误命中"型号_产品线（新）"。改为精确名优先（产品一级分类/产品线），
+# 保持 --from-excel（"产品线"列）与 silver（"产品一级分类"列）语义一致。
+prod_line_col = None
+for _cand in ["产品一级分类", "产品线"]:
+    for _c in rex.columns:
+        if _cand == str(_c):
+            prod_line_col = _c
+            break
+    if prod_line_col:
+        break
+if prod_line_col is None:
+    prod_line_col = next((c for c in rex.columns if "产品线" in str(c)), None)
 if prod_line_col:
     rex["_prod_line"] = rex[prod_line_col].astype(str).str.strip()
     pl_agg = rex[(rex["_d"]>=ytd_start)&(rex["_d"]<=ytd_end)&(rex["_sales"].isin(sales_2026_set))].groupby(["_sales","_prod_line"])["_rev"].sum().reset_index()
@@ -1373,32 +1419,39 @@ for fk in force_keys:
     vals = [s["forces"].get(fk, 50) for s in d_sales_list if s["forces"].get(fk, 0) > 0]
     team_force_avg[fk] = round(sum(vals)/len(vals), 1) if vals else 50
 
-# 为客户维系力证据准备：每个客户同比数据
+# 为客户维系力证据准备：每个客户同比数据（批次④a 向量化：逐客户过滤 → 一次 groupby）
 cust_yoy_data = {}
 # 使用rex而非r26（r26无_sales列）
 r26_all = rex[(rex["_d"]>=ytd_start)&(rex["_d"]<=ytd_end)]
 r25_all = rex[(rex["_d"]>=pytd_start)&(rex["_d"]<=pytd_end)]
+_cy26 = r26_all.groupby("_cust")["_rev"].sum()
+_cy25 = r25_all.groupby("_cust")["_rev"].sum()
 for cid_name in rex_valid_sales["_cust"].unique():
-    cy26 = r26_all[r26_all["_cust"]==cid_name]["_rev"].sum()
-    cy25 = r25_all[r25_all["_cust"]==cid_name]["_rev"].sum()
+    cy26 = float(_cy26.get(cid_name, 0.0))
+    cy25 = float(_cy25.get(cid_name, 0.0))
     if cy25 > 0:
         cust_yoy_data[cid_name] = {"yoy": round((cy26-cy25)/cy25*100,1), "rev_26": round(cy26/1e4,2), "rev_25": round(cy25/1e4,2)}
 
-# 为客户维系力证据准备：客户×存货名称 近6月vs前6月对比
+# 为客户维系力证据准备：客户×存货名称 近6月vs前6月对比（批次④a 向量化：逐客户过滤 → 一次 groupby+merge）
 cust_item_decline = {}
-for cid_name in rex_valid_sales["_cust"].unique()[:]:
-    cur6 = rex[(rex["_ym_full"]>=near6_start)&(rex["_ym_full"]<=latest)&(rex["_cust"]==cid_name)]
-    prev6 = rex[(rex["_ym_full"]>=prev6_start)&(rex["_ym_full"]<=prev6_end)&(rex["_cust"]==cid_name)]
-    cur_ci = cur6.groupby(["_item","_cat_new"]).agg(rev6=("_rev","sum")).reset_index()
-    prev_ci = prev6.groupby(["_item","_cat_new"]).agg(prev_rev6=("_rev","sum")).reset_index()
-    merged = cur_ci.merge(prev_ci, on=["_item","_cat_new"], how="outer").fillna(0)
-    merged["decline"] = merged["prev_rev6"] - merged["rev6"]
-    declines = merged[merged["decline"]>0].sort_values("decline", ascending=False).head(3)
-    if len(declines)>0:
-        cust_item_decline[cid_name] = []
-        for _, dr in declines.iterrows():
-            label = f"{dr['_cat_new']} - {dr['_item']}" if dr["_cat_new"] and dr["_cat_new"]!="" else str(dr["_item"])
-            cust_item_decline[cid_name].append({"item":label, "decline_rev":round(float(dr["decline"])/1e4,2)})
+_cur6_ci = rex[(rex["_ym_full"]>=near6_start)&(rex["_ym_full"]<=latest)].groupby(["_cust","_item","_cat_new"]).agg(rev6=("_rev","sum")).reset_index()
+_prev6_ci = rex[(rex["_ym_full"]>=prev6_start)&(rex["_ym_full"]<=prev6_end)].groupby(["_cust","_item","_cat_new"]).agg(prev_rev6=("_rev","sum")).reset_index()
+_merged_ci = _cur6_ci.merge(_prev6_ci, on=["_cust","_item","_cat_new"], how="outer").fillna(0)
+_merged_ci["decline"] = _merged_ci["prev_rev6"] - _merged_ci["rev6"]
+_merged_ci = _merged_ci[_merged_ci["decline"]>0]
+_valid_custs = set(rex_valid_sales["_cust"].unique())
+for cid_name, _grp in _merged_ci.groupby("_cust"):
+    if cid_name not in _valid_custs:
+        continue
+    _grp = _grp.sort_values("decline", ascending=False).head(3)
+    cust_item_decline[cid_name] = []
+    for _, dr in _grp.iterrows():
+        label = f"{dr['_cat_new']} - {dr['_item']}" if dr["_cat_new"] and dr["_cat_new"]!="" else str(dr["_item"])
+        cust_item_decline[cid_name].append({"item":label, "decline_rev":round(float(dr["decline"])/1e4,2)})
+
+# 批次④a：预聚合 销售员→客户（保留首次出现顺序，等价于逐销售员 r26_all 过滤），供 6l/6l2 证据循环
+_sales_cust_26 = {str(k): list(dict.fromkeys(v)) for k, v in r26_all.groupby("_sales")["_cust"].apply(list).items()}
+_sales_cust_25 = {str(k): list(dict.fromkeys(v)) for k, v in r25_all.groupby("_sales")["_cust"].apply(list).items()}
 
 for s in d_sales_list:
     forces = s["forces"]
@@ -1414,7 +1467,7 @@ for s in d_sales_list:
         # 根据力的类型生成证据
         if fk == "retention":
             # 找该销售员名下同比降幅最大的客户
-            sales_custs = r26_all[r26_all["_sales"]==s["name"]]["_cust"].unique()
+            sales_custs = _sales_cust_26.get(s["name"], [])
             cust_declines = [(cn, cust_yoy_data.get(cn,{}).get("yoy",0), cust_yoy_data.get(cn,{}).get("rev_26",0)) for cn in sales_custs if cn in cust_yoy_data and cust_yoy_data[cn]["yoy"]<0]
             cust_declines.sort(key=lambda x: x[1])
             for cn, yoy, rev26 in cust_declines[:3]:
@@ -1425,8 +1478,8 @@ for s in d_sales_list:
         elif fk == "activation":
             evidence.append(f"得分{score}分 · 团队均值{team_force_avg.get(fk,50)}分")
         elif fk == "new_dev":
-            s26_custs = set(r26_all[r26_all["_sales"]==s["name"]]["_cust"].unique())
-            s25_custs = set(r25_all[r25_all["_sales"]==s["name"]]["_cust"].unique())
+            s26_custs = set(_sales_cust_26.get(s["name"], []))
+            s25_custs = set(_sales_cust_25.get(s["name"], []))
             sales_new_custs_2026 = len(s26_custs - s25_custs)
             evidence.append(f"{_latest_y}年新客数: {sales_new_custs_2026}个")
         else:
@@ -1448,8 +1501,8 @@ for s in d_sales_list:
     _force_evidence[nm]["category_expand"] = f"覆盖{s['prod_count']}条产品线" + \
         (f"（Top2：{'、'.join(s['top_prod_lines'][:2])}）" if s.get('top_prod_lines') else "")
     # 新客力证据
-    s26custs = set(r26_all[r26_all["_sales"]==nm]["_cust"].unique())
-    s25custs = set(r25_all[r25_all["_sales"]==nm]["_cust"].unique())
+    s26custs = set(_sales_cust_26.get(nm, []))
+    s25custs = set(_sales_cust_25.get(nm, []))
     new_cnt = len(s26custs - s25custs)
     _force_evidence[nm]["new_dev"] = f"{_latest_y}年新增{new_cnt}个客户"
     # 维系力证据：同比正增长客户TOP2
@@ -1536,17 +1589,22 @@ print(f"  能力画像: {len(d_sales_list)}人 · 团队总结已生成")
 # 6m. 瀑布图数据（团队9力均值，供前端对比）
 d_waterfall = {"team_avg": team_force_avg, "labels": [force_labels_cn[fk] for fk in force_keys]}
 
-# 6n. 客户热力图（26销售员 × Top33客户 × 利润金额万元）
+# 6n. 客户热力图（销售员 × Top33客户 × 利润金额万元）
+# 批次④a 向量化：858 次 rex 布尔过滤（26人×33客户）→ 一次 groupby 预聚合（纯等价）
 top33_custs = list(rex[(rex["_d"]>=ytd_start)&(rex["_d"]<=ytd_end)].groupby("_cust")["_rev"].sum().sort_values(ascending=False).head(33).index)
 top33_custs = [c for c in top33_custs if c not in ("nan","None","","未知客户")]
+_hm_rex = rex[(rex["_d"]>=ytd_start)&(rex["_d"]<=ytd_end)&(rex["_cust"].isin(top33_custs))]
+_hm_agg = _hm_rex.groupby(["_sales","_cust"]).agg(rev=("_rev","sum"), profit=("_profit","sum")).reset_index()
+_hm_map = {(str(_r["_sales"]), str(_r["_cust"])): (float(_r["rev"]), float(_r["profit"])) for _, _r in _hm_agg.iterrows()}
 d_cust_heatmap = {"sales_names": [s["name"] for s in d_sales_list], "cust_names": top33_custs, "matrix": [], "detail": {}}
 for s in d_sales_list:
     row = []
     s_total_profit = s["ytd_profit"]
     for cn in top33_custs:
-        sc = rex[(rex["_d"]>=ytd_start)&(rex["_d"]<=ytd_end)&(rex["_sales"]==s["name"])&(rex["_cust"]==cn)]
-        rev = float(sc["_rev"].sum())
-        profit = float(sc["_profit"].sum())
+        rec = _hm_map.get((s["name"], cn))
+        rev = 0.0; profit = 0.0
+        if rec is not None:
+            rev = rec[0]; profit = rec[1]
         mg = round(profit/rev*100, 1) if rev > 0 else 0
         pct = round((profit/1e4)/s_total_profit*100, 1) if s_total_profit > 0 else 0
         row.append(round(profit/1e4, 2))
