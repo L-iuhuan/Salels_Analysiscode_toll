@@ -306,6 +306,38 @@ def stage_cross_ref(source_path: str = None) -> bool:
 
 
 # ============================================================
+# 显式 stage 注册表（批次④b：main() 统一循环驱动，顺序即执行顺序）
+# ============================================================
+STAGES = [
+    ("silver", stage_silver),
+    ("product", stage_product),
+    ("customer", stage_customer),
+    ("kpi", stage_kpi),
+    ("cross_ref", stage_cross_ref),
+]
+
+
+def _run_stage(func, source_path, cached_raw, cached_cust_info):
+    """按注册表统一执行单个 stage，返回 (success, cached_raw, cached_cust_info)。
+
+    保持既有分派语义（行为不变）：
+      - silver     : 返回 (success, raw, cust_info)，缓存随返回更新
+      - customer   : 消费 cached_raw / cached_cust_info
+      - kpi        : 消费 cached_raw
+      - product / cross_ref : 只传 source_path
+    """
+    if func is stage_silver:
+        return func(source_path)  # (success, raw, cust_info)
+    if func is stage_customer:
+        return (func(source_path, raw_data=cached_raw, cust_info=cached_cust_info),
+                cached_raw, cached_cust_info)
+    if func is stage_kpi:
+        return (func(source_path, raw_data=cached_raw),
+                cached_raw, cached_cust_info)
+    return func(source_path), cached_raw, cached_cust_info
+
+
+# ============================================================
 # 阶段关键产物校验（宪法 S4：缺关键产物 → 非零退出并阻断下游）
 # ============================================================
 
@@ -417,14 +449,8 @@ def main():
             os.remove(os.path.join(OUTPUT_SILVER, f))
         print("  Silver层缓存已清除")
 
-    # 分阶段执行
-    stage_map = {
-        "silver": stage_silver,
-        "product": stage_product,
-        "customer": stage_customer,
-        "kpi": stage_kpi,
-        "cross_ref": stage_cross_ref,
-    }
+    # 分阶段执行（批次④b：显式 stage 注册表驱动）
+    stage_registry = dict(STAGES)
 
     # 缓存数据避免重复读取Excel
     _cached_raw = None
@@ -432,17 +458,12 @@ def main():
 
     executed = []
     for stage in stages:
-        if stage not in stage_map:
+        if stage not in stage_registry:
             print(f"  [警告] 未知阶段 '{stage}'，跳过")
             continue
-        if stage == "silver":
-            success, _cached_raw, _cached_cust_info = stage_silver(source_path)
-        elif stage == "customer":
-            success = stage_customer(source_path, raw_data=_cached_raw, cust_info=_cached_cust_info)
-        elif stage == "kpi":
-            success = stage_kpi(source_path, raw_data=_cached_raw)
-        else:
-            success = stage_map[stage](source_path)
+        func = stage_registry[stage]
+        success, _cached_raw, _cached_cust_info = _run_stage(
+            func, source_path, _cached_raw, _cached_cust_info)
         if success:
             executed.append(stage)
         elif stage == "silver":

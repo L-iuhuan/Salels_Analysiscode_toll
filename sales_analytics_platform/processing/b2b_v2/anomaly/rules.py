@@ -10,19 +10,6 @@ import numpy as np
 from config.settings import ANOMALY_DETECTION, INVENTORY_AGING
 
 
-def _safe_val(row, col, default=np.nan):
-    """Safely extract a value from a row (Series or dict)."""
-    if hasattr(row, "__getitem__"):
-        try:
-            v = row[col]
-            if pd.isna(v) if isinstance(v, (float, type(np.nan))) else v is None:
-                return default
-            return v
-        except (KeyError, IndexError):
-            return default
-    return default
-
-
 # ── A1: 采购中断检测 ─────────────────────────────────────────
 
 def detect_purchase_interruption(customer_df: pd.DataFrame) -> pd.DataFrame:
