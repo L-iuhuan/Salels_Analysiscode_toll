@@ -24,3 +24,5 @@
 | processing/data_pipeline/aggregator.py | 2026-08-19 | DI 包装器，仅 core/pipeline.py 使用 | 批次②.5 council裁决 |
 | processing/analysis/b2b_adapters.py | 2026-08-19 | B2B 适配器无人使用，生产 gold.py 直接调 b2b_v2 | 批次②.5 council裁决 |
 | test/test_pipeline.py | 2026-08-19 | 测试 mock 而非真实契约；批次④b 补真实编排测试 | 批次②.5 council裁决 |
+| 长库龄存货明细.xlsx（根目录散件） | 2026-08-24 | 未注册散件，非平台输入；如后续需要长库龄分析，从封存取回 | 用户拍板（仓库卫生整理） |
+| 2026年7月销售经营分析_数据附件.xlsx（根目录散件） | 2026-08-24 | 未注册散件；文件名与流水线输入（财务分析-x月.xlsx）不同构。若为7月跑批输入，从封存取回放入 `sales_analytics_platform\data\` 并核对列结构（注意 data\ 多文件时自动探测取字母序第一个的风险） | 用户拍板（仓库卫生整理） |
