@@ -909,6 +909,8 @@ dashboard/dashboard_a.html（内嵌 JSON 看板，A~F 六面）
 
 ## 4. Dashboard 直读原始 Excel 的列
 
+> ⚠️ **历史标记（批次④a）**：批次④a 起看板已切 silver（`output/silver/silver_cleaned_rows.csv`，零 Excel 直读），本节转为历史记录，详见文末冻结记录。
+
 `dashboard/generate_dashboard.py`（L349~393，加载阶段）不读 Silver/Gold 的宽表，而是**直接读取 `data/` 里最新的一份原始 Excel**（sheet **"24-26"**），按列名精准读取后归一为 `rex`（rename 后 `_xxx` 列）。实际读取的列及语义：
 
 | 原始 Excel 列 | 定位方式 | 归一列 | 语义 / 用途 |
