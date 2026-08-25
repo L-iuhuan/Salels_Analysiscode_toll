@@ -272,26 +272,6 @@ def render(month):
         + kc("行动项", f"{n_todo + n_doing}", f"待处理 {n_todo} · 跟进中 {n_doing}")
     )
 
-    # A 面速览条（测试页最小验证用）：从日度 KPI 算本年累计
-    a_strip = ""
-    kpi_path = os.path.join(GOLD, "gold_kpi_daily.csv")
-    if os.path.exists(kpi_path):
-        d = pd.read_csv(kpi_path, encoding="utf-8-sig")
-        d["日期"] = pd.to_datetime(d["日期"])
-        latest_year = d["日期"].dt.year.max()
-        ytd = d[d["日期"].dt.year == latest_year]
-        rev, profit = ytd["销售额"].sum(), ytd["销售额"].sum() * 0  # 利润列单独取
-        profit = ytd["毛利"].sum() if "毛利" in ytd.columns else None
-        qty = ytd["数量"].sum() if "数量" in ytd.columns else None
-        gm = f"{profit / rev * 100:.1f}%" if profit else "-"
-        asp = f"{rev / qty:.2f}" if qty else "-"
-        a_strip = ('<div class="kpi-bar" style="margin-bottom:0">'
-                   + kc(f"{latest_year} 年收入（速览）", f"{rev / 1e8:.2f}亿", "测试页 A 面最小验证")
-                   + kc("毛利率", gm, "毛利 ÷ 收入")
-                   + kc("ASP", asp, "收入 ÷ 数量")
-                   + kc("数据月份", f"{month[:4]}-{month[4:]}", "silver 最新月")
-                   + "</div>")
-
     # 口径说明（取 md 第三节的纯文本）
     caliber = ""
     marker = "## 三、口径说明"
@@ -303,7 +283,6 @@ def render(month):
     page = (page
             .replace("%%DATA_MONTH%%", month)
             .replace("%%GEN_TIME%%", f"{datetime.now():%Y-%m-%d %H:%M}")
-            .replace("%%A_STRIP%%", a_strip)
             .replace("%%RISK_KPI%%", risk_kpi)
             .replace("%%RISK_TABLE%%", _render_table(risk_h, risk_rows, num_cols={3}))
             .replace("%%ACTION_TABLE%%", _render_table(act_h, act_rows))
