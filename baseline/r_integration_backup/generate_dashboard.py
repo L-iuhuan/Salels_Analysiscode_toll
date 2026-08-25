@@ -2417,19 +2417,6 @@ _margin_bounds = _margin_axis_bounds(c_data)
 print(f"  [截断] 毛利率轴: raw[{_margin_bounds['raw_abs_min']:.2f}, {_margin_bounds['raw_abs_max']:.2f}] "
       f"-> p{DASHBOARD_AXIS_CLIP.get('margin_pct', [1,99])[0]}~p{DASHBOARD_AXIS_CLIP.get('margin_pct', [1,99])[1]}[{_margin_bounds['min']}, {_margin_bounds['max']}]")
 
-# ========== R面（风险与行动 · W4 并入）：读取人工审定总体文档 ==========
-# 内容来自 dashboard\risk_action_YYYYMM.md（跑批生成初稿 → 人工审定 → 本处渲染）。
-# 该 md 已纳入指纹（fingerprint.py risk_doc 键），审定编辑后缓存自动失效。
-try:
-    import generate_risk_face as _rface
-    r_face_html = _rface.build_r_face_inner_html(latest.replace("-", ""))
-    print(f"[R面] 风险与行动内容已并入（数据月份 {latest}）")
-except Exception as _e:
-    r_face_html = ('<div class="cb"><h3>风险与行动</h3><div class="note">'
-                   '总体文档读取失败，请先运行 python dashboard\\generate_risk_face.py'
-                   f'（{type(_e).__name__}: {_e}）</div></div>')
-    print(f"  [R面] 读取失败: {_e}")
-
 # ========== HTML ==========
 _timed("F面H1汇总+C面DATA构建", _t_seg0); _t_seg0 = _time_mod.time()
 print("[HTML] 生成...")
@@ -2477,8 +2464,6 @@ replacements = {
     "%%MARGIN_AXIS_MAX%%":_margin_bounds["max"],
     "%%ASP_AXIS_MIN%%":_asp_bounds["min"],
     "%%ASP_AXIS_MAX%%":_asp_bounds["max"],
-    # ---- W4：风险与行动面（人工审定总体文档渲染，服务端 HTML 注入）----
-    "%%R_FACE_HTML%%": r_face_html,
 }
 
 html = template

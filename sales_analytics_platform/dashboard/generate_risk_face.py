@@ -234,11 +234,18 @@ def _render_table(headers, rows, num_cols=()):
     return f'<table class="data-table"><thead><tr>{th}</tr></thead><tbody>{body}</tbody></table>'
 
 
-def render(month):
+def _kc(label, value, sub, cls=""):
+    return (f'<div class="kc {cls}"><div class="label">{label}</div>'
+            f'<div class="value">{value}</div><div class="sub">{sub}</div></div>')
+
+
+def _build_r_parts(month):
+    """解析总体文档并构建 R 面各区块（测试页与正式看板并入共用）。
+    返回 dict: ok / err / risk_kpi / risk_table / action_table / caliber / stats。
+    副作用：行动清单状态回写 action_items.json（跨月结转的持久化层）。"""
     md_path = os.path.join(DASH_DIR, f"risk_action_{month}.md")
     if not os.path.exists(md_path):
-        print(f"[错误] 总体文档不存在: {md_path}")
-        return 1
+        return {"ok": False, "err": md_path}
     with open(md_path, encoding="utf-8") as f:
         md = f.read()
     sec = _parse_md_tables(md)
@@ -261,15 +268,11 @@ def render(month):
     n_todo = sum(1 for r in act_rows if r and r[0] == "待处理")
     n_doing = sum(1 for r in act_rows if r and r[0] == "跟进中")
 
-    def kc(label, value, sub, cls=""):
-        return (f'<div class="kc {cls}"><div class="label">{label}</div>'
-                f'<div class="value">{value}</div><div class="sub">{sub}</div></div>')
-
     risk_kpi = (
-        kc("高风险事项", n_high, "需立即处理", "kpi-danger")
-        + kc("中风险事项", n_mid, "需关注", "kpi-warning")
-        + kc("负毛利损失合计", f"{loss_sum:.1f}万", "审定后展示口径", "kpi-danger" if loss_sum > 0 else "")
-        + kc("行动项", f"{n_todo + n_doing}", f"待处理 {n_todo} · 跟进中 {n_doing}")
+        _kc("高风险事项", n_high, "需立即处理", "kpi-danger")
+        + _kc("中风险事项", n_mid, "需关注", "kpi-warning")
+        + _kc("负毛利损失合计", f"{loss_sum:.1f}万", "审定后展示口径", "kpi-danger" if loss_sum > 0 else "")
+        + _kc("行动项", f"{n_todo + n_doing}", f"待处理 {n_todo} · 跟进中 {n_doing}")
     )
 
     # 口径说明（取 md 第三节的纯文本）
@@ -278,21 +281,7 @@ def render(month):
     if marker in md:
         caliber = md.split(marker, 1)[1].strip()
 
-    with open(TEMPLATE, encoding="utf-8") as f:
-        page = f.read()
-    page = (page
-            .replace("%%DATA_MONTH%%", month)
-            .replace("%%GEN_TIME%%", f"{datetime.now():%Y-%m-%d %H:%M}")
-            .replace("%%RISK_KPI%%", risk_kpi)
-            .replace("%%RISK_TABLE%%", _render_table(risk_h, risk_rows, num_cols={3}))
-            .replace("%%ACTION_TABLE%%", _render_table(act_h, act_rows))
-            .replace("%%CALIBER%%", _esc(caliber)))
-    out = os.path.join(DASH_DIR, "dashboard_risk_test.html")
-    with open(out, "w", encoding="utf-8") as f:
-        f.write(page)
-
     # 行动清单状态回写 action_items.json（持久化层；json 不是人工编辑对象）
-    actions = load_actions()
     if act_h:
         idx = {h: i for i, h in enumerate(act_h)}
         items = []
@@ -309,13 +298,55 @@ def render(month):
                 "created_month": month,
                 "source": "总体文档",
             })
+        actions = load_actions()
         closed = [it for it in actions.get("items", []) if it.get("status") == "已关闭"]
-        actions = {"version": "1", "last_batch_month": month,
-                   "items": items + closed}
-        save_actions(actions)
+        save_actions({"version": "1", "last_batch_month": month, "items": items + closed})
 
+    return {"ok": True, "risk_kpi": risk_kpi,
+            "risk_table": _render_table(risk_h, risk_rows, num_cols={3}),
+            "action_table": _render_table(act_h, act_rows),
+            "caliber": caliber,
+            "stats": (len(risk_rows), n_high, n_mid, loss_sum, len(act_rows))}
+
+
+def build_r_face_inner_html(month):
+    """供 generate_dashboard.py 并入正式看板（W4）：返回 R 面内容 HTML（不含页面框架，
+    样式复用 template.html 的 kpi-bar/kc/cb/data-table 组件）。"""
+    parts = _build_r_parts(month)
+    if not parts["ok"]:
+        return ('<div class="cb"><h3>风险与行动</h3><div class="note">本月总体文档未生成：'
+                '请先在明文窗口跑批后运行 <code>python dashboard\\generate_risk_face.py</code> '
+                '生成并审定总体文档（缺失：' + _esc(parts["err"]) + '）</div></div>')
+    return ('<div class="kpi-bar">\n' + parts["risk_kpi"] + '\n</div>\n'
+            + '<div class="cb"><h3>一、当月风险摘要</h3><div class="note">初稿由系统按规则生成，经人工审定后展示。</div>'
+            + parts["risk_table"] + '</div>\n'
+            + '<div class="cb"><h3>二、行动清单</h3><div class="note">状态：待处理 / 跟进中 / 已关闭。未关闭事项跨月自动结转。</div>'
+            + parts["action_table"] + '</div>\n'
+            + '<div class="cb"><h3>三、口径说明</h3><div class="caliber">'
+            + _esc(parts["caliber"]) + '</div></div>')
+
+
+def render(month):
+    parts = _build_r_parts(month)
+    if not parts["ok"]:
+        print(f"[错误] 总体文档不存在: {parts['err']}")
+        return 1
+    with open(TEMPLATE, encoding="utf-8") as f:
+        page = f.read()
+    page = (page
+            .replace("%%DATA_MONTH%%", month)
+            .replace("%%GEN_TIME%%", f"{datetime.now():%Y-%m-%d %H:%M}")
+            .replace("%%RISK_KPI%%", parts["risk_kpi"])
+            .replace("%%RISK_TABLE%%", parts["risk_table"])
+            .replace("%%ACTION_TABLE%%", parts["action_table"])
+            .replace("%%CALIBER%%", _esc(parts["caliber"])))
+    out = os.path.join(DASH_DIR, "dashboard_risk_test.html")
+    with open(out, "w", encoding="utf-8") as f:
+        f.write(page)
+
+    n_r, n_high, n_mid, loss_sum, n_act = parts["stats"]
     print(f"[OK] 测试页已生成: {out}")
-    print(f"     风险摘要 {len(risk_rows)} 条（高 {n_high} / 中 {n_mid}）；行动项 {len(act_rows)} 条；负毛利损失合计 {loss_sum:.1f} 万")
+    print(f"     风险摘要 {n_r} 条（高 {n_high} / 中 {n_mid}）；行动项 {n_act} 条；负毛利损失合计 {loss_sum:.1f} 万")
     return 0
 
 

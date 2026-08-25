@@ -14,6 +14,8 @@ Dashboard 自缓存指纹（批次③ 车道D 与 车道P 共享契约）。
   outputs        : output/silver 与 output/gold 全部文件的 (文件名+大小+mtime) 有序列表 sha256
   dept_md        : data/部门-人员-职务对应.md 的 {size, mtime, sha256全文}（批次③车道P 契约扩展：
                    该文件影响看板 D_DEPT_LIST/F_DEPT_MARGINS，须纳入指纹防漏）
+  risk_doc       : dashboard/risk_action_*.md 的 (文件名+大小+mtime) 有序列表 sha256
+                   （W4 风险与行动面：人工审定内容，不纳入则缓存路径会用过期清单）
 
  说明：存量 preagg.json 指纹缺 dept_md 键时，fingerprints_equal（严格 ==）判"不新鲜"，
        促使一次全量重跑重盖戳（批次③车道P 契约扩展行为）。
@@ -108,6 +110,18 @@ def compute_dashboard_fingerprint(platform_dir: str, excel_path: str = None) -> 
             "sha256": hashlib.sha256(dept_content).hexdigest(),
         }
 
+    # risk_doc: dashboard/risk_action_*.md（W4 风险与行动面人工审定内容；缺键判不新鲜，同 dept_md 契约）
+    # 内容级哈希（非 mtime）：人工编辑工具/还原操作会动 mtime 但内容不变，内容哈希才不会误判过期
+    risk_docs = []
+    dash_dir = os.path.join(platform_dir, "dashboard")
+    if os.path.isdir(dash_dir):
+        for fn in sorted(os.listdir(dash_dir)):
+            if fn.startswith("risk_action_") and fn.endswith(".md"):
+                p = os.path.join(dash_dir, fn)
+                if os.path.isfile(p):
+                    risk_docs.append((fn, _sha256_text(_read_lf_norm(p))))
+    risk_doc = _sha256_text(json.dumps(risk_docs, ensure_ascii=False)) if risk_docs else None
+
     return {
         "excel": _excel_fingerprint(excel_path),
         "settings": settings,
@@ -115,6 +129,7 @@ def compute_dashboard_fingerprint(platform_dir: str, excel_path: str = None) -> 
         "template": template,
         "outputs": outputs,
         "dept_md": dept_md,
+        "risk_doc": risk_doc,
     }
 
 
