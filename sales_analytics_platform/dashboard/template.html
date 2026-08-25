@@ -565,19 +565,28 @@ TABS.ChartRegistry = {
  });
  return instances;
  },
- resizeAll: (function(){
- var timer = null;
- return function(){
- if(timer) clearTimeout(timer);
- timer = setTimeout(function(){
- requestAnimationFrame(function(){
- TABS.ChartRegistry.getAll().forEach(function(item){
- try{ item.chart.resize() }catch(e){}
- });
- });
- }, 200);
- };
- })(),
+  resizeAll: (function(){
+  var timer = null;
+  return function(){
+  if(timer) clearTimeout(timer);
+  timer = setTimeout(function(){
+  requestAnimationFrame(function(){
+  var activeTab = document.querySelector('.tab-content.active');
+  TABS.ChartRegistry.getAll().forEach(function(item){
+  try{
+    // Only resize charts that are inside the currently visible tab or drawer
+    var el = item.el;
+    if(!el) return;
+    var inActiveTab = activeTab && activeTab.contains(el);
+    var inDrawer = document.getElementById('appDrawer') && document.getElementById('appDrawer').contains(el);
+    if(inActiveTab || inDrawer){ item.chart.resize(); }
+  }catch(e){}
+  });
+  });
+  }, 200);
+  };
+  })(),
+
  disposeInContainer: function(container){
  if(!container) return;
  container.querySelectorAll('[_echarts_instance_]').forEach(function(el){
@@ -1898,6 +1907,7 @@ if(typeof requestIdleCallback === 'function'){
 // --- Tab Init Tracking (Phase 3.1-3.2) ---
 // Charts are built only on first tab visit; subsequent visits just resize.
 TABS._tabInitialized = {};
+TABS._cInitialized = false; // Tab C (product lifecycle) lazy init flag
 
 function switchTab(t){
  document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active')});
@@ -1906,8 +1916,17 @@ function switchTab(t){
  var tab=document.getElementById('tab'+t);if(tab)tab.classList.add('active');
  // Ensure lazy data is loaded before rendering non-first-screen tabs
  if(t!=='A' && t!=='C' && !TABS._lazyLoaded){ TABS._loadLazyData(); }
- // Tab A: always rebuild (filters may have changed)
- if(t==='A'){setTimeout(function(){try{buildMain()}catch(e){};try{buildPie()}catch(e){};try{buildKLine()}catch(e){};try{buildScat()}catch(e){}},200)}
+ // Tab A: rebuild main chart (filters may have changed); init others only once
+ if(t==='A'){
+ setTimeout(function(){
+ try{buildMain()}catch(e){};
+ if(!TABS._tabInitialized.A){
+ try{buildPie()}catch(e){};
+ try{buildKLine()}catch(e){};
+ try{buildScat()}catch(e){};
+ }
+ },200);
+ }
  // Tab B: always re-render list (search/sort state may have changed)
  if(t==='B'){renderBList()}
  // Tab D: build only on first visit, resize on subsequent
@@ -1937,16 +1956,22 @@ function switchTab(t){
  setTimeout(function(){TABS.ChartRegistry.resizeAll()},50);
  }
  }
- // Tab C: resize charts on every visit (init runs immediately, but charts get 0 width when hidden)
- if(t==='C'){
- setTimeout(function(){
- ['chart-portrait','chart-risk','chart-pareto','chart-summary','chart-slope','chart-matrix','chart-scatter','chart-sankey','chart-rev-margin','chart-dominance','chart-asp-trend'].forEach(function(id){
- var el = document.getElementById(id);
- if(el && typeof echarts!=='undefined'){ var inst = echarts.getInstanceByDom(el); if(inst) inst.resize(); }
- });
- },50);
- }
+// Tab C: lazy init on first visit; resize on subsequent visits
+  if(t==='C'){
+  if(!TABS._cInitialized){
+    TABS._cInitialized = true;
+    setTimeout(function(){ init(); }, 50);
+  }else{
+    setTimeout(function(){
+    ['chart-portrait','chart-risk','chart-pareto','chart-summary','chart-slope','chart-matrix','chart-scatter','chart-sankey','chart-rev-margin','chart-dominance','chart-asp-trend'].forEach(function(id){
+    var el = document.getElementById(id);
+    if(el && typeof echarts!=='undefined'){ var inst = echarts.getInstanceByDom(el); if(inst) inst.resize(); }
+    });
+    },50);
+  }
+  }
 }
+
 document.getElementById('btnA').addEventListener('click',function(){switchTab('A')});
 document.getElementById('btnR').addEventListener('click',function(){switchTab('R')});
 document.getElementById('btnB').addEventListener('click',function(){switchTab('B')});
@@ -2006,7 +2031,11 @@ setTimeout(function(){renderMarginTable()},300);
 var style=document.createElement('style');style.textContent='.hidden{display:none}.rot{transform:rotate(90deg)}';document.head.appendChild(style);
 
 // ===== B面 =====
-function renderBList(){if(!ALL)return;var q=(document.getElementById('bSrch').value||'').toLowerCase();var tier=document.getElementById('bTier').value,act=document.getElementById('bAct').value,risk=document.getElementById('bRisk').value;BF=ALL.filter(function(c){if(q&&c.n.toLowerCase().indexOf(q)===-1&&c.id.toLowerCase().indexOf(q)===-1)return false;if(tier&&c.t!==tier)return false;if(act&&c.ac!==act)return false;if(risk&&c.rk!==risk)return false;return true});BF.sort(function(a,b){var va=a[BSORT.key],vb=b[BSORT.key];return BSORT.asc?(va>vb?1:-1):(va<vb?1:-1)});var h='<div class="brow hd"><span onclick="toggleBSort(\'n\')">客户名</span><span onclick="toggleBSort(\'r\')">YTD收入</span><span onclick="toggleBSort(\'p\')">YTD毛利</span><span onclick="toggleBSort(\'ytd_mg\')">毛利率</span><span onclick="toggleBSort(\'npct\')">新品%</span><span>层级</span></div>';BF.forEach(function(c,i){var sel=(BSEL&&BSEL.id===c.id)?' sel':'';h+='<div class="brow'+sel+'" onclick="selB('+i+')">';h+='<span style="font-weight:500">'+c.n+'</span><span>'+Math.round(c.r).toLocaleString()+'</span><span>'+Math.round(c.p).toLocaleString()+'</span><span>'+(c.ytd_mg||0)+'%</span><span>'+(c.new_pct||0)+'%</span><span>'+c.t+'</span></div>'});document.getElementById('bList').innerHTML=h;if(BSEL)renderBDetail(BSEL)}
+var B_LIST_LIMIT=200,B_LIST_LIMIT_STEP=200;var _bLastFilter={};
+function bFiltersChanged(){var q=(document.getElementById('bSrch').value||'').toLowerCase();var tier=document.getElementById('bTier').value,act=document.getElementById('bAct').value,risk=document.getElementById('bRisk').value;var curr={q:q,tier:tier,act:act,risk:risk};var s=JSON.stringify(curr);var changed=s!==JSON.stringify(_bLastFilter);_bLastFilter=curr;return changed}
+function renderBList(){if(!ALL)return;var q=(document.getElementById('bSrch').value||'').toLowerCase();var tier=document.getElementById('bTier').value,act=document.getElementById('bAct').value,risk=document.getElementById('bRisk').value;if(bFiltersChanged())B_LIST_LIMIT=200;BF=ALL.filter(function(c){if(q&&c.n.toLowerCase().indexOf(q)===-1&&c.id.toLowerCase().indexOf(q)===-1)return false;if(tier&&c.t!==tier)return false;if(act&&c.ac!==act)return false;if(risk&&c.rk!==risk)return false;return true});BF.sort(function(a,b){var va=a[BSORT.key],vb=b[BSORT.key];return BSORT.asc?(va>vb?1:-1):(va<vb?1:-1)});if(BSEL){var selIdx=-1;for(var i=0;i<BF.length;i++){if(BF[i].id===BSEL.id){selIdx=i;break}}if(selIdx>=B_LIST_LIMIT){B_LIST_LIMIT=Math.ceil((selIdx+1)/B_LIST_LIMIT_STEP)*B_LIST_LIMIT_STEP}}
+var h='<div class="brow hd"><span onclick="toggleBSort(\'n\')">客户名</span><span onclick="toggleBSort(\'r\')">YTD收入</span><span onclick="toggleBSort(\'p\')">YTD毛利</span><span onclick="toggleBSort(\'ytd_mg\')">毛利率</span><span onclick="toggleBSort(\'npct\')">新品%</span><span>层级</span></div>';var show=Math.min(BF.length,B_LIST_LIMIT);for(var i=0;i<show;i++){var c=BF[i];var sel=(BSEL&&BSEL.id===c.id)?' sel':'';h+='<div class="brow'+sel+'" onclick="selB('+i+')">';h+='<span style="font-weight:500">'+c.n+'</span><span>'+Math.round(c.r).toLocaleString()+'</span><span>'+Math.round(c.p).toLocaleString()+'</span><span>'+(c.ytd_mg||0)+'%</span><span>'+(c.new_pct||0)+'%</span><span>'+c.t+'</span></div>'}if(BF.length>show){h+='<div class="brow" style="justify-content:center;cursor:pointer;background:var(--surface-subtle);color:var(--primary);font-weight:500" onclick="bLoadMore()">加载更多 ('+show+'/'+BF.length+')</div>'}document.getElementById('bList').innerHTML=h;if(BSEL)renderBDetail(BSEL)}
+function bLoadMore(){B_LIST_LIMIT+=B_LIST_LIMIT_STEP;renderBList();var el=document.getElementById('bList');if(el){var rows=el.querySelectorAll('.brow');var last=rows[rows.length-2];if(last)last.scrollIntoView({block:'nearest'})}}
 function toggleBSort(key){if(BSORT.key===key)BSORT.asc=!BSORT.asc;else{BSORT.key=key;BSORT.asc=false}renderBList()}
 function selB(i){BSEL=BF[i];renderBList();renderBDetail(BSEL)}
 function openB(name){switchTab('B');if(!ALL){ALL=B_CUSTS;CTR=B_TREND}setTimeout(function(){var f=ALL.find(function(c){return c.n===name});if(f){BSEL=f;renderBList();renderBDetail(BSEL)}},300)}
@@ -2266,11 +2295,11 @@ wf2.setOption({tooltip:{trigger:'axis',axisPointer:{type:'shadow'}},grid:{left:6
 TABS.bus.on('eRefreshed', function(){ setTimeout(function(){eDecompBuild()}, 200); });
 
 // INIT A面
+TABS._tabInitialized.A = true; // Mark Tab A as initialized (Phase 3.1)
 try{buildMain()}catch(e){document.getElementById('globalErr').style.display='block'}
 try{buildPie()}catch(e){}
 try{buildKLine()}catch(e){}
 try{buildScat()}catch(e){}
-TABS._tabInitialized.A = true; // Mark Tab A as initialized (Phase 3.1)
 
 
 // Replace FA icons with inline SVG (Phase 4.7)
@@ -2600,6 +2629,7 @@ window.toggleBSort = toggleBSort;
 window.selB = selB;
 window.openB = openB;
 window.bSetQtyMode = bSetQtyMode;
+window.bLoadMore = bLoadMore;
 window.renderDRanking = renderDRanking;
 window.toggleDRankSort = toggleDRankSort;
 window.selectDSales = selectDSales;
@@ -3314,18 +3344,15 @@ function exportCSV() {
 }
 
 window.addEventListener('resize', () => {
+ if(!document.getElementById('tabC').classList.contains('active')) return;
  ['chart-portrait','chart-risk','chart-pareto','chart-summary','chart-slope','chart-matrix','chart-scatter','chart-sankey','chart-rev-margin','chart-dominance','chart-asp-trend'].forEach(id => {
  const el = document.getElementById(id);
- if (el) echarts.getInstanceByDom(el)?.resize();
+ if (el) { var inst = echarts.getInstanceByDom(el); if(inst) inst.resize(); }
  });
 });
 
-init();
-
-
 </script>
 
-<!-- Unified drawer (shared by Tab C/D/E · Phase 3.8) -->
 <div class="d-overlay" id="appOverlay" onclick="TABS.drawer.close()"></div>
 <div class="d-drawer" id="appDrawer">
  <div class="d-drawer-header">
