@@ -19,11 +19,8 @@ if PROJECT_ROOT not in sys.path:
 from shared.data_cleaning import (
     filter_negative_qty, rename_erp_columns, read_excel_auto, load_silver_table,
 )
-from config.settings import ERP_COL_MAP
-
-OUTPUT_GOLD = os.path.join(PROJECT_ROOT, "output", "gold")
-OUTPUT_SILVER = os.path.join(PROJECT_ROOT, "output", "silver")
-DATA_DIR = os.path.join(PROJECT_ROOT, "data")
+# [批次⑤ 缺陷A修复] 输出/输入目录统一从 config.settings 引入（指向包根 output/ 与 data/）
+from config.settings import ERP_COL_MAP, OUTPUT_GOLD, OUTPUT_SILVER, DATA_DIR
 
 
 def build_kpi(source_path: str = None, raw_df: pd.DataFrame = None) -> pd.DataFrame:

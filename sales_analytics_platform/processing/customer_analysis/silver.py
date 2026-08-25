@@ -13,9 +13,9 @@ if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
 from shared.data_cleaning import build_silver_layer as _build_silver_layer
-from config.settings import CUSTOMER_ANALYSIS_WINDOW
-
-OUTPUT_SILVER = os.path.join(PROJECT_ROOT, "output", "silver")
+# [批次⑤ 缺陷A修复] OUTPUT_SILVER 统一从 config.settings 引入（指向包根 output/），
+# 不再按 processing/ 目录自建——原先与 run_all.py 的写出目录不一致，干净部署下 customer 阶段找不到 silver 文件
+from config.settings import CUSTOMER_ANALYSIS_WINDOW, OUTPUT_SILVER
 
 
 def build_silver_layer(source_path: str, col_map: dict = None) -> dict:

@@ -197,6 +197,18 @@ SKIP_SILVER_IF_EXISTS = True  # Silver层CSV存在时跳过重新清洗
 # 报表保留数量（每次运行只保留最近 N 个 Excel 报告）
 REPORT_RETENTION_COUNT = 10
 
+# ============================================================
+# Excel 报告输出开关（批次⑦，2026-08-25 用户拍板：默认不输出）
+# ============================================================
+# 两份 Excel 报告（客户分析报告 / 产品生命周期报告）不被任何下游消费
+# （看板与数据管道均不读取），纯属人工查阅交付物；实测生成耗时约占
+# 端到端 40%（客户 ~103s + 产品 ~10s，2026-08-25 真实数据）。
+# 默认关闭；需要 Excel 报告时将对应键改为 True 即可恢复，无需改代码。
+EXCEL_REPORT = {
+    "customer_enabled": False,   # 客户分析报告_v1.1_*.xlsx（reports/gold_exporter.py）
+    "product_enabled": False,    # 产品生命周期报告_v4.0_*.xlsx（product_lifecycle/report.py）
+}
+
 # ── 导入产品和客户配置（分拆自 settings.py P1-A）──
 from config.settings_product import *
 from config.settings_customer import *

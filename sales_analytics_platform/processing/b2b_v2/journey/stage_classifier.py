@@ -108,6 +108,13 @@ def classify_customer_journey_stage(
     global_latest = all_months[-1]
 
     results = []
+    _recent6_by_cid = {}  # [批次⑥ P4] 主循环顺带记录近6月营收，供成熟期排名修正复用（原逻辑在修正段重复全表 groupby 两遍）
+
+    # [批次⑥ P4] 历史阶段判定的乘数配置在函数顶部读取一次（原为每次调用 _estimate_historical_stage
+    # 时在循环内 import 并读取，配置静态不变，值完全一致）
+    from config.settings import CUSTOMER_JOURNEY_THRESHOLDS as _jcfg
+    _hist_decline_mul = float(_jcfg.get("hist_decline_multiplier", 0.9))
+    _hist_growth_mul = float(_jcfg.get("hist_growth_multiplier", 1.1))
 
     for cid, grp in df.groupby(cust_col):
         grp = grp.sort_values(date_col, kind='stable').reset_index(drop=True)
@@ -206,14 +213,19 @@ def classify_customer_journey_stage(
 
         # ── 阶段持续时间 ──
         # 计算最近一次阶段转换：扫描近12月，看哪个月开始进入当前状态特征
+        # [批次⑥ P4] 每客户一次性取 numpy 数组 + 首个正收入位置，替代逐月
+        # Series.iloc/.get 与每月一次的 grp[grp["rev_sum"]>0] 掩码扫描
+        # （原 25,609 次调用 14.9s；数组索引值与 Series 取数完全一致）
+        _rev_arr = grp[rev_col].to_numpy(dtype="float64", na_value=np.nan)
+        _pos_idx = np.nonzero(_rev_arr > 0)[0]
         duration_months = 1  # 至少1个月
         stage_seq = []
         if n_months >= 3:
             for i in range(max(0, n_months - 12), n_months):
-                row = grp.iloc[i]
-                stage_seq.append(_estimate_historical_stage(
-                    row, grp, i, n_months, global_latest,
-                    onboarding_max_months, churn_days,
+                stage_seq.append(_estimate_historical_stage_arr(
+                    _rev_arr, _pos_idx, i, n_months,
+                    onboarding_max_months,
+                    _hist_decline_mul, _hist_growth_mul,
                 ))
             if stage_seq:
                 # 从后往前找第一个不同于当前阶段的月份
@@ -236,6 +248,8 @@ def classify_customer_journey_stage(
         # 距上次采购天数（近似为月数 * 30）
         days_since_last = months_since_last * 30
 
+        _recent6_by_cid[cid] = recent6_rev  # [批次⑥ P4] 供成熟期修正复用
+
         results.append({
             cust_col: cid,
             "客户旅程阶段": stage,
@@ -251,34 +265,22 @@ def classify_customer_journey_stage(
 
     # ── 成熟期金额排名修正 ──
     if len(out) > 0 and "成熟期" in out["客户旅程阶段"].values:
-        all_recent6_rev = []
-        for cid, grp in df.groupby(cust_col):
-            g = grp.sort_values(date_col, kind='stable')
-            r6 = g[g[date_col] > global_latest - 6][rev_col].sum()
-            all_recent6_rev.append(r6)
-        rank_threshold = np.percentile(
-            [r for r in all_recent6_rev if r > 0],
-            (1 - maturity_rank_pct) * 100,
-        ) if all_recent6_rev else 0
-
-        # 计算每客户近6月营收
-        cid_to_recent6 = {}
-        for cid, grp in df.groupby(cust_col):
-            g = grp.sort_values(date_col, kind='stable')
-            r6 = g[g[date_col] > global_latest - 6][rev_col].sum()
-            cid_to_recent6[cid] = r6
+        # [批次⑥ P4] 近6月营收直接在主循环记录（值与原"再跑两遍全表 groupby"逐位一致），
+        # 原实现在此对 df.groupby(cust_col) 又完整迭代两遍（每遍 3032 组逐组 sort+过滤）
+        cid_to_recent6 = _recent6_by_cid
 
         if channel_map is not None:
+            # [批次⑥ P4] 渠道→客户列表预计算一次（原为每个成熟期客户都全表扫描 3032 客户）
+            _chan_peers = {}
+            for pid in out[cust_col].tolist():
+                if cid_to_recent6.get(pid, 0) > 0:
+                    _chan_peers.setdefault(channel_map.get(pid, "未知"), []).append(pid)
             # 按渠道分组排名
             maturity_mask = out["客户旅程阶段"] == "成熟期"
             for idx in out[maturity_mask].index:
                 cid = out.at[idx, cust_col]
                 ch = channel_map.get(cid, "未知")
-                # 同渠道中营收>0的客户
-                peers = [
-                    pid for pid in out[cust_col].tolist()
-                    if channel_map.get(pid, "未知") == ch and cid_to_recent6.get(pid, 0) > 0
-                ]
+                peers = _chan_peers.get(ch, [])
                 if not peers:
                     continue
                 threshold = np.percentile(
@@ -308,29 +310,36 @@ def _month_diff(a: pd.Period, b: pd.Period) -> int:
         return 999
 
 
-def _estimate_historical_stage(
-    row, grp, idx, n_months, global_latest,
-    onboarding_max_months, churn_days,
+def _estimate_historical_stage_arr(
+    rev_arr, pos_idx, idx, n_months,
+    onboarding_max_months,
+    hist_decline_mul, hist_growth_mul,
 ) -> str:
-    """估计某个月份客户的旅程阶段。
+    """估计某个月份客户的旅程阶段（数组版，[批次⑥ P4] 性能等价改写）。
 
-    基于该月份及后续最多6个月的数据判断：
-      - 导入期：首次交易后 onboarding_max_months 个月内
+    与原 _estimate_historical_stage 语义逐条一致，仅把 Series.iloc/.get/掩码扫描
+    换成调用方预计算的 numpy 数组：
+      - rev_arr: 客户按月升序的 rev_sum 数组
+      - pos_idx: rev_arr > 0 的位置数组（替代每次调用 grp[grp["rev_sum"]>0].index[0]）
+      - 乘数配置由调用方顶部读取一次传入（原在函数内每次 import 读取，值相同）
+
+    判定逻辑（与原一致）：
       - 流失期：当月无交易额
+      - 导入期：首次交易后 onboarding_max_months 个月内
       - 衰退期：后续3月收入趋势持续下降
       - 预警期：后续3月波动下降或近期交易额低迷
       - 爬坡期：后续3月收入持续增长
       - 稳定期：其余情况
     """
-    rev = row.get("rev_sum", 0)
+    rev = rev_arr[idx]
 
     # 流失期：当月无交易
     if rev == 0:
         return "流失期"
 
     # 导入期：首次交易后指定月数内
-    first_rev_idx = grp[grp["rev_sum"] > 0].index[0] if (grp["rev_sum"] > 0).any() else idx
-    months_since_first = idx - first_rev_idx if hasattr(idx, "__sub__") else 0
+    first_rev_idx = pos_idx[0] if len(pos_idx) > 0 else idx
+    months_since_first = idx - first_rev_idx
     if months_since_first <= onboarding_max_months:
         return "导入期"
 
@@ -338,25 +347,18 @@ def _estimate_historical_stage(
     lookahead = min(idx + 4, n_months)
     future_months = list(range(idx + 1, lookahead))
     if len(future_months) >= 2:
-        future_revs = []
-        for fi in future_months:
-            if fi < n_months:
-                fr = grp.iloc[fi].get("rev_sum", 0)
-                future_revs.append(fr)
+        future_revs = [rev_arr[fi] for fi in future_months if fi < n_months]
 
         if len(future_revs) >= 2:
             # 连续下降/增长判定（乘数从配置读取）
-            from config.settings import CUSTOMER_JOURNEY_THRESHOLDS as _jcfg
-            _hist_decline_mul = float(_jcfg.get("hist_decline_multiplier", 0.9))
-            _hist_growth_mul = float(_jcfg.get("hist_growth_multiplier", 1.1))
             declines = sum(
                 1 for i in range(1, len(future_revs))
-                if future_revs[i] < future_revs[i - 1] * _hist_decline_mul
+                if future_revs[i] < future_revs[i - 1] * hist_decline_mul
             )
             # 连续增长
             grows = sum(
                 1 for i in range(1, len(future_revs))
-                if future_revs[i] > future_revs[i - 1] * _hist_growth_mul
+                if future_revs[i] > future_revs[i - 1] * hist_growth_mul
             )
 
             if declines >= 2:

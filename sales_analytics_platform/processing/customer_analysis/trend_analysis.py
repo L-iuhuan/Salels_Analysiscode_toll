@@ -219,6 +219,26 @@ def calc_category_migration(
 # 3. 客户ETS预测
 # ============================================================
 
+def _run_ets_parallel(task_args, worker):
+    """[批次⑥ P3] 并行执行 ETS 拟合列表，保持输入顺序返回结果。
+
+    - len < 64 或并行环境不可用时回退串行（结果与并行完全相同，只是慢）；
+    - ProcessPoolExecutor.map 按输入顺序返回；worker 为 shared.forecasting 的
+      模块级函数（Windows spawn 可序列化）；chunksize 摊薄 IPC 开销。
+    """
+    if len(task_args) < 64:
+        return [worker(a) for a in task_args]
+    try:
+        import os as _os
+        from concurrent.futures import ProcessPoolExecutor as _PPE
+        n_workers = min(8, (_os.cpu_count() or 4), len(task_args))
+        with _PPE(max_workers=n_workers) as ex:
+            return list(ex.map(worker, task_args, chunksize=16))
+    except Exception as _e:  # noqa: BLE001 —— 并行不可用必须可回退，结果不变
+        print(f"  [警告] ETS并行拟合失败，回退串行: {type(_e).__name__}: {_e}")
+        return [worker(a) for a in task_args]
+
+
 def calc_customer_forecast(
     cust_monthly: pd.DataFrame,
     latest_month,
@@ -247,17 +267,25 @@ def calc_customer_forecast(
     _min_hist = min_history if min_history is not None else TREND_FORECAST.get("min_history", 12)
 
     results = []
+    # [批次⑥ P3] ETS 逐客户拟合是 CPU 密集且互相独立：先按原 groupby 顺序收集任务，
+    # 再用 ProcessPool 并行拟合（executor.map 保持输入顺序返回，同一确定性算法 →
+    # 结果与串行逐位一致）；任务量少或并行环境不可用时回退串行（结果相同）。
+    from shared.forecasting import ets_forecast_picklable as _ets_worker
+
+    _task_cids = []
+    _task_args = []
     for cid, grp in df.groupby("客户编号"):
         grp = grp.sort_values("_月", kind='stable')
 
         if len(grp) < _min_hist:
             continue
 
-        rev_series = grp["rev_sum"].values
-        forecast, direction, pred_int, model_info = ets_forecast(
-            rev_series,
-            periods=_n_forecast,
-        )
+        _task_cids.append(cid)
+        _task_args.append((grp["rev_sum"].values, _n_forecast, 0))
+
+    _ets_results = _run_ets_parallel(_task_args, _ets_worker)
+
+    for cid, (forecast, direction, pred_int, model_info) in zip(_task_cids, _ets_results):
 
         if forecast is None:
             continue

@@ -23,7 +23,8 @@ PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
-from config.settings import REPORT_RETENTION_COUNT
+# [批次⑤ 缺陷A修复] 输出目录统一从 config.settings 引入（指向包根 output/）
+from config.settings import REPORT_RETENTION_COUNT, OUTPUT_GOLD, OUTPUT_REPORT
 
 
 # Gold 表 → CSV 文件名映射（按 generate_gold_tables() 内部键名）
@@ -63,9 +64,6 @@ GOLD_CSV_MAP = {
     "产品研发建议": "产品研发建议.csv",
 }
 
-OUTPUT_GOLD = os.path.join(PROJECT_ROOT, "output", "gold")
-OUTPUT_REPORT = os.path.join(PROJECT_ROOT, "output", "report")
-
 
 class GoldExporter:
     """Gold 层表写入器。
@@ -98,7 +96,12 @@ class GoldExporter:
                 path = os.path.join(out_dir, csv_name)
                 df.to_csv(path, index=False, encoding="utf-8-sig")
 
-        # 写 Excel
+        # 写 Excel（[批次⑦] 默认关闭：EXCEL_REPORT.customer_enabled=False 时跳过，
+        # 该报告不被看板/管道消费，实测生成耗时 ~103s/次；需要时改配置为 True 恢复）
+        from config.settings import EXCEL_REPORT
+        if not EXCEL_REPORT.get("customer_enabled", False):
+            print("  [批次⑦] 客户分析 Excel 报告已按配置跳过（EXCEL_REPORT.customer_enabled=False）")
+            return None
         return self._write_excel_report(gold)
 
     def _write_excel_report(self, gold: dict) -> str:
@@ -151,29 +154,70 @@ class GoldExporter:
             worksheet.freeze_panes(1, 0)
 
             col_widths = []
+            # [批次⑥ P2] 单元格写入按列 dtype 分派 + 矢量化舍入/空值掩码/列宽极值估算，
+            # 替代逐格 pd.isna/round/f-string。
+            # 等价性说明（与原逐格逻辑逐一对齐）：
+            #   - 原逻辑按"每个单元格值的 Python 类型"分派：isinstance(int/float/complex)
+            #     → write_number，其余 → write_string(str(val))，NaN → write_blank。
+            #     因此 float dtype 列可整列走快速数值路径（值均为 np.float64，必过 isinstance），
+            #     而 object 列必须保留逐格 isinstance 判定（object 列里的 Python float 在
+            #     原实现中同样走 write_number，不能降级为字符串）；
+            #   - np.int64/np.bool_ 不是 int 子类，原实现走 write_string(str(val))，保持一致；
+            #   - round(float(v),2) 与 np.round(float64,2) 同为 half-to-even，结果一致；
+            #   - 数值列列宽：f"{v:,.2f}" 的长度关于 |v| 单调，取列内最小/最大值即可得最大宽度。
+            warn_flags = None
+            if sheet_name == "客户全景" and warn_indices:
+                warn_flags = np.zeros(len(df), dtype=bool)
+                _wi = np.fromiter(warn_indices, dtype=int, count=len(warn_indices))
+                _wi = _wi[(_wi >= 0) & (_wi < len(df))]
+                warn_flags[_wi] = True
+            n_rows = len(df)
+            _NUM_TYPES = (int, float, complex)
             for col_idx, col_name in enumerate(df.columns):
                 worksheet.write(0, col_idx, col_name, header_fmt)
-                max_len = len(str(col_name))
-
-                for row_idx, val in enumerate(df[col_name]):
-                    r = row_idx + 1
-                    if isinstance(val, (list, np.ndarray, pd.Series)):
-                        worksheet.write_string(r, col_idx, str(val), text_fmt)
-                    elif pd.isna(val):
-                        worksheet.write_blank(r, col_idx, None, text_fmt)
-                    elif isinstance(val, (int, float, complex)):
-                        rounded = round(float(val), 2)
-                        cell_fmt = num_fmt
-                        if sheet_name == "客户全景" and r - 1 in warn_indices:
-                            cell_fmt = warn_fmt
-                        worksheet.write_number(r, col_idx, rounded, cell_fmt)
-                        col_len = len(f"{rounded:,.2f}")
-                    else:
-                        worksheet.write_string(r, col_idx, str(val), text_fmt)
-                        col_len = len(str(val))
-                    max_len = max(max_len, col_len)
-
-                col_widths.append(min(max_len + 4, 30))
+                col = df[col_name]
+                na_mask = col.isna().to_numpy()
+                if pd.api.types.is_float_dtype(col.dtype):
+                    rounded = np.round(col.to_numpy(dtype="float64", na_value=np.nan), 2)
+                    for row_idx in range(n_rows):
+                        r = row_idx + 1
+                        if na_mask[row_idx]:
+                            worksheet.write_blank(r, col_idx, None, text_fmt)
+                        else:
+                            cell_fmt = num_fmt
+                            if warn_flags is not None and warn_flags[row_idx]:
+                                cell_fmt = warn_fmt
+                            worksheet.write_number(r, col_idx, float(rounded[row_idx]), cell_fmt)
+                    _cands = [len(str(col_name))]
+                    if (~na_mask).any():
+                        _rv = rounded[~na_mask]
+                        _cands.append(len(f"{np.nanmin(_rv):,.2f}"))
+                        _cands.append(len(f"{np.nanmax(_rv):,.2f}"))
+                    col_widths.append(min(max(_cands) + 4, 30))
+                else:
+                    # object/整型/布尔等列：与原实现一致，逐格按值类型分派
+                    vals = col.to_numpy()
+                    max_len = len(str(col_name))
+                    for row_idx in range(n_rows):
+                        r = row_idx + 1
+                        if na_mask[row_idx]:
+                            worksheet.write_blank(r, col_idx, None, text_fmt)
+                            continue
+                        v = vals[row_idx]
+                        if isinstance(v, _NUM_TYPES):
+                            rv = round(float(v), 2)
+                            cell_fmt = num_fmt
+                            if warn_flags is not None and warn_flags[row_idx]:
+                                cell_fmt = warn_fmt
+                            worksheet.write_number(r, col_idx, rv, cell_fmt)
+                            col_len = len(f"{rv:,.2f}")
+                        else:
+                            s = v if type(v) is str else str(v)
+                            worksheet.write_string(r, col_idx, s, text_fmt)
+                            col_len = len(s)
+                        if col_len > max_len:
+                            max_len = col_len
+                    col_widths.append(min(max_len + 4, 30))
 
             for col_idx, w in enumerate(col_widths):
                 worksheet.set_column(col_idx, col_idx, w)

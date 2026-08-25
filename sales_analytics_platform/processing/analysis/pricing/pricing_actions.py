@@ -48,8 +48,14 @@ def calc_markup_opportunity(
         active_months=(price_col, "count"),
     ).reset_index()
 
-    cp["中位价"] = cp[prod_col].map(prod_median)
-    cp["产品总销量"] = cp[prod_col].map(prod_total_qty)
+    # [批次⑤ 缺陷B修复] cp[prod_col] 为 category dtype（silver parquet 读入口径）时，
+    # pandas≥2.3.2 下 .map() 结果保留 category，后续减法/除法抛
+    # "Object with dtype category cannot perform the numpy op subtract"。
+    # 中位价/总销量本就是数值，显式 np.asarray 去 category 外壳；
+    # 不指定 dtype——保持映射结果的自然 dtype（float32 入 → float32 出），
+    # 与生产环境 pandas 2.3.1 的列 dtype 及 CSV 打印格式逐位一致。
+    cp["中位价"] = np.asarray(cp[prod_col].map(prod_median))
+    cp["产品总销量"] = np.asarray(cp[prod_col].map(prod_total_qty))
     cp["客户销量占比"] = cp["total_qty"] / cp["产品总销量"].replace(0, float("nan"))
 
     # 条件筛选

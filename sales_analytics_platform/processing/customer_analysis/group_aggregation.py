@@ -237,8 +237,9 @@ def run_group_aggregation(
     # 聚合集团指标
     group_df = calc_group_aggregation(result, cust_x_prod=cust_x_prod, cat_col=cat_col)
 
-    # 输出
-    output_dir = os.path.join(PROJECT_ROOT, "output", "gold")
+    # 输出（[批次⑤ 缺陷A修复] 统一用 config.settings.OUTPUT_GOLD，指向包根 output/）
+    from config.settings import OUTPUT_GOLD
+    output_dir = OUTPUT_GOLD
     os.makedirs(output_dir, exist_ok=True)
 
     if len(group_df) > 0:

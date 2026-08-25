@@ -21,29 +21,42 @@ except ImportError:
     HAS_CHINESE_CALENDAR = False
 
 
+# [批次⑥ P5] 月度工作日比率缓存：本函数是纯函数（同年月→同结果），但全管道被调用 1400+ 次
+# （每个预测实体一次），逐日 is_workday 重复计算同一批月份。按 (year, month) 记忆化，
+# 返回值与原计算完全一致，实测可省 ~15-19s。
+_WORKDAY_RATIO_CACHE = {}
+
+
 def calc_monthly_holiday_ratios(year_months):
     """基于chinese_calendar计算每月实际工作日占比。
-    
+
     参数:
         year_months: Period对象列表
-    
+
     返回:
         dict: {Period: 工作日比率}
     """
     if not HAS_CHINESE_CALENDAR:
         return {pm: 1.0 for pm in year_months}
-    
+
     ratios = {}
     for pm in year_months:
         year = pm.year
         month = pm.month
+        key = (year, month)
+        cached = _WORKDAY_RATIO_CACHE.get(key)
+        if cached is not None:
+            ratios[pm] = cached
+            continue
         total_days = pd.Timestamp(year, month, 1).days_in_month
         workdays = 0
         for day in range(1, total_days + 1):
             dt = pd.Timestamp(year, month, day)
             if chinese_calendar.is_workday(dt):
                 workdays += 1
-        ratios[pm] = workdays / 22.0
+        ratio = workdays / 22.0
+        _WORKDAY_RATIO_CACHE[key] = ratio
+        ratios[pm] = ratio
     return ratios
 
 
@@ -220,6 +233,16 @@ def _ets_forecast_impl(monthly_qty, periods=3, seasonal_periods=0):
         'aic': round(best_aic, 1) if best_aic != np.inf else None
     }
     return forecast, direction, pred_intervals, model_info
+
+
+def ets_forecast_picklable(args):
+    """[批次⑥ P3] ProcessPool worker：解包参数调用 ets_forecast。
+
+    必须是模块级函数（Windows spawn 下 worker 按导入路径反序列化）。
+    结果与串行直接调用 ets_forecast 完全一致（同一确定性算法、同一输入）。
+    """
+    monthly_qty, periods, seasonal_periods = args
+    return ets_forecast(monthly_qty, periods=periods, seasonal_periods=seasonal_periods)
 
 
 def weighted_ma_forecast(monthly_qty, periods=3, window=3):

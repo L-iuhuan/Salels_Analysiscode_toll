@@ -16,8 +16,8 @@ PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
-OUTPUT_GOLD = os.path.join(PROJECT_ROOT, "output", "gold")
-OUTPUT_REPORT = os.path.join(PROJECT_ROOT, "output", "report")
+# [批次⑤ 缺陷A修复] 输出目录统一从 config.settings 引入（指向包根 output/）
+from config.settings import OUTPUT_GOLD, OUTPUT_REPORT
 
 
 def load_gold_tables() -> dict:
