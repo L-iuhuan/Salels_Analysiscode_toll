@@ -96,10 +96,11 @@ def _naive_cell(v):
     return v
 
 
-def _read_encrypted_com(path, sheet_name):
+def _read_encrypted_com(path, sheet_name, strict=False):
     """DSE 加密文件：COM 解密读（ReadOnly 打开，读目标 sheet UsedRange，首行作列名）。
 
     用 DispatchEx 创建新实例（避免 attach 到残留/损坏的 Excel 实例导致 Workbooks 不可用）。
+    strict=True 时 sheet 不存在返回 (None, None)，不回退首个 sheet（客户信息表等可选 sheet 用）。
     """
     import win32com.client
     excel = win32com.client.DispatchEx("Excel.Application")
@@ -114,7 +115,9 @@ def _read_encrypted_com(path, sheet_name):
         t0 = time.time()
         wb = excel.Workbooks.Open(path, ReadOnly=True, UpdateLinks=0, IgnoreReadOnlyRecommended=True)
         names = [wb.Sheets(i).Name for i in range(1, wb.Sheets.Count + 1)]
-        target = _resolve_sheet(names, sheet_name)
+        if strict and sheet_name not in names:
+            return None, None
+        target = sheet_name if strict else _resolve_sheet(names, sheet_name)
         ws = wb.Sheets(names.index(target) + 1)
         used = ws.UsedRange
         data = used.Value
@@ -221,6 +224,22 @@ def _coerce_datetime_columns(df):
     return df
 
 
+def _read_sheet_optional(path, sheet_name, enc):
+    """读取可选 sheet（如客户信息表）；sheet 不存在或读取失败返回 None，绝不回退到首个 sheet。"""
+    if enc:
+        df, _used = _read_encrypted_com(path, sheet_name, strict=True)
+        return df
+    sys.path.insert(0, os.path.join(DEFAULT_PLATFORM, "processing"))
+    from shared.data_cleaning import read_excel_auto
+    try:
+        xls = pd.ExcelFile(path)
+        if sheet_name not in xls.sheet_names:
+            return None
+        return read_excel_auto(path, sheet_name=sheet_name)
+    except Exception:
+        return None
+
+
 def main():
     ap = argparse.ArgumentParser(description="W1 快照仓 · ERP 明文快照 ingest")
     ap.add_argument("--data", default=None, help="源 Excel 路径（默认 data\\ 下最新 财务分析-*.xlsx）")
@@ -277,6 +296,20 @@ def main():
     df.to_parquet(pq_path, index=False)
     print(f"\n[写] {pq_path}")
 
+    # 客户信息表 sheet 一并入快照（stage_silver 需要；源文件没有该 sheet 则记 None，
+    # 跑批时回退 build_cust_info 从 ERP 列构建客户属性）
+    cust_df = _read_sheet_optional(xlsx, "客户信息表", enc)
+    cust_rows = None
+    if cust_df is not None:
+        cust_df = _coerce_object_columns(cust_df)
+        cust_df = _coerce_datetime_columns(cust_df)
+        cust_pq = os.path.join(out_dir, "cust_info.parquet")
+        cust_df.to_parquet(cust_pq, index=False)
+        cust_rows = int(len(cust_df))
+        print(f"[写] {cust_pq}（客户信息表 {cust_rows} 行）")
+    else:
+        print("  [提示] 源文件无“客户信息表”sheet，跑批将从 ERP 列构建客户属性（build_cust_info）")
+
     cols_hash = hashlib.sha256("\n".join(str(c) for c in df.columns).encode("utf-8")).hexdigest()
     manifest = {
         "source": {
@@ -298,6 +331,10 @@ def main():
             "columns_hash": cols_hash,
             "columns": [str(c) for c in df.columns],
             "sums": sums,
+        },
+        "cust_info": {
+            "file": "cust_info.parquet" if cust_rows is not None else None,
+            "row_count": cust_rows,
         },
     }
     mf_path = os.path.join(out_dir, "manifest.json")

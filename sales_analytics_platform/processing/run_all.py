@@ -208,10 +208,21 @@ def stage_silver(source_path: str) -> tuple:
 
     # ── 从raw提取客户属性（客户信息表不存在时，统一用 build_cust_info() 从ERP列构建）──
     cust_info = None
+    # W1 快照仓：快照模式优先读 data_warehouse 的 cust_info.parquet（客户信息表 sheet 的快照）；
+    # 无快照 sheet 时回退 build_cust_info（与"源文件无客户信息表"口径一致）
+    _cust_pq = None
+    if _snap is not None:
+        _cust_pq_cand = os.path.join(os.path.dirname(_pq_path), "cust_info.parquet")
+        if os.path.isfile(_cust_pq_cand):
+            _cust_pq = _cust_pq_cand
     try:
-        cust_info = read_excel_auto(source_path, sheet_name="客户信息表")
+        if _cust_pq is not None:
+            cust_info = pd.read_parquet(_cust_pq)
+            print(f"  客户信息表: data_warehouse 快照（{len(cust_info)} 行）")
+        else:
+            cust_info = read_excel_auto(source_path, sheet_name="客户信息表")
         raw = raw.merge(cust_info[["客户编号", "渠道类型", "客户等级", "所属区域"]], on="客户编号", how="left")
-    except (ValueError, FileNotFoundError, KeyError):
+    except (ValueError, FileNotFoundError, KeyError, RuntimeError):
         # 客户信息表不存在 → 统一用 build_cust_info() 从ERP数据列构建 cust_info
         # （批次① T2/P0-1：与缓存路径共用同一构建函数，保证两条路径客户属性一致；
         #   含客户编号 fillna("未知客户") 与 客户类别列名归一）
