@@ -65,7 +65,8 @@ def build_kpi(source_path: str = None, raw_df: pd.DataFrame = None) -> pd.DataFr
                 if not xlsx_files:
                     print("[KPI] 错误: data/ 目录下未找到数据文件")
                     return pd.DataFrame()
-                source_path = os.path.join(DATA_DIR, xlsx_files[0])
+                # mtime 最新（与 run_chain.find_raw_excel / run_all.find_source_data 同口径；字母序会在多月度文件并存时取错）
+                source_path = os.path.join(DATA_DIR, max(xlsx_files, key=lambda n: os.path.getmtime(os.path.join(DATA_DIR, n))))
             from config.settings import DATA_SHEET_NAME
             print(f"[KPI] 读取数据: {source_path} (sheet={DATA_SHEET_NAME})")
             raw = read_excel_auto(source_path, sheet_name=DATA_SHEET_NAME)

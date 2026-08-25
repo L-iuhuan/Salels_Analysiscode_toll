@@ -88,7 +88,8 @@ def run(
             if source_path is None:
                 xlsx_files = [f for f in os.listdir(DATA_DIR) if f.endswith(".xlsx") and not f.startswith("~$")]
                 if xlsx_files:
-                    source_path = os.path.join(DATA_DIR, xlsx_files[0])
+                    # mtime 最新（与 run_chain.find_raw_excel 同口径；字母序会在多月度文件并存时取错）
+                    source_path = os.path.join(DATA_DIR, max(xlsx_files, key=lambda n: os.path.getmtime(os.path.join(DATA_DIR, n))))
             if source_path:
                 raw_temp = read_excel_auto(source_path, sheet_name=DATA_SHEET_NAME)
                 _keep_cols = ["销售模式", "终端客户名称_客户类别", "实际业务员"]
@@ -110,7 +111,8 @@ def run(
             xlsx_files = [f for f in os.listdir(DATA_DIR) if f.endswith(".xlsx") and not f.startswith("~$")]
             if not xlsx_files:
                 return {}
-            source_path = os.path.join(DATA_DIR, xlsx_files[0])
+            # mtime 最新（与 run_chain.find_raw_excel 同口径；字母序会在多月度文件并存时取错）
+            source_path = os.path.join(DATA_DIR, max(xlsx_files, key=lambda n: os.path.getmtime(os.path.join(DATA_DIR, n))))
 
         raw_temp = read_excel_auto(source_path, sheet_name=DATA_SHEET_NAME)
         if col_map:

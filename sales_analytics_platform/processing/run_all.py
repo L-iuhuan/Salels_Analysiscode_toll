@@ -144,12 +144,14 @@ def _silver_cache_valid(source_path: str = None) -> bool:
 
 
 def find_source_data(data_path: str = None) -> str:
-    """定位源数据文件。"""
+    """定位源数据文件。--data 显式优先；否则取 data/ 下 mtime 最新的 xlsx
+    （与 run_chain.find_raw_excel、dashboard 指纹的 _latest_excel 同口径；
+    批次③前为字母序第一个，多月度文件并存时会取错——W1 实战暴露后修正）。"""
     if data_path and os.path.exists(data_path):
         return data_path
     xlsx_files = [f for f in os.listdir(DATA_DIR) if f.endswith(".xlsx") and not f.startswith("~$")]
     if xlsx_files:
-        return os.path.join(DATA_DIR, xlsx_files[0])
+        return os.path.join(DATA_DIR, max(xlsx_files, key=lambda n: os.path.getmtime(os.path.join(DATA_DIR, n))))
     return ""
 
 

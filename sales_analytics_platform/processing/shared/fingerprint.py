@@ -77,6 +77,10 @@ def compute_dashboard_fingerprint(platform_dir: str, excel_path: str = None) -> 
     settings_parts = []
     for name in sorted(n for n in os.listdir(settings_dir) if n.startswith("settings") and n.endswith(".py")):
         settings_parts.append(_read_lf_norm(os.path.join(settings_dir, name)))
+    # faces.yaml 也进 settings 键（W4 插拔：面开关影响计算与输出，变更必须使缓存失效）
+    faces_file = os.path.join(platform_dir, "dashboard", "faces.yaml")
+    if os.path.isfile(faces_file):
+        settings_parts.append(_read_lf_norm(faces_file))
     settings = _sha256_text("\n".join(settings_parts))
 
     # dashboard_code / template

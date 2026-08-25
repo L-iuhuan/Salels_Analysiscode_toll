@@ -547,6 +547,39 @@ def build_c_data(prod_df, hist_df=None, data_month=None, insuff_count=0):
         print(f"  数据月份: {data_month}")
     return data
 
+# ========== W4 插拔：faces.yaml 面开关（enabled/visible） ==========
+_FACES_CFG = None
+
+def _face_visible(face_id):
+    """面是否可视（enabled 且 visible）。faces.yaml 缺失/异常时默认全部可视（向后兼容）。"""
+    global _FACES_CFG
+    if _FACES_CFG is None:
+        try:
+            import yaml as _yaml
+            with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "faces.yaml"),
+                      encoding="utf-8") as _f:
+                _FACES_CFG = (_yaml.safe_load(_f) or {}).get("faces", {})
+        except Exception:
+            _FACES_CFG = {}
+    _f = _FACES_CFG.get(face_id, {})
+    return bool(_f.get("enabled", True)) and bool(_f.get("visible", True))
+
+
+def _hide_invisible_faces(page_html):
+    """插拔（W4）：faces.yaml 中不可见面的 tab 按钮从输出中移除（服务端，模板结构不动）。
+    同时移除对应按钮的 JS 监听器——否则 getElementById 拿到 null，addEventListener 抛 TypeError 卡死后续 JS。"""
+    _tab_names = {"A": "总览决策", "R": "风险与行动", "B": "客户360", "C": "产品生命周期",
+                  "D": "销售能力", "E": "月度作战雷达", "F": "半年度专项"}
+    for _fid, _fname in _tab_names.items():
+        if not _face_visible(_fid):
+            for _pat in (f'<button class="tab-btn" data-tab="{_fid}" id="btn{_fid}">{_fname}</button>',
+                         f'<button class="tab-btn active" data-tab="{_fid}" id="btn{_fid}">{_fname}</button>'):
+                page_html = page_html.replace(_pat + "\n", "").replace(_pat, "")
+            _lis = f"document.getElementById('btn{_fid}').addEventListener('click',function(){{switchTab('{_fid}')}});"
+            page_html = page_html.replace(_lis + "\n", "").replace(_lis, "")
+    return page_html
+
+
 # ========== 批次③ 车道D：看板自缓存（preagg.json）判定 ==========
 # 指纹新鲜且缓存存在 → 走缓存路径（跳过全部重算，直接渲染），否则全算并写缓存。
 _fp_cur = None
@@ -630,6 +663,7 @@ if _cache_hit and _cached_obj:
     _html_c = _template_c.read_text(encoding="utf-8")
     for _k_c, _v_c in _replacements.items():
         _html_c = _html_c.replace(_k_c, _v_c)
+    _html_c = _hide_invisible_faces(_html_c)
     with open(OUT, "w", encoding="utf-8") as _f_c:
         _f_c.write(_html_c)
     _sz_c = os.path.getsize(OUT) / (1024 * 1024)
@@ -1914,437 +1948,447 @@ for _dn in sorted(set(sales_dept_map.values())):
     })
 dept_list.sort(key=lambda x: -x["rev"])
 
-# ---- 8c. H1数据 ----
-h1_data = rex[(rex["_d"] >= f"{_latest_y}-01-01") & (rex["_d"] <= f"{_latest_y}-06-30")]
-ph1_data = rex[(rex["_d"] >= f"{_latest_y-1}-01-01") & (rex["_d"] <= f"{_latest_y-1}-06-30")]
-h1_r = float(h1_data["_rev"].sum()); h1_p = float(h1_data["_profit"].sum())
-h1_q = float(h1_data["_qty"].sum())
-h1_mg = round(h1_p / h1_r * 100, 1) if h1_r > 0 else 0
-ph1_r = float(ph1_data["_rev"].sum()); ph1_p = float(ph1_data["_profit"].sum())
-ph1_mg = round(ph1_p / ph1_r * 100, 1) if ph1_r > 0 else 0
-h1_rev_yoy = round((h1_r - ph1_r) / ph1_r * 100, 1) if ph1_r > 0 else 0
-h1_mg_yoy = round(h1_mg - ph1_mg, 1)
-h1_asp = round(h1_r / h1_q, 4) if h1_q > 0 else 0
-ph1_q = float(ph1_data["_qty"].sum())
-h1_asp_yoy = round((h1_asp - (ph1_r / ph1_q if ph1_q > 0 else 0)) / (ph1_r / ph1_q if ph1_q > 0 else 1) * 100, 1) if ph1_q > 0 else 0
-# KA+AA H1
-h1_kaaa_d = h1_data[h1_data["_tier"].str.contains("KA|AA", na=False)]
-h1_kaaa_r = float(h1_kaaa_d["_rev"].sum()); h1_kaaa_p = float(h1_kaaa_d["_profit"].sum())
-h1_kaaa_sc = h1_kaaa_d["_cust"].nunique()
+# ---- 插拔（W4 拍板）：F面平时关闭（faces.yaml visible=false）时跳过 8c-8h 全部 H1 计算，注入空值 ----
+if _face_visible("F"):
+    # ---- 8c. H1数据 ----
+    h1_data = rex[(rex["_d"] >= f"{_latest_y}-01-01") & (rex["_d"] <= f"{_latest_y}-06-30")]
+    ph1_data = rex[(rex["_d"] >= f"{_latest_y-1}-01-01") & (rex["_d"] <= f"{_latest_y-1}-06-30")]
+    h1_r = float(h1_data["_rev"].sum()); h1_p = float(h1_data["_profit"].sum())
+    h1_q = float(h1_data["_qty"].sum())
+    h1_mg = round(h1_p / h1_r * 100, 1) if h1_r > 0 else 0
+    ph1_r = float(ph1_data["_rev"].sum()); ph1_p = float(ph1_data["_profit"].sum())
+    ph1_mg = round(ph1_p / ph1_r * 100, 1) if ph1_r > 0 else 0
+    h1_rev_yoy = round((h1_r - ph1_r) / ph1_r * 100, 1) if ph1_r > 0 else 0
+    h1_mg_yoy = round(h1_mg - ph1_mg, 1)
+    h1_asp = round(h1_r / h1_q, 4) if h1_q > 0 else 0
+    ph1_q = float(ph1_data["_qty"].sum())
+    h1_asp_yoy = round((h1_asp - (ph1_r / ph1_q if ph1_q > 0 else 0)) / (ph1_r / ph1_q if ph1_q > 0 else 1) * 100, 1) if ph1_q > 0 else 0
+    # KA+AA H1
+    h1_kaaa_d = h1_data[h1_data["_tier"].str.contains("KA|AA", na=False)]
+    h1_kaaa_r = float(h1_kaaa_d["_rev"].sum()); h1_kaaa_p = float(h1_kaaa_d["_profit"].sum())
+    h1_kaaa_sc = h1_kaaa_d["_cust"].nunique()
 
-f_h1_kpi = {
-    "rev": round(h1_r / 1e4, 0), "profit": round(h1_p / 1e4, 0), "mg": h1_mg,
-    "mg_yoy": h1_mg_yoy, "rev_yoy": h1_rev_yoy, "asp": h1_asp, "asp_yoy": h1_asp_yoy,
-    "prev_mg": ph1_mg, "period": f"{_latest_y} H1 (1-6月)",
-    "kaaa_rev": round(h1_kaaa_r / 1e4, 0), "kaaa_mg": round(h1_kaaa_p / h1_kaaa_r * 100, 1) if h1_kaaa_r > 0 else 0,
-    "kaaa_pct": round(h1_kaaa_r / h1_r * 100, 1) if h1_r > 0 else 0, "kaaa_count": h1_kaaa_sc,
-}
-
-# H1 产品线毛利率
-h1_pline_margins = []
-for _pn in sorted(h1_data["_pline_new"].dropna().unique()):
-    if _pn in ("nan", "None", "", "未知"):
-        continue
-    _pd = h1_data[h1_data["_pline_new"] == _pn]
-    _r = float(_pd["_rev"].sum()); _p = float(_pd["_profit"].sum())
-    _ppd = ph1_data[ph1_data["_pline_new"] == _pn]
-    _pr = float(_ppd["_rev"].sum()); _pp = float(_ppd["_profit"].sum())
-    h1_pline_margins.append({
-        "name": _pn, "rev": round(_r / 1e4, 1), "profit": round(_p / 1e4, 1),
-        "mg": round(_p / _r * 100, 1) if _r > 0 else 0,
-        "prev_mg": round(_pp / _pr * 100, 1) if _pr > 0 else 0,
-        "mg_yoy": round(_p / _r * 100 - (_pp / _pr * 100 if _pr > 0 else 0), 1) if _r > 0 else 0,
-        "rev_yoy": round((_r - _pr) / _pr * 100, 1) if _pr > 0 else 0,
-    })
-h1_pline_margins.sort(key=lambda x: -x["rev"])
-
-# H1 品类毛利率
-h1_cat_margins = []
-for _cn in sorted(h1_data["_cat"].dropna().unique()):
-    if _cn in ("nan", "None", ""):
-        continue
-    _cd = h1_data[h1_data["_cat"] == _cn]
-    _r = float(_cd["_rev"].sum())
-    if _r < 10000:
-        continue
-    _p = float(_cd["_profit"].sum())
-    _kad = _cd[_cd["_tier"].str.contains("KA", na=False)]
-    _aar = _cd[_cd["_tier"].str.contains("AA", na=False) & ~_cd["_tier"].str.contains("KA", na=False)]
-    _pcd = ph1_data[ph1_data["_cat"] == _cn]
-    _pr = float(_pcd["_rev"].sum()); _pp = float(_pcd["_profit"].sum())
-    h1_cat_margins.append({
-        "name": _cn, "rev": round(_r / 1e4, 1), "profit": round(_p / 1e4, 1),
-        "mg": round(_p / _r * 100, 1) if _r > 0 else 0,
-        "ka_mg": round(float(_kad["_profit"].sum()) / float(_kad["_rev"].sum()) * 100, 1) if float(_kad["_rev"].sum()) > 0 else 0,
-        "aa_mg": round(float(_aar["_profit"].sum()) / float(_aar["_rev"].sum()) * 100, 1) if float(_aar["_rev"].sum()) > 0 else 0,
-        "prev_mg": round(_pp / _pr * 100, 1) if _pr > 0 else 0,
-        "mg_yoy": round(_p / _r * 100 - (_pp / _pr * 100 if _pr > 0 else 0), 1) if _r > 0 else 0,
-    })
-h1_cat_margins.sort(key=lambda x: -x["rev"])
-
-# H1 销售部毛利率
-h1_dept_margins = []
-for _dn in sorted(set(sales_dept_map.values())):
-    _names = [n for n, d in sales_dept_map.items() if d == _dn]
-    _dd = h1_data[h1_data["_sales"].isin(_names)]
-    _r = float(_dd["_rev"].sum()); _p = float(_dd["_profit"].sum())
-    if _r < 10000:
-        continue
-    _pdd = ph1_data[ph1_data["_sales"].isin(_names)]
-    _pr = float(_pdd["_rev"].sum()); _pp = float(_pdd["_profit"].sum())
-    _dq = float(_dd["_qty"].sum()); _pdq = float(_pdd["_qty"].sum())
-    _asp = round(_r / _dq, 4) if _dq > 0 else 0
-    _pasp = round(_pr / _pdq, 4) if _pdq > 0 else 0
-    _asp_yoy = round((_asp - _pasp) / _pasp * 100, 1) if _pasp > 0 else 0
-    _dm = h1_data[(h1_data["_d"].dt.month == _latest_m) & (h1_data["_d"].dt.year == _latest_y) & h1_data["_sales"].isin(_names)]
-    _pm = h1_data[(h1_data["_d"].dt.month == _prev_m) & (h1_data["_d"].dt.year == _prev_y) & h1_data["_sales"].isin(_names)]
-    _dm_r = float(_dm["_rev"].sum()); _pm_r = float(_pm["_rev"].sum())
-    _asp_mom = round((_dm_r / float(_dm["_qty"].sum()) - _pm_r / float(_pm["_qty"].sum())) / (_pm_r / float(_pm["_qty"].sum()) if float(_pm["_qty"].sum()) > 0 else 1) * 100, 1) if float(_dm["_qty"].sum()) > 0 and float(_pm["_qty"].sum()) > 0 and _pm_r > 0 else 0
-    _inds = []
-    for _sn in _names:
-        _sd = _dd[_dd["_sales"] == _sn]
-        _sr = float(_sd["_rev"].sum())
-        if _sr > 0:
-            _sq = float(_sd["_qty"].sum())
-            _inds.append({"name": _sn, "rev": round(_sr / 1e4, 1), "mg": round(float(_sd["_profit"].sum()) / _sr * 100, 1), "asp": round(_sr / _sq, 4) if _sq > 0 else 0})
-    _inds.sort(key=lambda x: -x["rev"])
-    h1_dept_margins.append({
-        "name": _dn, "rev": round(_r / 1e4, 1), "profit": round(_p / 1e4, 1),
-        "mg": round(_p / _r * 100, 1) if _r > 0 else 0,
-        "prev_mg": round(_pp / _pr * 100, 1) if _pr > 0 else 0,
-        "mg_yoy": round(_p / _r * 100 - (_pp / _pr * 100 if _pr > 0 else 0), 1) if _r > 0 else 0,
-        "asp": _asp, "asp_yoy": _asp_yoy, "asp_mom": _asp_mom,
-        "headcount": len(_names), "individuals": _inds,
-    })
-h1_dept_margins.sort(key=lambda x: -x["rev"])
-
-# H1 KA/AA客户毛利率（全量，含ASP/环比/新品渗透）
-h1_kaaa_cust = h1_kaaa_d.groupby("_cust").agg(rev=("_rev", "sum"), profit=("_profit", "sum"), qty=("_qty", "sum")).reset_index()
-h1_kaaa_margins = []
-for _, _row in h1_kaaa_cust.sort_values("rev", ascending=False).iterrows():
-    _nm = str(_row["_cust"]); _r = float(_row["rev"]); _p = float(_row["profit"]); _q = float(_row["qty"])
-    _prev = ph1_data[(ph1_data["_cust"] == _nm) & (ph1_data["_tier"].str.contains("KA|AA", na=False))]
-    _pr = float(_prev["_rev"].sum()); _pp = float(_prev["_profit"].sum()); _pq = float(_prev["_qty"].sum())
-    _tr = h1_data[h1_data["_cust"] == _nm]["_tier"]
-    _tier = "KA" if any("KA" in str(t) for t in _tr) else ("AA" if any("AA" in str(t) for t in _tr) else "")
-    # ASP
-    _asp = round(_r / _q, 4) if _q > 0 else 0
-    _pasp = round(_pr / _pq, 4) if _pq > 0 else 0
-    _asp_yoy = round((_asp - _pasp) / _pasp * 100, 1) if _pasp > 0 else 0
-    # 环比（最新月vs上月）
-    _cm = h1_data[(h1_data["_cust"] == _nm) & (h1_data["_d"].dt.month == _latest_m) & (h1_data["_d"].dt.year == _latest_y)]
-    _pm = h1_data[(h1_data["_cust"] == _nm) & (h1_data["_d"].dt.month == _prev_m) & (h1_data["_d"].dt.year == _prev_y)]
-    _cm_r = float(_cm["_rev"].sum()); _pm_r = float(_pm["_rev"].sum())
-    _mom = round((_cm_r - _pm_r) / _pm_r * 100, 1) if _pm_r > 0 else 0
-    # 新品渗透
-    _cn = h1_data[(h1_data["_cust"] == _nm) & h1_data["_is_new"]]
-    _new_r = float(_cn["_rev"].sum())
-    _new_pct = round(_new_r / _r * 100, 1) if _r > 0 else 0
-    h1_kaaa_margins.append({
-        "name": _nm, "tier": _tier, "rev": round(_r / 1e4, 1), "profit": round(_p / 1e4, 1),
-        "mg": round(_p / _r * 100, 1) if _r > 0 else 0,
-        "prev_mg": round(_pp / _pr * 100, 1) if _pr > 0 else 0,
-        "mg_yoy": round(_p / _r * 100 - (_pp / _pr * 100 if _pr > 0 else 0), 1) if _r > 0 else 0,
-        "rev_yoy": round((_r - _pr) / _pr * 100, 1) if _pr > 0 else 0,
-        "asp": _asp, "asp_yoy": _asp_yoy, "mom": _mom, "new_pct": _new_pct,
-    })
-
-# ---- 8d. 新品分析（12个月存活口径）----
-_new_prods = rex[rex["_is_new"]]["_prod"].unique()
-np_analysis = []
-for _prod in _new_prods:
-    _pdata = rex[rex["_prod"] == _prod]
-    _fd = _pdata["_d"].min()
-    _we = _fd + pd.DateOffset(months=12)
-    _wdata = _pdata[(_pdata["_d"] >= _fd) & (_pdata["_d"] <= _we)]
-    _pm = _wdata["_ym"].nunique()
-    _r = float(_wdata["_rev"].sum()); _p = float(_wdata["_profit"].sum())
-    np_analysis.append({
-        "name": _prod, "first": _fd.strftime("%Y-%m-%d"),
-        "survival": round(_pm / 12 * 100, 1),
-        "rev": round(_r / 1e4, 1), "mg": round(_p / _r * 100, 1) if _r > 0 else 0,
-        "custs": int(_wdata["_cust"].nunique()),
-        "sales": int(_wdata["_sales"].nunique()) if "_sales" in _wdata.columns else 0,
-    })
-np_analysis.sort(key=lambda x: -x["rev"])
-_np_total_rev = sum(p["rev"] for p in np_analysis)
-_np_total_profit = sum(p["mg"] * p["rev"] / 100 for p in np_analysis)
-np_summary = {
-    "count": len(np_analysis),
-    "survival_rate": round(sum(1 for p in np_analysis if p["survival"] > 0) / len(np_analysis) * 100, 1) if np_analysis else 0,
-    "mg": round(_np_total_profit / _np_total_rev * 100, 1) if _np_total_rev > 0 else 0,
-    "penetration": round(len(set(rex[rex["_is_new"]]["_cust"])) / rex["_cust"].nunique() * 100, 1) if rex["_cust"].nunique() > 0 else 0,
-    "promotion": round(len(set(rex[rex["_is_new"]]["_sales"]) & sales_2026_set) / len(sales_2026_set) * 100, 1) if sales_2026_set else 0,
-    "total_rev": round(_np_total_rev, 1),
-    "customers": len(set(rex[rex["_is_new"]]["_cust"])),
-    "sales_people": len(set(rex[rex["_is_new"]]["_sales"]) & sales_2026_set) if "_sales" in rex.columns else 0,
-}
-
-# ---- 8e. H1关键问题与解决方案 ----
-h1_issues = []
-for _pl in h1_pline_margins:
-    if _pl["mg_yoy"] < -2 and _pl["rev"] > 100:
-        h1_issues.append({"type": "产品线毛利率下滑", "target": _pl["name"],
-            "metric": f"毛利率{_pl['mg']}%(同比{_pl['mg_yoy']:+.1f}pp)",
-            "solution": f"排查{_pl['name']}成本结构，关注ASP下降是否由价格战引起，评估是否调整产品组合"})
-for _dept in h1_dept_margins:
-    if _dept["mg"] < h1_mg - 3 and _dept["rev"] > 100:
-        h1_issues.append({"type": "销售部毛利率偏低", "target": _dept["name"],
-            "metric": f"毛利率{_dept['mg']}%(低于整体{h1_mg - _dept['mg']:.1f}pp)",
-            "solution": f"检查{_dept['name']}客户结构，关注低毛利客户占比，加强定价博弈力培训"})
-for _cust in h1_kaaa_margins:
-    if _cust["mg_yoy"] < -3 and _cust["rev"] > 100:
-        # 客户产品级归因：按存货名称拆解毛利率变化
-        _cn = _cust["name"]
-        _cust_26h1 = h1_data[(h1_data["_cust"] == _cn) & (h1_data["_d"] >= f"{_latest_y}-01-01") & (h1_data["_d"] <= f"{_latest_y}-06-30")]
-        _cust_25h1 = ph1_data[(ph1_data["_cust"] == _cn) & (ph1_data["_d"] >= f"{_prev_year}-01-01") & (ph1_data["_d"] <= f"{_prev_year}-06-30")]
-        _cust_attr = []
-        for _pn in _cust_26h1["_item"].unique():
-            _pd26 = _cust_26h1[_cust_26h1["_item"] == _pn]
-            _r26 = float(_pd26["_rev"].sum()); _p26 = float(_pd26["_profit"].sum())
-            if _r26 < 5000:
-                continue
-            _pd25 = _cust_25h1[_cust_25h1["_item"] == _pn]
-            _r25 = float(_pd25["_rev"].sum()); _p25 = float(_pd25["_profit"].sum())
-            _mg26 = _p26 / _r26 * 100 if _r26 > 0 else 0
-            _mg25 = _p25 / _r25 * 100 if _r25 > 0 else 0
-            _cat_val = str(_pd26["_cat"].iloc[0]) if len(_pd26) > 0 else ""
-            _cust_attr.append({
-                "name": _pn, "cat": _cat_val,
-                f"rev_{_yy_latest}h1": round(_r26 / 1e4, 1), f"mg_{_yy_latest}h1": round(_mg26, 1),
-                f"rev_{_yy_prev}h1": round(_r25 / 1e4, 1), f"mg_{_yy_prev}h1": round(_mg25, 1),
-                "mg_change": round(_mg26 - _mg25, 1),
-                "is_new": _r25 < 1000,
-            })
-        _cust_attr.sort(key=lambda x: x["mg_change"])
-        # 判断原因类型
-        _price_drop = [p for p in _cust_attr if p["mg_change"] < -3 and not p["is_new"]]
-        _new_low = [p for p in _cust_attr if p["is_new"] and p[f"mg_{_yy_latest}h1"] < _cust["mg"]]
-        _reason = "价格原因" if len(_price_drop) >= len(_new_low) else "结构原因" if _new_low else "综合原因"
-        h1_issues.append({"type": "KA/AA客户毛利率下滑", "target": _cn,
-            "metric": f"毛利率{_cust['mg']}%(同比{_cust['mg_yoy']:+.1f}pp) → {_reason}",
-            "solution": f"{'价格原因：以下产品毛利率同比下降，建议核查定价' if _reason=='价格原因' else '结构原因：低毛利新品/新品类占比上升拉低整体' if _reason=='结构原因' else '价格+结构综合影响'}",
-            "cust_attr": _cust_attr[:10],
-            "reason": _reason,
-        })
-
-# ---- 8f. 品类毛利下降归因分析 ----
-h1_cat_attribution = []
-for _cat in h1_cat_margins:
-    if _cat["mg_yoy"] >= -2 or _cat["rev"] < 100:
-        continue
-    _cd = h1_data[h1_data["_cat"] == _cat["name"]]
-    _pcd = ph1_data[ph1_data["_cat"] == _cat["name"]]
-    _prod_attr = []
-    for _pn in _cd["_item"].unique():
-        _pd = _cd[_cd["_item"] == _pn]
-        _r = float(_pd["_rev"].sum()); _p = float(_pd["_profit"].sum()); _q = float(_pd["_qty"].sum())
-        if _r < 10000:
-            continue
-        _ppd = _pcd[_pcd["_item"] == _pn]
-        _pr = float(_ppd["_rev"].sum()); _pp = float(_ppd["_profit"].sum())
-        _mg = _p / _r * 100 if _r > 0 else 0
-        _pmg = _pp / _pr * 100 if _pr > 0 else 0
-        _mg_chg = _mg - _pmg
-        _impact = _r * _mg_chg / 100
-        _rm = _pd[(_pd["_d"].dt.month == _latest_m) & (_pd["_d"].dt.year == _latest_y)]
-        _rm_r = float(_rm["_rev"].sum()); _rm_q = float(_rm["_qty"].sum())
-        _rm_asp = _rm_r / _rm_q if _rm_q > 0 else 0
-        _prod_attr.append({
-            "name": _pn, "rev": round(_r / 1e4, 1), "mg": round(_mg, 1),
-            "prev_mg": round(_pmg, 1), "mg_change": round(_mg_chg, 1),
-            "impact": round(_impact / 1e4, 1),
-            "recent_rev": round(_rm_r / 1e4, 1), "recent_qty": round(_rm_q / 1e4, 2),
-            "recent_asp": round(_rm_asp, 4),
-        })
-    _prod_attr.sort(key=lambda x: x["impact"])
-    h1_cat_attribution.append({
-        "category": _cat["name"], "mg_yoy": _cat["mg_yoy"],
-        "rev": _cat["rev"], "mg": _cat["mg"],
-        "products": _prod_attr[:8],
-    })
-
-# 产品线归因分析（与品类归因合并到同一列表）
-for _pl in h1_pline_margins:
-    if _pl["mg_yoy"] >= -2 or _pl["rev"] < 100:
-        continue
-    _pd_data = h1_data[h1_data["_pline_new"] == _pl["name"]]
-    _ppd_data = ph1_data[ph1_data["_pline_new"] == _pl["name"]]
-    _pline_attr = []
-    for _pn in _pd_data["_item"].unique():
-        _pd = _pd_data[_pd_data["_item"] == _pn]
-        _r = float(_pd["_rev"].sum()); _p = float(_pd["_profit"].sum()); _q = float(_pd["_qty"].sum())
-        if _r < 10000:
-            continue
-        _ppd = _ppd_data[_ppd_data["_item"] == _pn]
-        _pr = float(_ppd["_rev"].sum()); _pp = float(_ppd["_profit"].sum())
-        _mg = _p / _r * 100 if _r > 0 else 0
-        _pmg = _pp / _pr * 100 if _pr > 0 else 0
-        _mg_chg = _mg - _pmg
-        _impact = _r * _mg_chg / 100
-        _rm = _pd[(_pd["_d"].dt.month == _latest_m) & (_pd["_d"].dt.year == _latest_y)]
-        _rm_r = float(_rm["_rev"].sum()); _rm_q = float(_rm["_qty"].sum())
-        _rm_asp = _rm_r / _rm_q if _rm_q > 0 else 0
-        _pline_attr.append({
-            "name": _pn, "rev": round(_r / 1e4, 1), "mg": round(_mg, 1),
-            "prev_mg": round(_pmg, 1), "mg_change": round(_mg_chg, 1),
-            "impact": round(_impact / 1e4, 1),
-            "recent_rev": round(_rm_r / 1e4, 1), "recent_qty": round(_rm_q / 1e4, 2),
-            "recent_asp": round(_rm_asp, 4),
-        })
-    _pline_attr.sort(key=lambda x: x["impact"])
-    h1_cat_attribution.append({
-        "category": _pl["name"], "mg_yoy": _pl["mg_yoy"],
-        "rev": _pl["rev"], "mg": _pl["mg"],
-        "products": _pline_attr[:8],
-    })
-
-print(f"  H1: 收入{h1_r/1e4:.0f}万 毛利率{h1_mg}% 同比{h1_mg_yoy:+.1f}pp")
-print(f"  部门: {len(dept_list)}部 新品: {len(np_analysis)}个 存活率{np_summary['survival_rate']}% H1问题: {len(h1_issues)}条")
-
-# ---- 8g. F面产品维度H1对比 ----
-print("  产品维度H1对比...")
-# 定义半年区间（批次②：由 _latest_period 动态推导 前年H1/H2 + 当年H1）
-_h1_periods = _PD["h1_periods"]
-# 按存货名称聚合每个半年的收入/利润/成本
-_prod_h1 = {}
-for _pk, (_ps, _pe) in _h1_periods.items():
-    _pd = rex[(rex["_d"] >= _ps) & (rex["_d"] <= _pe)]
-    _agg = _pd.groupby("_item").agg(rev=("_rev", "sum"), profit=("_profit", "sum"), cost=("_rev", lambda x: float(x.sum()) - float(_pd.loc[x.index, "_profit"].sum())), qty=("_qty", "sum")).reset_index()
-    for _, _r in _agg.iterrows():
-        _nm = str(_r["_item"])
-        if _nm not in _prod_h1:
-            _prod_h1[_nm] = {}
-        _prod_h1[_nm][_pk] = {
-            "rev": round(float(_r["rev"]) / 1e4, 1),
-            "profit": round(float(_r["profit"]) / 1e4, 1),
-            "cost": round(float(_r["cost"]) / 1e4, 1),
-            "qty": round(float(_r["qty"]) / 1e4, 2),
-            "mg": round(float(_r["profit"]) / float(_r["rev"]) * 100, 1) if float(_r["rev"]) > 0 else 0,
-        }
-
-# 近12月收入>10万的主要产品
-_near12 = rex[rex["_d"] >= pd.Timestamp(latest) - pd.DateOffset(months=11)]
-_near12_rev = _near12.groupby("_item")["_rev"].sum()
-_major_items = set(_near12_rev[_near12_rev > 100000].index)
-
-# 首次出现日期 + 新品标记
-_first_dates = rex.groupby("_item")["_d"].min()
-_is_new_tag = rex.groupby("_item")["_is_new"].any()
-
-# Gold画像映射
-_portrait_map = {}
-if "产品名称" in prod_df.columns and "当前画像" in prod_df.columns:
-    _portrait_map = dict(zip(prod_df["产品名称"].astype(str), prod_df["当前画像"].astype(str)))
-_risk_map = {}
-if "产品名称" in prod_df.columns and "综合风险等级" in prod_df.columns:
-    _risk_map = dict(zip(prod_df["产品名称"].astype(str), prod_df["综合风险等级"].astype(str)))
-
-# 月度趋势数据（24个月，起始月动态）
-_all_months = sorted(rex["_ym"].unique())
-_trend_months = [m for m in _all_months if m >= _trend_months_start][-24:]
-_prod_trend = {}
-for _item in _major_items:
-    _td = rex[rex["_item"] == _item]
-    _monthly = _td.groupby("_ym").agg(r=("_rev", "sum"), p=("_profit", "sum"), c=("_rev", lambda x: float(x.sum()) - float(_td.loc[x.index, "_profit"].sum())), q=("_qty", "sum")).reindex(_trend_months, fill_value=0)
-    _prod_trend[_item] = {
-        "months": _trend_months,
-        "rev": [round(float(v) / 1e4, 2) for v in _monthly["r"]],
-        "profit": [round(float(v) / 1e4, 2) for v in _monthly["p"]],
-        "cost": [round(float(v) / 1e4, 2) for v in _monthly["c"]],
-        "asp": [round(float(_monthly["r"].iloc[i]) / float(_monthly["q"].iloc[i]), 4) if float(_monthly["q"].iloc[i]) > 0 else 0 for i in range(len(_trend_months))],
+    f_h1_kpi = {
+        "rev": round(h1_r / 1e4, 0), "profit": round(h1_p / 1e4, 0), "mg": h1_mg,
+        "mg_yoy": h1_mg_yoy, "rev_yoy": h1_rev_yoy, "asp": h1_asp, "asp_yoy": h1_asp_yoy,
+        "prev_mg": ph1_mg, "period": f"{_latest_y} H1 (1-6月)",
+        "kaaa_rev": round(h1_kaaa_r / 1e4, 0), "kaaa_mg": round(h1_kaaa_p / h1_kaaa_r * 100, 1) if h1_kaaa_r > 0 else 0,
+        "kaaa_pct": round(h1_kaaa_r / h1_r * 100, 1) if h1_r > 0 else 0, "kaaa_count": h1_kaaa_sc,
     }
 
-# 展示层截断：ASP 轴边界（F面产品月度ASP趋势；从 fingerprinted 的 rex 数据派生，可入缓存）
-_asp_bounds = _asp_axis_bounds(_prod_trend)
-print(f"  [截断] ASP轴: raw[{_asp_bounds['raw_abs_min']:.2f}, {_asp_bounds['raw_abs_max']:.2f}] "
-      f"-> p{DASHBOARD_AXIS_CLIP.get('asp_pct', [1,99])[0]}~p{DASHBOARD_AXIS_CLIP.get('asp_pct', [1,99])[1]}[{_asp_bounds['min']}, {_asp_bounds['max']}]")
-_asp_axis_cache = {"min": _asp_bounds["raw_min"], "max": _asp_bounds["raw_max"]}
-
-# Top5客户
-_prod_top5 = {}
-for _item in _major_items:
-    _td = rex[rex["_item"] == _item]
-    _cust_agg = _td.groupby("_cust")["_rev"].sum().sort_values(ascending=False).head(5)
-    _prod_top5[_item] = [{"name": k, "rev": round(float(v) / 1e4, 1)} for k, v in _cust_agg.items()]
-
-# 构建产品列表
-f_product_list = []
-for _item in sorted(_major_items, key=lambda x: (-(_prod_h1.get(x, {}).get(f"{_yy_latest}h1", {}).get("rev", 0)), str(x))):
-    _d = _prod_h1.get(_item, {})
-    _fd = _first_dates.get(_item, pd.Timestamp(f"{_y0}-01-01"))
-    _days_since = (pd.Timestamp(latest) - _fd).days
-    _is_new = _is_new_tag.get(_item, False)
-    # 新品代次
-    if _is_new and _days_since <= 365:
-        _gen = "新品"
-    elif _days_since <= 365:
-        _gen = "1年+"
-    elif str(_item).endswith("Q1") or _days_since <= 730:
-        _gen = "2年+"
-    else:
-        _gen = ""
-    f_product_list.append({
-        "name": _item,
-        "portrait": _portrait_map.get(_item, ""),
-        "risk": _risk_map.get(_item, ""),
-        "gen": _gen,
-        "is_new": bool(_is_new and _days_since <= 365),
-        "first_date": _fd.strftime("%Y-%m-%d") if hasattr(_fd, 'strftime') else str(_fd)[:10],
-        "top_cust": _prod_top5.get(_item, [{}])[0].get("name", "") if _prod_top5.get(_item) else "",
-        f"h1_{_yy_prev}": _d.get(f"{_yy_prev}h1", {"rev": 0, "profit": 0, "mg": 0}),
-        f"h2_{_yy_prev}": _d.get(f"{_yy_prev}h2", {"rev": 0, "profit": 0, "mg": 0}),
-        f"h1_{_yy_latest}": _d.get(f"{_yy_latest}h1", {"rev": 0, "profit": 0, "mg": 0}),
-        "trend": _prod_trend.get(_item, {}),
-        "top5": _prod_top5.get(_item, []),
-    })
-
-print(f"  主要产品(近12月>10万): {len(f_product_list)}个")
-
-# ---- 8h. F面品类维度H1对比 ----
-print("  品类维度H1对比...")
-# 先给产品列表补充品类字段（品类统计需要）
-_cat_map = {}
-for _item_name in _major_items:
-    _cat_val = rex[rex["_item"] == _item_name]["_cat"].iloc[0] if len(rex[rex["_item"] == _item_name]) > 0 else ""
-    _cat_map[_item_name] = str(_cat_val)
-for p in f_product_list:
-    p["cat"] = _cat_map.get(p["name"], "")
-
-f_cat_h1 = []
-for _cat_name in sorted(h1_data["_cat"].dropna().unique()):
-    if _cat_name in ("nan", "None", ""):
-        continue
-    # 按品类聚合半年数据
-    _cat_data = {}
-    for _pk, (_ps, _pe) in _h1_periods.items():
-        _cd = rex[(rex["_d"] >= _ps) & (rex["_d"] <= _pe) & (rex["_cat"] == _cat_name)]
-        _r = float(_cd["_rev"].sum()); _p = float(_cd["_profit"].sum())
-        if _r < 10000 and _pk == f"{_yy_latest}h1":
+    # H1 产品线毛利率
+    h1_pline_margins = []
+    for _pn in sorted(h1_data["_pline_new"].dropna().unique()):
+        if _pn in ("nan", "None", "", "未知"):
             continue
-        _cat_data[_pk] = {"rev": round(_r / 1e4, 1), "profit": round(_p / 1e4, 1), "mg": round(_p / _r * 100, 1) if _r > 0 else 0}
-    if not _cat_data.get(f"{_yy_latest}h1"):
-        continue
-    _r25h1 = _cat_data.get(f"{_yy_prev}h1", {}).get("rev", 0)
-    _r25h2 = _cat_data.get(f"{_yy_prev}h2", {}).get("rev", 0)
-    _r26h1 = _cat_data.get(f"{_yy_latest}h1", {}).get("rev", 0)
-    _mg25h1 = _cat_data.get(f"{_yy_prev}h1", {}).get("mg", 0)
-    _mg25h2 = _cat_data.get(f"{_yy_prev}h2", {}).get("mg", 0)
-    _mg26h1 = _cat_data.get(f"{_yy_latest}h1", {}).get("mg", 0)
-    f_cat_h1.append({
-        "name": _cat_name,
-        f"rev_{_yy_latest}h1": _r26h1, f"mg_{_yy_latest}h1": _mg26h1,
-        f"rev_{_yy_prev}h1": _r25h1, f"mg_{_yy_prev}h1": _mg25h1,
-        f"rev_{_yy_prev}h2": _r25h2, f"mg_{_yy_prev}h2": _mg25h2,
-        "rev_yoy": round((_r26h1 - _r25h1) / _r25h1 * 100, 1) if _r25h1 > 0 else 0,
-        "rev_mom": round((_r26h1 - _r25h2) / _r25h2 * 100, 1) if _r25h2 > 0 else 0,
-        "mg_yoy": round(_mg26h1 - _mg25h1, 1),
-        "mg_mom": round(_mg26h1 - _mg25h2, 1),
-        "prod_count": len([p for p in f_product_list if p.get("cat") == _cat_name]),
-    })
-f_cat_h1.sort(key=lambda x: -x[f"rev_{_yy_latest}h1"])
+        _pd = h1_data[h1_data["_pline_new"] == _pn]
+        _r = float(_pd["_rev"].sum()); _p = float(_pd["_profit"].sum())
+        _ppd = ph1_data[ph1_data["_pline_new"] == _pn]
+        _pr = float(_ppd["_rev"].sum()); _pp = float(_ppd["_profit"].sum())
+        h1_pline_margins.append({
+            "name": _pn, "rev": round(_r / 1e4, 1), "profit": round(_p / 1e4, 1),
+            "mg": round(_p / _r * 100, 1) if _r > 0 else 0,
+            "prev_mg": round(_pp / _pr * 100, 1) if _pr > 0 else 0,
+            "mg_yoy": round(_p / _r * 100 - (_pp / _pr * 100 if _pr > 0 else 0), 1) if _r > 0 else 0,
+            "rev_yoy": round((_r - _pr) / _pr * 100, 1) if _pr > 0 else 0,
+        })
+    h1_pline_margins.sort(key=lambda x: -x["rev"])
 
-print(f"  品类: {len(f_cat_h1)}个")
+    # H1 品类毛利率
+    h1_cat_margins = []
+    for _cn in sorted(h1_data["_cat"].dropna().unique()):
+        if _cn in ("nan", "None", ""):
+            continue
+        _cd = h1_data[h1_data["_cat"] == _cn]
+        _r = float(_cd["_rev"].sum())
+        if _r < 10000:
+            continue
+        _p = float(_cd["_profit"].sum())
+        _kad = _cd[_cd["_tier"].str.contains("KA", na=False)]
+        _aar = _cd[_cd["_tier"].str.contains("AA", na=False) & ~_cd["_tier"].str.contains("KA", na=False)]
+        _pcd = ph1_data[ph1_data["_cat"] == _cn]
+        _pr = float(_pcd["_rev"].sum()); _pp = float(_pcd["_profit"].sum())
+        h1_cat_margins.append({
+            "name": _cn, "rev": round(_r / 1e4, 1), "profit": round(_p / 1e4, 1),
+            "mg": round(_p / _r * 100, 1) if _r > 0 else 0,
+            "ka_mg": round(float(_kad["_profit"].sum()) / float(_kad["_rev"].sum()) * 100, 1) if float(_kad["_rev"].sum()) > 0 else 0,
+            "aa_mg": round(float(_aar["_profit"].sum()) / float(_aar["_rev"].sum()) * 100, 1) if float(_aar["_rev"].sum()) > 0 else 0,
+            "prev_mg": round(_pp / _pr * 100, 1) if _pr > 0 else 0,
+            "mg_yoy": round(_p / _r * 100 - (_pp / _pr * 100 if _pr > 0 else 0), 1) if _r > 0 else 0,
+        })
+    h1_cat_margins.sort(key=lambda x: -x["rev"])
+
+    # H1 销售部毛利率
+    h1_dept_margins = []
+    for _dn in sorted(set(sales_dept_map.values())):
+        _names = [n for n, d in sales_dept_map.items() if d == _dn]
+        _dd = h1_data[h1_data["_sales"].isin(_names)]
+        _r = float(_dd["_rev"].sum()); _p = float(_dd["_profit"].sum())
+        if _r < 10000:
+            continue
+        _pdd = ph1_data[ph1_data["_sales"].isin(_names)]
+        _pr = float(_pdd["_rev"].sum()); _pp = float(_pdd["_profit"].sum())
+        _dq = float(_dd["_qty"].sum()); _pdq = float(_pdd["_qty"].sum())
+        _asp = round(_r / _dq, 4) if _dq > 0 else 0
+        _pasp = round(_pr / _pdq, 4) if _pdq > 0 else 0
+        _asp_yoy = round((_asp - _pasp) / _pasp * 100, 1) if _pasp > 0 else 0
+        _dm = h1_data[(h1_data["_d"].dt.month == _latest_m) & (h1_data["_d"].dt.year == _latest_y) & h1_data["_sales"].isin(_names)]
+        _pm = h1_data[(h1_data["_d"].dt.month == _prev_m) & (h1_data["_d"].dt.year == _prev_y) & h1_data["_sales"].isin(_names)]
+        _dm_r = float(_dm["_rev"].sum()); _pm_r = float(_pm["_rev"].sum())
+        _asp_mom = round((_dm_r / float(_dm["_qty"].sum()) - _pm_r / float(_pm["_qty"].sum())) / (_pm_r / float(_pm["_qty"].sum()) if float(_pm["_qty"].sum()) > 0 else 1) * 100, 1) if float(_dm["_qty"].sum()) > 0 and float(_pm["_qty"].sum()) > 0 and _pm_r > 0 else 0
+        _inds = []
+        for _sn in _names:
+            _sd = _dd[_dd["_sales"] == _sn]
+            _sr = float(_sd["_rev"].sum())
+            if _sr > 0:
+                _sq = float(_sd["_qty"].sum())
+                _inds.append({"name": _sn, "rev": round(_sr / 1e4, 1), "mg": round(float(_sd["_profit"].sum()) / _sr * 100, 1), "asp": round(_sr / _sq, 4) if _sq > 0 else 0})
+        _inds.sort(key=lambda x: -x["rev"])
+        h1_dept_margins.append({
+            "name": _dn, "rev": round(_r / 1e4, 1), "profit": round(_p / 1e4, 1),
+            "mg": round(_p / _r * 100, 1) if _r > 0 else 0,
+            "prev_mg": round(_pp / _pr * 100, 1) if _pr > 0 else 0,
+            "mg_yoy": round(_p / _r * 100 - (_pp / _pr * 100 if _pr > 0 else 0), 1) if _r > 0 else 0,
+            "asp": _asp, "asp_yoy": _asp_yoy, "asp_mom": _asp_mom,
+            "headcount": len(_names), "individuals": _inds,
+        })
+    h1_dept_margins.sort(key=lambda x: -x["rev"])
+
+    # H1 KA/AA客户毛利率（全量，含ASP/环比/新品渗透）
+    h1_kaaa_cust = h1_kaaa_d.groupby("_cust").agg(rev=("_rev", "sum"), profit=("_profit", "sum"), qty=("_qty", "sum")).reset_index()
+    h1_kaaa_margins = []
+    for _, _row in h1_kaaa_cust.sort_values("rev", ascending=False).iterrows():
+        _nm = str(_row["_cust"]); _r = float(_row["rev"]); _p = float(_row["profit"]); _q = float(_row["qty"])
+        _prev = ph1_data[(ph1_data["_cust"] == _nm) & (ph1_data["_tier"].str.contains("KA|AA", na=False))]
+        _pr = float(_prev["_rev"].sum()); _pp = float(_prev["_profit"].sum()); _pq = float(_prev["_qty"].sum())
+        _tr = h1_data[h1_data["_cust"] == _nm]["_tier"]
+        _tier = "KA" if any("KA" in str(t) for t in _tr) else ("AA" if any("AA" in str(t) for t in _tr) else "")
+        # ASP
+        _asp = round(_r / _q, 4) if _q > 0 else 0
+        _pasp = round(_pr / _pq, 4) if _pq > 0 else 0
+        _asp_yoy = round((_asp - _pasp) / _pasp * 100, 1) if _pasp > 0 else 0
+        # 环比（最新月vs上月）
+        _cm = h1_data[(h1_data["_cust"] == _nm) & (h1_data["_d"].dt.month == _latest_m) & (h1_data["_d"].dt.year == _latest_y)]
+        _pm = h1_data[(h1_data["_cust"] == _nm) & (h1_data["_d"].dt.month == _prev_m) & (h1_data["_d"].dt.year == _prev_y)]
+        _cm_r = float(_cm["_rev"].sum()); _pm_r = float(_pm["_rev"].sum())
+        _mom = round((_cm_r - _pm_r) / _pm_r * 100, 1) if _pm_r > 0 else 0
+        # 新品渗透
+        _cn = h1_data[(h1_data["_cust"] == _nm) & h1_data["_is_new"]]
+        _new_r = float(_cn["_rev"].sum())
+        _new_pct = round(_new_r / _r * 100, 1) if _r > 0 else 0
+        h1_kaaa_margins.append({
+            "name": _nm, "tier": _tier, "rev": round(_r / 1e4, 1), "profit": round(_p / 1e4, 1),
+            "mg": round(_p / _r * 100, 1) if _r > 0 else 0,
+            "prev_mg": round(_pp / _pr * 100, 1) if _pr > 0 else 0,
+            "mg_yoy": round(_p / _r * 100 - (_pp / _pr * 100 if _pr > 0 else 0), 1) if _r > 0 else 0,
+            "rev_yoy": round((_r - _pr) / _pr * 100, 1) if _pr > 0 else 0,
+            "asp": _asp, "asp_yoy": _asp_yoy, "mom": _mom, "new_pct": _new_pct,
+        })
+
+    # ---- 8d. 新品分析（12个月存活口径）----
+    _new_prods = rex[rex["_is_new"]]["_prod"].unique()
+    np_analysis = []
+    for _prod in _new_prods:
+        _pdata = rex[rex["_prod"] == _prod]
+        _fd = _pdata["_d"].min()
+        _we = _fd + pd.DateOffset(months=12)
+        _wdata = _pdata[(_pdata["_d"] >= _fd) & (_pdata["_d"] <= _we)]
+        _pm = _wdata["_ym"].nunique()
+        _r = float(_wdata["_rev"].sum()); _p = float(_wdata["_profit"].sum())
+        np_analysis.append({
+            "name": _prod, "first": _fd.strftime("%Y-%m-%d"),
+            "survival": round(_pm / 12 * 100, 1),
+            "rev": round(_r / 1e4, 1), "mg": round(_p / _r * 100, 1) if _r > 0 else 0,
+            "custs": int(_wdata["_cust"].nunique()),
+            "sales": int(_wdata["_sales"].nunique()) if "_sales" in _wdata.columns else 0,
+        })
+    np_analysis.sort(key=lambda x: -x["rev"])
+    _np_total_rev = sum(p["rev"] for p in np_analysis)
+    _np_total_profit = sum(p["mg"] * p["rev"] / 100 for p in np_analysis)
+    np_summary = {
+        "count": len(np_analysis),
+        "survival_rate": round(sum(1 for p in np_analysis if p["survival"] > 0) / len(np_analysis) * 100, 1) if np_analysis else 0,
+        "mg": round(_np_total_profit / _np_total_rev * 100, 1) if _np_total_rev > 0 else 0,
+        "penetration": round(len(set(rex[rex["_is_new"]]["_cust"])) / rex["_cust"].nunique() * 100, 1) if rex["_cust"].nunique() > 0 else 0,
+        "promotion": round(len(set(rex[rex["_is_new"]]["_sales"]) & sales_2026_set) / len(sales_2026_set) * 100, 1) if sales_2026_set else 0,
+        "total_rev": round(_np_total_rev, 1),
+        "customers": len(set(rex[rex["_is_new"]]["_cust"])),
+        "sales_people": len(set(rex[rex["_is_new"]]["_sales"]) & sales_2026_set) if "_sales" in rex.columns else 0,
+    }
+
+    # ---- 8e. H1关键问题与解决方案 ----
+    h1_issues = []
+    for _pl in h1_pline_margins:
+        if _pl["mg_yoy"] < -2 and _pl["rev"] > 100:
+            h1_issues.append({"type": "产品线毛利率下滑", "target": _pl["name"],
+                "metric": f"毛利率{_pl['mg']}%(同比{_pl['mg_yoy']:+.1f}pp)",
+                "solution": f"排查{_pl['name']}成本结构，关注ASP下降是否由价格战引起，评估是否调整产品组合"})
+    for _dept in h1_dept_margins:
+        if _dept["mg"] < h1_mg - 3 and _dept["rev"] > 100:
+            h1_issues.append({"type": "销售部毛利率偏低", "target": _dept["name"],
+                "metric": f"毛利率{_dept['mg']}%(低于整体{h1_mg - _dept['mg']:.1f}pp)",
+                "solution": f"检查{_dept['name']}客户结构，关注低毛利客户占比，加强定价博弈力培训"})
+    for _cust in h1_kaaa_margins:
+        if _cust["mg_yoy"] < -3 and _cust["rev"] > 100:
+            # 客户产品级归因：按存货名称拆解毛利率变化
+            _cn = _cust["name"]
+            _cust_26h1 = h1_data[(h1_data["_cust"] == _cn) & (h1_data["_d"] >= f"{_latest_y}-01-01") & (h1_data["_d"] <= f"{_latest_y}-06-30")]
+            _cust_25h1 = ph1_data[(ph1_data["_cust"] == _cn) & (ph1_data["_d"] >= f"{_prev_year}-01-01") & (ph1_data["_d"] <= f"{_prev_year}-06-30")]
+            _cust_attr = []
+            for _pn in _cust_26h1["_item"].unique():
+                _pd26 = _cust_26h1[_cust_26h1["_item"] == _pn]
+                _r26 = float(_pd26["_rev"].sum()); _p26 = float(_pd26["_profit"].sum())
+                if _r26 < 5000:
+                    continue
+                _pd25 = _cust_25h1[_cust_25h1["_item"] == _pn]
+                _r25 = float(_pd25["_rev"].sum()); _p25 = float(_pd25["_profit"].sum())
+                _mg26 = _p26 / _r26 * 100 if _r26 > 0 else 0
+                _mg25 = _p25 / _r25 * 100 if _r25 > 0 else 0
+                _cat_val = str(_pd26["_cat"].iloc[0]) if len(_pd26) > 0 else ""
+                _cust_attr.append({
+                    "name": _pn, "cat": _cat_val,
+                    f"rev_{_yy_latest}h1": round(_r26 / 1e4, 1), f"mg_{_yy_latest}h1": round(_mg26, 1),
+                    f"rev_{_yy_prev}h1": round(_r25 / 1e4, 1), f"mg_{_yy_prev}h1": round(_mg25, 1),
+                    "mg_change": round(_mg26 - _mg25, 1),
+                    "is_new": _r25 < 1000,
+                })
+            _cust_attr.sort(key=lambda x: x["mg_change"])
+            # 判断原因类型
+            _price_drop = [p for p in _cust_attr if p["mg_change"] < -3 and not p["is_new"]]
+            _new_low = [p for p in _cust_attr if p["is_new"] and p[f"mg_{_yy_latest}h1"] < _cust["mg"]]
+            _reason = "价格原因" if len(_price_drop) >= len(_new_low) else "结构原因" if _new_low else "综合原因"
+            h1_issues.append({"type": "KA/AA客户毛利率下滑", "target": _cn,
+                "metric": f"毛利率{_cust['mg']}%(同比{_cust['mg_yoy']:+.1f}pp) → {_reason}",
+                "solution": f"{'价格原因：以下产品毛利率同比下降，建议核查定价' if _reason=='价格原因' else '结构原因：低毛利新品/新品类占比上升拉低整体' if _reason=='结构原因' else '价格+结构综合影响'}",
+                "cust_attr": _cust_attr[:10],
+                "reason": _reason,
+            })
+
+    # ---- 8f. 品类毛利下降归因分析 ----
+    h1_cat_attribution = []
+    for _cat in h1_cat_margins:
+        if _cat["mg_yoy"] >= -2 or _cat["rev"] < 100:
+            continue
+        _cd = h1_data[h1_data["_cat"] == _cat["name"]]
+        _pcd = ph1_data[ph1_data["_cat"] == _cat["name"]]
+        _prod_attr = []
+        for _pn in _cd["_item"].unique():
+            _pd = _cd[_cd["_item"] == _pn]
+            _r = float(_pd["_rev"].sum()); _p = float(_pd["_profit"].sum()); _q = float(_pd["_qty"].sum())
+            if _r < 10000:
+                continue
+            _ppd = _pcd[_pcd["_item"] == _pn]
+            _pr = float(_ppd["_rev"].sum()); _pp = float(_ppd["_profit"].sum())
+            _mg = _p / _r * 100 if _r > 0 else 0
+            _pmg = _pp / _pr * 100 if _pr > 0 else 0
+            _mg_chg = _mg - _pmg
+            _impact = _r * _mg_chg / 100
+            _rm = _pd[(_pd["_d"].dt.month == _latest_m) & (_pd["_d"].dt.year == _latest_y)]
+            _rm_r = float(_rm["_rev"].sum()); _rm_q = float(_rm["_qty"].sum())
+            _rm_asp = _rm_r / _rm_q if _rm_q > 0 else 0
+            _prod_attr.append({
+                "name": _pn, "rev": round(_r / 1e4, 1), "mg": round(_mg, 1),
+                "prev_mg": round(_pmg, 1), "mg_change": round(_mg_chg, 1),
+                "impact": round(_impact / 1e4, 1),
+                "recent_rev": round(_rm_r / 1e4, 1), "recent_qty": round(_rm_q / 1e4, 2),
+                "recent_asp": round(_rm_asp, 4),
+            })
+        _prod_attr.sort(key=lambda x: x["impact"])
+        h1_cat_attribution.append({
+            "category": _cat["name"], "mg_yoy": _cat["mg_yoy"],
+            "rev": _cat["rev"], "mg": _cat["mg"],
+            "products": _prod_attr[:8],
+        })
+
+    # 产品线归因分析（与品类归因合并到同一列表）
+    for _pl in h1_pline_margins:
+        if _pl["mg_yoy"] >= -2 or _pl["rev"] < 100:
+            continue
+        _pd_data = h1_data[h1_data["_pline_new"] == _pl["name"]]
+        _ppd_data = ph1_data[ph1_data["_pline_new"] == _pl["name"]]
+        _pline_attr = []
+        for _pn in _pd_data["_item"].unique():
+            _pd = _pd_data[_pd_data["_item"] == _pn]
+            _r = float(_pd["_rev"].sum()); _p = float(_pd["_profit"].sum()); _q = float(_pd["_qty"].sum())
+            if _r < 10000:
+                continue
+            _ppd = _ppd_data[_ppd_data["_item"] == _pn]
+            _pr = float(_ppd["_rev"].sum()); _pp = float(_ppd["_profit"].sum())
+            _mg = _p / _r * 100 if _r > 0 else 0
+            _pmg = _pp / _pr * 100 if _pr > 0 else 0
+            _mg_chg = _mg - _pmg
+            _impact = _r * _mg_chg / 100
+            _rm = _pd[(_pd["_d"].dt.month == _latest_m) & (_pd["_d"].dt.year == _latest_y)]
+            _rm_r = float(_rm["_rev"].sum()); _rm_q = float(_rm["_qty"].sum())
+            _rm_asp = _rm_r / _rm_q if _rm_q > 0 else 0
+            _pline_attr.append({
+                "name": _pn, "rev": round(_r / 1e4, 1), "mg": round(_mg, 1),
+                "prev_mg": round(_pmg, 1), "mg_change": round(_mg_chg, 1),
+                "impact": round(_impact / 1e4, 1),
+                "recent_rev": round(_rm_r / 1e4, 1), "recent_qty": round(_rm_q / 1e4, 2),
+                "recent_asp": round(_rm_asp, 4),
+            })
+        _pline_attr.sort(key=lambda x: x["impact"])
+        h1_cat_attribution.append({
+            "category": _pl["name"], "mg_yoy": _pl["mg_yoy"],
+            "rev": _pl["rev"], "mg": _pl["mg"],
+            "products": _pline_attr[:8],
+        })
+
+    print(f"  H1: 收入{h1_r/1e4:.0f}万 毛利率{h1_mg}% 同比{h1_mg_yoy:+.1f}pp")
+    print(f"  部门: {len(dept_list)}部 新品: {len(np_analysis)}个 存活率{np_summary['survival_rate']}% H1问题: {len(h1_issues)}条")
+
+    # ---- 8g. F面产品维度H1对比 ----
+    print("  产品维度H1对比...")
+    # 定义半年区间（批次②：由 _latest_period 动态推导 前年H1/H2 + 当年H1）
+    _h1_periods = _PD["h1_periods"]
+    # 按存货名称聚合每个半年的收入/利润/成本
+    _prod_h1 = {}
+    for _pk, (_ps, _pe) in _h1_periods.items():
+        _pd = rex[(rex["_d"] >= _ps) & (rex["_d"] <= _pe)]
+        _agg = _pd.groupby("_item").agg(rev=("_rev", "sum"), profit=("_profit", "sum"), cost=("_rev", lambda x: float(x.sum()) - float(_pd.loc[x.index, "_profit"].sum())), qty=("_qty", "sum")).reset_index()
+        for _, _r in _agg.iterrows():
+            _nm = str(_r["_item"])
+            if _nm not in _prod_h1:
+                _prod_h1[_nm] = {}
+            _prod_h1[_nm][_pk] = {
+                "rev": round(float(_r["rev"]) / 1e4, 1),
+                "profit": round(float(_r["profit"]) / 1e4, 1),
+                "cost": round(float(_r["cost"]) / 1e4, 1),
+                "qty": round(float(_r["qty"]) / 1e4, 2),
+                "mg": round(float(_r["profit"]) / float(_r["rev"]) * 100, 1) if float(_r["rev"]) > 0 else 0,
+            }
+
+    # 近12月收入>10万的主要产品
+    _near12 = rex[rex["_d"] >= pd.Timestamp(latest) - pd.DateOffset(months=11)]
+    _near12_rev = _near12.groupby("_item")["_rev"].sum()
+    _major_items = set(_near12_rev[_near12_rev > 100000].index)
+
+    # 首次出现日期 + 新品标记
+    _first_dates = rex.groupby("_item")["_d"].min()
+    _is_new_tag = rex.groupby("_item")["_is_new"].any()
+
+    # Gold画像映射
+    _portrait_map = {}
+    if "产品名称" in prod_df.columns and "当前画像" in prod_df.columns:
+        _portrait_map = dict(zip(prod_df["产品名称"].astype(str), prod_df["当前画像"].astype(str)))
+    _risk_map = {}
+    if "产品名称" in prod_df.columns and "综合风险等级" in prod_df.columns:
+        _risk_map = dict(zip(prod_df["产品名称"].astype(str), prod_df["综合风险等级"].astype(str)))
+
+    # 月度趋势数据（24个月，起始月动态）
+    _all_months = sorted(rex["_ym"].unique())
+    _trend_months = [m for m in _all_months if m >= _trend_months_start][-24:]
+    _prod_trend = {}
+    for _item in _major_items:
+        _td = rex[rex["_item"] == _item]
+        _monthly = _td.groupby("_ym").agg(r=("_rev", "sum"), p=("_profit", "sum"), c=("_rev", lambda x: float(x.sum()) - float(_td.loc[x.index, "_profit"].sum())), q=("_qty", "sum")).reindex(_trend_months, fill_value=0)
+        _prod_trend[_item] = {
+            "months": _trend_months,
+            "rev": [round(float(v) / 1e4, 2) for v in _monthly["r"]],
+            "profit": [round(float(v) / 1e4, 2) for v in _monthly["p"]],
+            "cost": [round(float(v) / 1e4, 2) for v in _monthly["c"]],
+            "asp": [round(float(_monthly["r"].iloc[i]) / float(_monthly["q"].iloc[i]), 4) if float(_monthly["q"].iloc[i]) > 0 else 0 for i in range(len(_trend_months))],
+        }
+
+    # 展示层截断：ASP 轴边界（F面产品月度ASP趋势；从 fingerprinted 的 rex 数据派生，可入缓存）
+    _asp_bounds = _asp_axis_bounds(_prod_trend)
+    print(f"  [截断] ASP轴: raw[{_asp_bounds['raw_abs_min']:.2f}, {_asp_bounds['raw_abs_max']:.2f}] "
+          f"-> p{DASHBOARD_AXIS_CLIP.get('asp_pct', [1,99])[0]}~p{DASHBOARD_AXIS_CLIP.get('asp_pct', [1,99])[1]}[{_asp_bounds['min']}, {_asp_bounds['max']}]")
+    _asp_axis_cache = {"min": _asp_bounds["raw_min"], "max": _asp_bounds["raw_max"]}
+
+    # Top5客户
+    _prod_top5 = {}
+    for _item in _major_items:
+        _td = rex[rex["_item"] == _item]
+        _cust_agg = _td.groupby("_cust")["_rev"].sum().sort_values(ascending=False).head(5)
+        _prod_top5[_item] = [{"name": k, "rev": round(float(v) / 1e4, 1)} for k, v in _cust_agg.items()]
+
+    # 构建产品列表
+    f_product_list = []
+    for _item in sorted(_major_items, key=lambda x: (-(_prod_h1.get(x, {}).get(f"{_yy_latest}h1", {}).get("rev", 0)), str(x))):
+        _d = _prod_h1.get(_item, {})
+        _fd = _first_dates.get(_item, pd.Timestamp(f"{_y0}-01-01"))
+        _days_since = (pd.Timestamp(latest) - _fd).days
+        _is_new = _is_new_tag.get(_item, False)
+        # 新品代次
+        if _is_new and _days_since <= 365:
+            _gen = "新品"
+        elif _days_since <= 365:
+            _gen = "1年+"
+        elif str(_item).endswith("Q1") or _days_since <= 730:
+            _gen = "2年+"
+        else:
+            _gen = ""
+        f_product_list.append({
+            "name": _item,
+            "portrait": _portrait_map.get(_item, ""),
+            "risk": _risk_map.get(_item, ""),
+            "gen": _gen,
+            "is_new": bool(_is_new and _days_since <= 365),
+            "first_date": _fd.strftime("%Y-%m-%d") if hasattr(_fd, 'strftime') else str(_fd)[:10],
+            "top_cust": _prod_top5.get(_item, [{}])[0].get("name", "") if _prod_top5.get(_item) else "",
+            f"h1_{_yy_prev}": _d.get(f"{_yy_prev}h1", {"rev": 0, "profit": 0, "mg": 0}),
+            f"h2_{_yy_prev}": _d.get(f"{_yy_prev}h2", {"rev": 0, "profit": 0, "mg": 0}),
+            f"h1_{_yy_latest}": _d.get(f"{_yy_latest}h1", {"rev": 0, "profit": 0, "mg": 0}),
+            "trend": _prod_trend.get(_item, {}),
+            "top5": _prod_top5.get(_item, []),
+        })
+
+    print(f"  主要产品(近12月>10万): {len(f_product_list)}个")
+
+    # ---- 8h. F面品类维度H1对比 ----
+    print("  品类维度H1对比...")
+    # 先给产品列表补充品类字段（品类统计需要）
+    _cat_map = {}
+    for _item_name in _major_items:
+        _cat_val = rex[rex["_item"] == _item_name]["_cat"].iloc[0] if len(rex[rex["_item"] == _item_name]) > 0 else ""
+        _cat_map[_item_name] = str(_cat_val)
+    for p in f_product_list:
+        p["cat"] = _cat_map.get(p["name"], "")
+
+    f_cat_h1 = []
+    for _cat_name in sorted(h1_data["_cat"].dropna().unique()):
+        if _cat_name in ("nan", "None", ""):
+            continue
+        # 按品类聚合半年数据
+        _cat_data = {}
+        for _pk, (_ps, _pe) in _h1_periods.items():
+            _cd = rex[(rex["_d"] >= _ps) & (rex["_d"] <= _pe) & (rex["_cat"] == _cat_name)]
+            _r = float(_cd["_rev"].sum()); _p = float(_cd["_profit"].sum())
+            if _r < 10000 and _pk == f"{_yy_latest}h1":
+                continue
+            _cat_data[_pk] = {"rev": round(_r / 1e4, 1), "profit": round(_p / 1e4, 1), "mg": round(_p / _r * 100, 1) if _r > 0 else 0}
+        if not _cat_data.get(f"{_yy_latest}h1"):
+            continue
+        _r25h1 = _cat_data.get(f"{_yy_prev}h1", {}).get("rev", 0)
+        _r25h2 = _cat_data.get(f"{_yy_prev}h2", {}).get("rev", 0)
+        _r26h1 = _cat_data.get(f"{_yy_latest}h1", {}).get("rev", 0)
+        _mg25h1 = _cat_data.get(f"{_yy_prev}h1", {}).get("mg", 0)
+        _mg25h2 = _cat_data.get(f"{_yy_prev}h2", {}).get("mg", 0)
+        _mg26h1 = _cat_data.get(f"{_yy_latest}h1", {}).get("mg", 0)
+        f_cat_h1.append({
+            "name": _cat_name,
+            f"rev_{_yy_latest}h1": _r26h1, f"mg_{_yy_latest}h1": _mg26h1,
+            f"rev_{_yy_prev}h1": _r25h1, f"mg_{_yy_prev}h1": _mg25h1,
+            f"rev_{_yy_prev}h2": _r25h2, f"mg_{_yy_prev}h2": _mg25h2,
+            "rev_yoy": round((_r26h1 - _r25h1) / _r25h1 * 100, 1) if _r25h1 > 0 else 0,
+            "rev_mom": round((_r26h1 - _r25h2) / _r25h2 * 100, 1) if _r25h2 > 0 else 0,
+            "mg_yoy": round(_mg26h1 - _mg25h1, 1),
+            "mg_mom": round(_mg26h1 - _mg25h2, 1),
+            "prod_count": len([p for p in f_product_list if p.get("cat") == _cat_name]),
+        })
+    f_cat_h1.sort(key=lambda x: -x[f"rev_{_yy_latest}h1"])
+
+    print(f"  品类: {len(f_cat_h1)}个")
+
+else:
+    f_h1_kpi = {}; h1_pline_margins = []; h1_cat_margins = []; h1_dept_margins = []
+    h1_kaaa_margins = []; np_analysis = {}; np_summary = {}; h1_issues = []
+    h1_cat_attribution = {}; f_product_list = []; f_cat_h1 = {}
+    _asp_bounds = {"min": "0", "max": "0"}  # ASP 轴边界只服务 F 面图表；F 隐藏时无人消费（须为 str，replace 不接受 float）
+    _asp_axis_cache = {"min": 0.0, "max": 0.0}  # 缓存写入处引用（原始浮点）；F 跳过时给空，否则 NameError 静默阻断缓存重盖戳
+    print("  [F面] 平时关闭（visible=false），跳过 H1 计算。半年度复盘期在 dashboard\\faces.yaml 改 visible=true")
 
 # ========== 保存 JSON ==========
 with open(os.path.join(DATA_DIR,"b_custs.json"),"w",encoding="utf-8") as f: json.dump(call,f,ensure_ascii=False)
@@ -2495,6 +2539,7 @@ replacements = {
 html = template
 for k,v in replacements.items():
     html = html.replace(k,v)
+html = _hide_invisible_faces(html)
 
 with open(OUT,"w",encoding="utf-8") as f: f.write(html)
 sz=os.path.getsize(OUT)/(1024*1024)
