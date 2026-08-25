@@ -317,7 +317,8 @@ def build_r_face_inner_html(month):
         return ('<div class="cb"><h3>风险与行动</h3><div class="note">本月总体文档未生成：'
                 '请先在明文窗口跑批后运行 <code>python dashboard\\generate_risk_face.py</code> '
                 '生成并审定总体文档（缺失：' + _esc(parts["err"]) + '）</div></div>')
-    return ('<div class="kpi-bar">\n' + parts["risk_kpi"] + '\n</div>\n'
+    return ('<div class="kpi-bar" style="grid-template-columns:repeat(4,1fr);max-width:960px;margin-left:auto;margin-right:auto">\n'
+            + parts["risk_kpi"] + '\n</div>\n'
             + '<div class="cb"><h3>一、当月风险摘要</h3><div class="note">初稿由系统按规则生成，经人工审定后展示。</div>'
             + parts["risk_table"] + '</div>\n'
             + '<div class="cb"><h3>二、行动清单</h3><div class="note">状态：待处理 / 跟进中 / 已关闭。未关闭事项跨月自动结转。</div>'
