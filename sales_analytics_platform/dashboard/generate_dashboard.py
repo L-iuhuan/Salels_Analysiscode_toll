@@ -613,6 +613,17 @@ if _cache_hit and _cached_obj:
     _replacements["%%MARGIN_AXIS_MAX%%"] = _mb["max"]
     _replacements["%%ASP_AXIS_MIN%%"] = _fmt_axis(_cached_asp_axis.get("min", 0))
     _replacements["%%ASP_AXIS_MAX%%"] = _fmt_axis(_cached_asp_axis.get("max", 0))
+    # R面与 C面/毛利率轴同理"永远现算"：审定 md 内容毫秒级解析，不入缓存，
+    # 保证"改审定文档 → --dashboard-only 秒级重渲染"流程不被缓存挡住。
+    # 注意：缓存命中路径在脚本前段执行，全算路径的 latest 变量此时尚未定义，
+    # 数据月份从缓存的 %%LATEST%% 占位符（如 2026-06）取。
+    try:
+        import generate_risk_face as _rface_c
+        _r_month_c = str(_cached_replacements.get("%%LATEST%%", "")).replace("-", "")
+        _replacements["%%R_FACE_HTML%%"] = _rface_c.build_r_face_inner_html(_r_month_c)
+    except Exception as _e:
+        _replacements["%%R_FACE_HTML%%"] = ('<div class="cb"><h3>风险与行动</h3><div class="note">'
+                                            f'总体文档读取失败（{type(_e).__name__}: {_e}）</div></div>')
 
     # 渲染
     _template_c = _pl_mod.Path(__file__).parent / "template.html"
@@ -2538,10 +2549,11 @@ if not _NO_CACHE and _fp is not None and _fp_cur is not None:
         os.makedirs(PREAGG_DIR, exist_ok=True)
         _cache_payload = {
             "data_block": data_block,
-            # 缓存除 DATA_BLOCK / C_DATA_JSON / 毛利率轴（现算）外的全部占位符值
+            # 缓存除 DATA_BLOCK / C_DATA_JSON / 毛利率轴（现算）/ R面HTML（现算，审定 md 毫秒级解析）外的全部占位符值
             "replacements": {k: v for k, v in replacements.items()
                              if k not in ("%%DATA_BLOCK%%", "%%C_DATA_JSON%%",
-                                          "%%MARGIN_AXIS_MIN%%", "%%MARGIN_AXIS_MAX%%")},
+                                          "%%MARGIN_AXIS_MIN%%", "%%MARGIN_AXIS_MAX%%",
+                                          "%%R_FACE_HTML%%")},
             # ASP 轴边界源自 fingerprinted 的 rex 数据，缓存原始浮点值
             "asp_axis": _asp_axis_cache,
         }
