@@ -2485,6 +2485,65 @@ except Exception as _e:
                    f'（{type(_e).__name__}: {_e}）</div></div>')
     print(f"  [R面] 读取失败: {_e}")
 
+# ========== W4：三层口径说明体系（faces.yaml → HTML 占位符） ==========
+def _build_face_meta_html(face_id, cfg):
+    """根据 faces.yaml 配置生成面级口径条 HTML（默认收起）。"""
+    if not cfg:
+        return ""
+    theme = cfg.get("theme", "")
+    desc = cfg.get("description", "")
+    sections = cfg.get("sections", []) or []
+    parts = []
+    parts.append(f'<div class="face-meta" id="faceMeta{face_id}">')
+    parts.append(f'  <div class="face-meta-summary" id="faceMetaSummary{face_id}" onclick="TABS.toggleFaceMeta(\'{face_id}\')">')
+    parts.append(f'    <i class="fa-solid fa-circle-info"></i> 本面口径与用法')
+    parts.append('  </div>')
+    parts.append(f'  <div class="face-meta-body" id="faceMetaBody{face_id}" style="display:none">')
+    if theme:
+        parts.append(f'    <div class="face-meta-theme"><strong>主题：</strong>{theme}</div>')
+    if desc:
+        parts.append(f'    <div class="face-meta-desc">{desc}</div>')
+    if sections:
+        parts.append('    <div class="face-meta-sections">')
+        for sec in sections:
+            title = sec.get("title", "")
+            definition = sec.get("definition", "")
+            koujing = sec.get("koujing", "")
+            usage = sec.get("usage", "")
+            update_note = sec.get("update_note", "")
+            if not any((definition, koujing, usage, update_note)):
+                continue
+            parts.append('      <div class="face-meta-section">')
+            if title:
+                parts.append(f'        <div class="face-meta-title">{title}</div>')
+            if definition:
+                parts.append(f'        <div class="face-meta-row"><span>定义：</span>{definition}</div>')
+            if koujing:
+                parts.append(f'        <div class="face-meta-row"><span>口径：</span>{koujing}</div>')
+            if usage:
+                parts.append(f'        <div class="face-meta-row"><span>用法：</span>{usage}</div>')
+            if update_note:
+                parts.append(f'        <div class="face-meta-row"><span>更新：</span>{update_note}</div>')
+            parts.append('      </div>')
+        parts.append('    </div>')
+    parts.append('  </div>')
+    parts.append('</div>')
+    return "\n".join(parts)
+
+
+def _build_guide_replacements(face_id, cfg):
+    """生成图表级导读占位符，未配置的图表返回空字符串。"""
+    reps = {}
+    guides = (cfg or {}).get("chart_guides", {}) or {}
+    for chart_id, guide in guides.items():
+        reps[f"%%GUIDE_{face_id}_{chart_id}%%"] = guide or ""
+    return reps
+
+
+# 确保 faces.yaml 已加载
+_face_visible("A")
+_FACE_META_CACHE = {fid: _FACES_CFG.get(fid, {}) for fid in ("A", "B", "C", "D", "E")}
+
 # ========== HTML ==========
 _timed("F面H1汇总+C面DATA构建", _t_seg0); _t_seg0 = _time_mod.time()
 print("[HTML] 生成...")
@@ -2534,7 +2593,17 @@ replacements = {
     "%%ASP_AXIS_MAX%%":_asp_bounds["max"],
     # ---- W4：风险与行动面（人工审定总体文档渲染，服务端 HTML 注入）----
     "%%R_FACE_HTML%%": r_face_html,
+    # ---- W4：面级口径条（A/B/C/D/E，R 面已有自己的口径节）----
+    "%%FACE_META_A%%": _build_face_meta_html("A", _FACE_META_CACHE.get("A", {})),
+    "%%FACE_META_B%%": _build_face_meta_html("B", _FACE_META_CACHE.get("B", {})),
+    "%%FACE_META_C%%": _build_face_meta_html("C", _FACE_META_CACHE.get("C", {})),
+    "%%FACE_META_D%%": _build_face_meta_html("D", _FACE_META_CACHE.get("D", {})),
+    "%%FACE_META_E%%": _build_face_meta_html("E", _FACE_META_CACHE.get("E", {})),
 }
+
+# 图表级导读占位符
+for _fid in ("A", "B", "C", "D", "E"):
+    replacements.update(_build_guide_replacements(_fid, _FACE_META_CACHE.get(_fid, {})))
 
 html = template
 for k,v in replacements.items():

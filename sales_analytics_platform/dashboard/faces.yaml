@@ -1,3 +1,4 @@
+
 # 面注册表（W4 测试版 · 设计依据 docs\看板叙事结构详细设计_20260825.md §4）
 # 口径文案规范（v4）：只写简明公式 + 通俗名词说明；不写取数出处、不写判断标准。
 # 字母 id 仅供内部使用，不进 UI；tab 显示中文 name。
@@ -17,13 +18,33 @@ faces:
       - title: YTD 指标卡
         definition: 本年度 1 月至最新数据月的累计经营结果
         koujing: 收入按不含税金额计；毛利率 = 毛利 ÷ 收入；ASP = 收入 ÷ 发货数量
-        usage: 各维度完整明细请跳转对应专面
+        usage: 先看总收入和毛利率同比，再判断 KA+AA 收入占比
         update_note: 每月刷新
       - title: 常用维度摘要
         definition: 产品线/品类/客户层级等维度的 Top-N 摘要
         koujing: 按维度聚合本年累计收入与毛利
         usage: 速览不下沉，明细引专面
         update_note: 每月刷新
+      - title: 产品型号变迁
+        definition: KA/AA 客户近 12 月与前 12 月的产品型号新增/流失数量摘要
+        koujing: 以单次销量 ≥6000 颗为门槛统计型号变化
+        usage: 快速感知核心客户的产品结构异动
+        update_note: 每月刷新
+    chart_guides:
+      mainBar: 堆叠柱展示历年月度成本、毛利与毛利率走势，观察整体经营节奏
+      pieChart: 按 KA/AA/KM/MM 分层展示客户数量结构
+      kaaaLine: 展示 KA+AA 核心客户群月度收入变化
+      scatter: 横轴为 YTD 同比收入增长率，纵轴为毛利率，每个点是一个 KA 客户
+      margin: 产品线/品类维度 YTD 收入与毛利率 Top 摘要
+      list: KA/AA 核心客户精简信息，点击客户名可跳转 B 面下钻
+      prodChange: 对比近 12 月与前 12 月，统计核心客户产品型号的新增与流失
+    glossary:
+      - term: YTD
+        definition: 本年度 1 月至最新数据月的累计值
+      - term: ASP
+        definition: 平均售价 = 收入 ÷ 发货数量
+      - term: KA+AA
+        definition: 核心客户层级，KA 为战略大客户，AA 为重点客户
 
   R:
     id: R
@@ -50,10 +71,12 @@ faces:
         koujing: 见各面 faces.yaml 配置
         usage: 看不懂某一面、某张图、某个指标时查阅
         update_note: 随配置更新
+    chart_guides: {}
+    glossary: []
 
   B:
     id: B
-    name: 客户 360
+    name: 客户360
     theme: 以客户为轴心的下钻分析
     enabled: true
     cadence: monthly
@@ -61,11 +84,32 @@ faces:
     owner: 数据分析组
     description: 单个客户的长期趋势、品类构成、新品与风险
     sections:
-      - title: 客户列表与详情
-        definition: 全部客户的层级、活跃状态、风险等级，可下钻单客户
-        koujing: 活跃状态 = 活跃 / 微量活跃 / 非活跃（按近期采购情况判定）；RFM = 按最近购买、频率、金额三维度的客户价值模型
-        usage: 左侧选客户，右侧看趋势与构成
+      - title: 客户列表
+        definition: 全部客户的层级、活跃状态、风险等级，可筛选与下钻
+        koujing: 活跃状态按近期采购情况判定；RFM = 按最近购买、频率、金额三维度的客户价值模型
+        usage: 左侧筛选并点选客户，右侧查看详情
         update_note: 每月刷新
+      - title: 客户详情
+        definition: 单个客户近 25 个月的收入、毛利、品类、品种、新品与风险趋势
+        koujing: 趋势按自然月聚合；品类与品种按客户采购明细统计
+        usage: 用于客户拜访前快速备课与异常诊断
+        update_note: 每月刷新
+      - title: 采购节律
+        definition: 基于历史采购间隔推算预计下次采购时间与近 6 月频次
+        koujing: 采购周期 = 历史订单间隔均值；预计下次 = 上次采购日 + 平均周期
+        usage: 判断客户是否到采购窗口、是否存在流失迹象
+        update_note: 每月刷新
+    chart_guides:
+      list: 左侧筛选并点选客户，右侧展示该客户详细分析
+      trend: 单个客户近 12 个月收入与毛利走势
+      qty: 单个客户销量按月或按季度的变化趋势
+    glossary:
+      - term: RFM
+        definition: 按最近购买（Recency）、购买频率（Frequency）、购买金额（Monetary）三维度评估客户价值的模型
+      - term: 活跃状态
+        definition: 按近期采购活跃程度分为活跃、微量活跃、非活跃
+      - term: 采购周期
+        definition: 客户历史订单之间的平均间隔天数
 
   C:
     id: C
@@ -77,11 +121,34 @@ faces:
     owner: 产品分析组
     description: 产品画像、风险等级、生命周期阶段与策略建议
     sections:
-      - title: 产品画像与风险
-        definition: 全部 SKU 的生命周期阶段与风险分布
+      - title: 产品健康度
+        definition: 全部 SKU 的画像、风险等级、生命周期阶段分布
         koujing: 生命周期阶段 = 导入 / 成长 / 成熟 / 衰退（按销售走势划分）
-        usage: 筛选高风险或衰退产品，查看策略建议
+        usage: 先关注高风险与衰退/夕阳产品数量
         update_note: 每月刷新
+      - title: 多维筛选
+        definition: 按画像、风险、帕累托、参照组、销量动能、盈利健康、ASP 趋势等维度筛选产品
+        koujing: 各维度均基于近 12 月销量与毛利计算
+        usage: 快速定位需要重点关注的 SKU 群体
+        update_note: 每月刷新
+      - title: 产品明细
+        definition: 列出每个 SKU 的策略建议与关键指标
+        koujing: 综合评分由增长、盈利、稳定性等维度加权得出
+        usage: 点击行查看历史画像追踪与策略建议
+        update_note: 每月刷新
+    chart_guides:
+      portrait: 全部 SKU 当前生命周期画像分布
+      risk: 全部 SKU 综合风险等级分布
+      pareto: 按收入贡献与毛利贡献划分的帕累托分类
+      scatter: 横轴为近 12 月增长率，纵轴为毛利率，气泡大小代表销量
+      sankey: 销量 Top100 产品近四个季度画像流转路径
+    glossary:
+      - term: 画像
+        definition: 综合销量、增长、盈利等特征给 SKU 打上的生命周期标签
+      - term: 帕累托分类
+        definition: 按收入贡献与毛利贡献将产品分为 stars / cash cows / question marks / dogs 等
+      - term: 综合风险等级
+        definition: 结合销量下滑、毛利率恶化、客户集中度等信号评估的 SKU 风险标签
 
   D:
     id: D
@@ -93,11 +160,39 @@ faces:
     owner: 销售运营组
     description: 销售员业绩、能力画像、客户覆盖与品类热度
     sections:
-      - title: 销售业绩与画像
-        definition: 销售员与部门的业绩、能力与覆盖
-        koujing: 业绩按业务员归属的收入与毛利计
-        usage: 看排名、画像与热力图
+      - title: 团队 KPI
+        definition: 销售团队 YTD 营收、毛利、人均产出、A级占比等顶层指标
+        koujing: 人均营收 = 团队 YTD 收入 ÷ 团队在职人数；A级占比 = A级销售员 ÷ 团队人数
+        usage: 先看团队总营收与毛利率，再下钻人均与结构
         update_note: 每月刷新
+      - title: 销售员排名
+        definition: 按收入、毛利、同比、环比、能力分等维度排序的销售员清单
+        koujing: 业绩按业务员归属的收入与毛利计
+        usage: 看排名、点选行查看画像与热力图
+        update_note: 每月刷新
+      - title: 能力画像
+        definition: 单个销售员在贡献、维系、拓展、定价等九维能力的雷达评估
+        koujing: 各维度按历史业绩与客户行为加权评分，50 分为团队均值基准
+        usage: 对比个人与团队均值，识别优势与短板
+        update_note: 每月刷新
+      - title: 品类/客户热力图
+        definition: 销售员与品类、销售员与客户的交叉收入/利润矩阵
+        koujing: 按销售员归属汇总 YTD 收入或利润
+        usage: 发现品类覆盖空白与客户利润集中风险
+        update_note: 每月刷新
+    chart_guides:
+      ranking: 全团队销售员多维排名，点击行查看详情
+      radar: 选中销售员与团队均值的能力九维对比
+      bubble: 横轴为 YTD 收入，纵轴为毛利率，气泡大小为客户数
+      teamTrend: 团队或指定销售员月度成本、毛利与毛利率趋势
+      heatmap: Top15 品类 × 销售员的 YTD 收入热力分布
+    glossary:
+      - term: 能力九维
+        definition: 贡献力、维系力、拓展力、定价力、新客力、激活力、升级力、优化力、抗风险力
+      - term: A级销售
+        definition: 综合业绩与能力评估位于前列的销售员
+      - term: 亚组
+        definition: 按客户结构与业绩特征将销售员分为均衡型、大客户型、批量型等
 
   E:
     id: E
@@ -109,11 +204,38 @@ faces:
     owner: 数据分析组
     description: 当月客户异动、量利拆解、首次导入与销售贡献
     sections:
-      - title: 月度执行视图
-        definition: 当月经营执行情况的拆解
+      - title: 月度 KPI
+        definition: 所选月份区间的收入、毛利、ASP、发货量、活跃客户、首次导入数
         koujing: 环比 = 与上月比；同比 = 与去年同月比
-        usage: 定位当月异动与执行差距
+        usage: 先总览当月经营结果，再下钻异动
         update_note: 每月刷新
+      - title: 客户势能矩阵
+        definition: 所选月份客户的同比增长率 vs 毛利率分布
+        koujing: 横轴为客户收入增长率，纵轴为客户毛利率
+        usage: 定位当月异动客户，识别高增/下滑/高利润/低利润群体
+        update_note: 每月刷新
+      - title: 量利拆解
+        definition: 按产品线、KA客户、AA客户、Top10品类拆解环比收入变化
+        koujing: 收入变化 = 量贡献 + 价贡献 + 毛利变化
+        usage: 判断收入波动来自销量还是价格因素
+        update_note: 每月刷新
+      - title: 首次大量导入
+        definition: 当月首次发货量 ≥6000 颗的产品/客户导入记录
+        koujing: 首次大量导入 = 该产品/客户当月首次达到 6000 颗门槛
+        usage: 跟踪新品与新客户的市场导入进度
+        update_note: 每月刷新
+    chart_guides:
+      matrix: 横轴为客户收入增长率，纵轴为毛利率，用于定位月度异动客户
+      penetration: KA/AA/KM/MM 四类客户月度收入构成趋势
+      decomp: 按产品线/客户/品类拆解收入环比变化，区分量贡献与价贡献
+      import: 当月首次大量导入按销售员聚合的个数与收入
+    glossary:
+      - term: 环比
+        definition: 与上一个统计周期相比，如本月 vs 上月
+      - term: 同比
+        definition: 与去年同期相比，如今年某月 vs 去年同月
+      - term: 量贡献/价贡献
+        definition: 将收入变化拆分为销量变动带来的部分与平均售价变动带来的部分
 
   F:
     id: F
@@ -130,3 +252,5 @@ faces:
         koujing: H1 = 上半年（1-6 月）；H2 = 下半年（7-12 月）
         usage: 半年度复盘会议使用
         update_note: 半年度更新，平时关闭
+    chart_guides: {}
+    glossary: []
