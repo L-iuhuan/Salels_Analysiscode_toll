@@ -1,0 +1,132 @@
+# 面注册表（W4 测试版 · 设计依据 docs\看板叙事结构详细设计_20260825.md §4）
+# 口径文案规范（v4）：只写简明公式 + 通俗名词说明；不写取数出处、不写判断标准。
+# 字母 id 仅供内部使用，不进 UI；tab 显示中文 name。
+version: "1"
+
+faces:
+  A:
+    id: A
+    name: 总览决策
+    theme: 经营总览（总体 + 常用维度速览）
+    enabled: true
+    cadence: monthly
+    visible: true
+    owner: 数据分析组
+    description: 整体经营结果与产品线/品类/客户层级等常用维度摘要
+    sections:
+      - title: YTD 指标卡
+        definition: 本年度 1 月至最新数据月的累计经营结果
+        koujing: 收入按不含税金额计；毛利率 = 毛利 ÷ 收入；ASP = 收入 ÷ 发货数量
+        usage: 各维度完整明细请跳转对应专面
+        update_note: 每月刷新
+      - title: 常用维度摘要
+        definition: 产品线/品类/客户层级等维度的 Top-N 摘要
+        koujing: 按维度聚合本年累计收入与毛利
+        usage: 速览不下沉，明细引专面
+        update_note: 每月刷新
+
+  R:
+    id: R
+    name: 风险与行动
+    theme: 当月风险信号与待办事项
+    enabled: true
+    cadence: monthly
+    visible: true
+    owner: 销售运营组
+    description: 数据驱动风险与会议跟踪项，经人工审定后展示
+    sections:
+      - title: 当月风险摘要
+        definition: 经人工审定的当月重点风险事项
+        koujing: 初稿由系统按规则自动识别（客户营收异动、负毛利产品等），人工审定后展示
+        usage: 定位本月需要处理的客户与产品
+        update_note: 每月跑批生成初稿
+      - title: 行动清单
+        definition: 审定后的待办事项，支持状态跟踪
+        koujing: 状态 = 待处理 / 跟进中 / 已关闭
+        usage: 分配负责人、记录备注、跟踪进度
+        update_note: 每月结转，状态跨月持久
+      - title: 口径说明
+        definition: 面级口径条 + 图表级导读 + 指标级术语卡
+        koujing: 见各面 faces.yaml 配置
+        usage: 看不懂某一面、某张图、某个指标时查阅
+        update_note: 随配置更新
+
+  B:
+    id: B
+    name: 客户 360
+    theme: 以客户为轴心的下钻分析
+    enabled: true
+    cadence: monthly
+    visible: true
+    owner: 数据分析组
+    description: 单个客户的长期趋势、品类构成、新品与风险
+    sections:
+      - title: 客户列表与详情
+        definition: 全部客户的层级、活跃状态、风险等级，可下钻单客户
+        koujing: 活跃状态 = 活跃 / 微量活跃 / 非活跃（按近期采购情况判定）；RFM = 按最近购买、频率、金额三维度的客户价值模型
+        usage: 左侧选客户，右侧看趋势与构成
+        update_note: 每月刷新
+
+  C:
+    id: C
+    name: 产品生命周期
+    theme: 以 SKU 为轴心的生命周期与风险分析
+    enabled: true
+    cadence: monthly
+    visible: true
+    owner: 产品分析组
+    description: 产品画像、风险等级、生命周期阶段与策略建议
+    sections:
+      - title: 产品画像与风险
+        definition: 全部 SKU 的生命周期阶段与风险分布
+        koujing: 生命周期阶段 = 导入 / 成长 / 成熟 / 衰退（按销售走势划分）
+        usage: 筛选高风险或衰退产品，查看策略建议
+        update_note: 每月刷新
+
+  D:
+    id: D
+    name: 销售能力
+    theme: 以销售员/部门为轴心的能力与业绩评估
+    enabled: true
+    cadence: monthly
+    visible: true
+    owner: 销售运营组
+    description: 销售员业绩、能力画像、客户覆盖与品类热度
+    sections:
+      - title: 销售业绩与画像
+        definition: 销售员与部门的业绩、能力与覆盖
+        koujing: 业绩按业务员归属的收入与毛利计
+        usage: 看排名、画像与热力图
+        update_note: 每月刷新
+
+  E:
+    id: E
+    name: 月度作战雷达
+    theme: 月度级次的执行作战视图
+    enabled: true
+    cadence: monthly
+    visible: true
+    owner: 数据分析组
+    description: 当月客户异动、量利拆解、首次导入与销售贡献
+    sections:
+      - title: 月度执行视图
+        definition: 当月经营执行情况的拆解
+        koujing: 环比 = 与上月比；同比 = 与去年同月比
+        usage: 定位当月异动与执行差距
+        update_note: 每月刷新
+
+  F:
+    id: F
+    name: 半年度专项
+    theme: 上半年/下半年经营复盘专项
+    enabled: true
+    cadence: half_year
+    visible: false   # 平时彻底关闭（用户拍板 2026-08-25）；半年度复盘期由人工核定改 true 开启
+    owner: 数据分析组
+    description: 半年度产品线/品类/部门/客户/新品多维对比
+    sections:
+      - title: 半年度复盘
+        definition: 半年度的多维经营对比
+        koujing: H1 = 上半年（1-6 月）；H2 = 下半年（7-12 月）
+        usage: 半年度复盘会议使用
+        update_note: 半年度更新，平时关闭
