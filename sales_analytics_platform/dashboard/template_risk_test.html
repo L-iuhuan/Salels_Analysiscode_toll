@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>风险与行动 · 测试页 %%DATA_MONTH%%</title>
+<style>
+/* 与正式看板 template.html 同一套设计令牌与组件（W4 测试版固定模板，勿单独改样式） */
+:root{--bg:#F8FAFC;--radius-sm:6px;--radius-md:8px;--radius-lg:12px;
+--shadow-sm:0 1px 2px rgba(15,23,42,0.04);--shadow-md:0 4px 12px rgba(15,23,42,0.06);--shadow-lg:0 12px 32px rgba(15,23,42,0.10);
+--risk-high:#EF4444;--risk-medium:#F59E0B;--risk-low:#10B981;--risk-none:#6B7280;
+--font-xs:11px;--font-sm:12px;--font-md:13px;--font-lg:15px;--font-xl:22px;--font-display:32px;
+--primary:#2563EB;--primary-50:#EFF6FF;--primary-100:#DBEAFE;--primary-600:#2563EB;--primary-700:#1D4ED8;
+--text-primary:#0F172A;--text-secondary:#475569;--text-tertiary:#64748B;--text-muted:#94A3B8;
+--border:#E2E8F0;--border-light:#F1F5F9;--surface:#FFFFFF;--surface-subtle:#F1F5F9;
+--success:#10B981;--success-bg:#ECFDF5;--danger:#EF4444;--danger-bg:#FEF2F2;--warning:#F59E0B;--warning-bg:#FFFBEB;
+--transition:all 0.2s cubic-bezier(0.4, 0, 0.2, 1)}
+body{font-family:-apple-system,'Microsoft YaHei',sans-serif;background:var(--bg);color:var(--text-primary);margin:0;padding:0}
+.topbar{background:var(--surface);border-bottom:2px solid var(--border);padding:12px 20px;position:sticky;top:0;z-index:50}
+.topbar h1{font-size:16px;margin:0;color:var(--text-primary)}
+.topbar .meta{font-size:var(--font-xs);color:var(--text-muted);margin-top:2px}
+.kpi-bar{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:14px 20px}
+.kc{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;box-shadow:var(--shadow-md);display:flex;flex-direction:column;gap:6px}
+.kc .label{font-size:var(--font-sm);color:var(--text-secondary);font-weight:500}
+.kc .value{font-size:var(--font-display);font-weight:700;color:var(--text-primary);letter-spacing:-1px;line-height:1.1;font-variant-numeric:tabular-nums}
+.kc .sub{font-size:var(--font-xs);color:var(--text-muted)}
+.kc.kpi-danger .value{color:var(--danger)}
+.kc.kpi-warning .value{color:var(--warning)}
+.cb{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px;box-shadow:var(--shadow-md);margin:0 20px 14px}
+.cb:hover{box-shadow:var(--shadow-lg)}
+.cb h3{font-size:14px;margin:0 0 10px}
+.cb .note{font-size:var(--font-xs);color:var(--text-muted);margin:-4px 0 10px}
+.data-table{width:100%;border-collapse:separate;border-spacing:0;font-size:var(--font-md)}
+.data-table th{padding:10px 12px;font-weight:600;font-size:var(--font-sm);color:var(--text-secondary);background:var(--surface-subtle);border-bottom:1px solid var(--border);text-align:left;white-space:nowrap;position:sticky;top:0}
+.data-table td{padding:10px 12px;border-bottom:1px solid var(--border);color:var(--text-primary)}
+.data-table tbody tr:nth-child(even){background:var(--surface-subtle)}
+.data-table tbody tr:hover{background:var(--primary-50)}
+.data-table .num{text-align:right;font-variant-numeric:tabular-nums}
+.tag{display:inline-flex;align-items:center;padding:2px 10px;border-radius:999px;font-size:11px;font-weight:500;white-space:nowrap}
+.tag-high{background:var(--danger-bg);color:var(--danger)}
+.tag-medium{background:var(--warning-bg);color:#B45309}
+.tag-low{background:var(--success-bg);color:#047857}
+.tag-none{background:var(--surface-subtle);color:var(--text-tertiary)}
+.caliber{font-size:var(--font-md);line-height:1.8;color:var(--text-secondary);white-space:pre-wrap}
+.banner{background:var(--warning-bg);border:1px solid #FDE68A;padding:8px 16px;font-size:12px;color:#92400E;margin:14px 20px 0;border-radius:var(--radius-md)}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <h1>风险与行动 <span style="font-size:12px;color:var(--text-muted);font-weight:400">（测试页 · 与正式看板同风格）</span></h1>
+  <div class="meta">数据月份 %%DATA_MONTH%% ｜ 生成时间 %%GEN_TIME%% ｜ 内容来源：dashboard\risk_action_%%DATA_MONTH%%.md（人工审定版）</div>
+</div>
+<div class="banner">本页为「风险与行动」新面测试版。内容来自月度总体文档（人工审定后渲染），未确认的内容不会出现在这里。</div>
+<div class="kpi-bar">
+%%RISK_KPI%%
+</div>
+<div class="cb">
+  <h3>一、当月风险摘要</h3>
+  <div class="note">初稿由系统按规则生成，经人工审定后展示。</div>
+  %%RISK_TABLE%%
+</div>
+<div class="cb">
+  <h3>二、行动清单</h3>
+  <div class="note">状态：待处理 / 跟进中 / 已关闭。未关闭事项跨月自动结转。</div>
+  %%ACTION_TABLE%%
+</div>
+<div class="cb">
+  <h3>三、口径说明</h3>
+  <div class="caliber">%%CALIBER%%</div>
+</div>
+</body>
+</html>

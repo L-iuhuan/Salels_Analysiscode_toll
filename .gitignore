@@ -7,6 +7,9 @@
 *.rar
 *.zip
 *.html
+# 例外：看板模板是源文件不是产物（2026-08-25 发现 template.html 长期被 *.html 误伤未跟踪）
+!sales_analytics_platform/dashboard/template.html
+!sales_analytics_platform/dashboard/template_risk_test.html
 *.png
 *.svg
 *.pyc
