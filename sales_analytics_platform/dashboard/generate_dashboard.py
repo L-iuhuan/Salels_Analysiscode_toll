@@ -1662,12 +1662,29 @@ print(f"    客户热力图(利润): {len(top33_custs)}客户 x {len(d_sales_lis
 _timed("D面销售能力(含客户热力图)", _t_seg0); _t_seg0 = _time_mod.time()
 print("[7/7] E面 月度作战雷达...")
 
+# 产品线（新）列（已在keep_cols中）
+# [批次⑤ P1] 本块原在 7c 之前，上移至预分组字典构建之前（纯列新增，提前不影响任何计算结果）
+if pline_new_col and pline_new_col in rex.columns:
+    rex["_pline_new"] = rex[pline_new_col].astype(str).str.strip()
+else:
+    rex["_pline_new"] = "未知"
+
 # 7a. 全量月度KPI（所有月份 + 所有客户）
 rex["_yr"] = rex["_d"].dt.year
 all_months = sorted(rex["_ym"].unique())
+
+# [批次⑤ P1 性能优化] 一次性 groupby 预分组，替代循环内 rex[rex[键]==值] 全表布尔扫描。
+# groupby(sort=False) 组内保留原始行序，与布尔过滤结果逐行一致 → 下游计算零变化。
+# 实测(191,725行)：object 列逐元素比较(comp_method_OBJECT_ARRAY) 34,305次/52.6s，占看板总耗时45%。
+# 此后 rex 只读（不再新增列），字典在 7/8 节全程复用。
+_REX_BY_YM = {k: g for k, g in rex.groupby("_ym", sort=False)}
+# (月份, 销售员) 二级预分组：7d 的 TOP1/异动逐销售员取数用（不过滤 sales_2026_set，
+# 与原 rex[(rex["_ym"]==prev_m)&(rex["_sales"]==name)] 无 isin 过滤的口径一致）
+_BY_YM_SALES_ALL = {m2: {k: g for k, g in gg.groupby("_sales", sort=False)} for m2, gg in _REX_BY_YM.items()}
+
 e_monthly_kpi = {}
 for m in all_months:
-    dm = rex[rex["_ym"] == m]
+    dm = _REX_BY_YM[m]  # [批次⑤ P1] 预分组，等价于 rex[rex["_ym"] == m]
     e_monthly_kpi[m] = {
         "rev": round(float(dm["_rev"].sum()) / 1e4, 2),
         "profit": round(float(dm["_profit"].sum()) / 1e4, 2),
@@ -1686,7 +1703,7 @@ for m in all_months:
 # 7b. 客户月度数据（用于势能矩阵）
 e_cust_monthly = {}
 for m in all_months:
-    dm = rex[rex["_ym"] == m]
+    dm = _REX_BY_YM[m]  # [批次⑤ P1] 预分组，等价于 rex[rex["_ym"] == m]
     cagg = dm.groupby("_cust").agg(rev=("_rev","sum"), profit=("_profit","sum"), qty=("_qty","sum")).reset_index()
     for _, r in cagg.iterrows():
         cid = str(r["_cust"]); rev = float(r["rev"]); profit = float(r["profit"])
@@ -1698,18 +1715,17 @@ for m in all_months:
         }
 
 # 7c. 首次大量导入检测 (≥6000, 从2024-01到当前月的前一月检查历史)
-# 产品线（新）列（已在keep_cols中）
-if pline_new_col and pline_new_col in rex.columns:
-    rex["_pline_new"] = rex[pline_new_col].astype(str).str.strip()
-else:
-    rex["_pline_new"] = "未知"
+# (_pline_new 已在 7a 前就绪 —— [批次⑤ P1] 上移)
 
 # 产品线/品类YTD毛利率表（A面显示用）
 ytd_all = rex[(rex["_d"]>=ytd_start)&(rex["_d"]<=ytd_end)]
+# [批次⑥] YTD 按产品线/品类预分组，替代循环内等值全表过滤（组内行序一致，等价）
+_YTD_BY_PLINE = {k: g for k, g in ytd_all.groupby("_pline_new", sort=False)}
+_YTD_BY_CAT = {k: g for k, g in ytd_all.groupby("_cat", sort=False)}
 pline_margins = []
 for pline_name in sorted(ytd_all["_pline_new"].dropna().unique()):
     if pline_name in ("nan","None","","未知"): continue
-    pd_data = ytd_all[ytd_all["_pline_new"]==pline_name]
+    pd_data = _YTD_BY_PLINE[pline_name]  # [批次⑥] 预分组，等价于 ytd_all[ytd_all["_pline_new"]==pline_name]
     r=float(pd_data["_rev"].sum());p=float(pd_data["_profit"].sum())
     ka_d=pd_data[pd_data["_tier"].str.contains("KA",na=False)];ka_r=float(ka_d["_rev"].sum());ka_p=float(ka_d["_profit"].sum())
     aa_d=pd_data[pd_data["_tier"].str.contains("AA",na=False)&~pd_data["_tier"].str.contains("KA",na=False)];aa_r=float(aa_d["_rev"].sum());aa_p=float(aa_d["_profit"].sum())
@@ -1718,7 +1734,7 @@ pline_margins.sort(key=lambda x:-x["rev"])
 cat_margins = []
 for cat_name in sorted(ytd_all["_cat"].dropna().unique()):
     if cat_name in ("nan","None",""): continue
-    cd=ytd_all[ytd_all["_cat"]==cat_name];r=float(cd["_rev"].sum())
+    cd=_YTD_BY_CAT[cat_name];r=float(cd["_rev"].sum())  # [批次⑥] 预分组，等价于 ytd_all[ytd_all["_cat"]==cat_name]
     if r<10000: continue
     p=float(cd["_profit"].sum())
     ka_d=cd[cd["_tier"].str.contains("KA",na=False)];ka_r=float(ka_d["_rev"].sum());ka_p=float(ka_d["_profit"].sum())
@@ -1731,7 +1747,7 @@ cat_margins=cat_margins[:20]
 first_imports = []
 all_cust_item_history = set()  # 累积历史：已出现过的(客户, 存货名称)
 for m in all_months:
-    dm = rex[rex["_ym"] == m]
+    dm = _REX_BY_YM[m]  # [批次⑤ P1] 预分组，等价于 rex[rex["_ym"] == m]
     big = dm[dm["_qty"] >= 6000]
     for (cid, item), grp in big.groupby(["_cust", "_item"]):
         key = (str(cid), str(item))
@@ -1759,7 +1775,7 @@ print(f"  月度KPI: {len(e_monthly_kpi)}月  客户月度: {len(e_cust_monthly)
 # 7d. 销售员月度贡献（增强：新品+TOP1+异动）
 e_sales_monthly = {}
 for m in all_months:
-    dm = rex[rex["_ym"] == m]
+    dm = _REX_BY_YM[m]  # [批次⑤ P1] 预分组，等价于 rex[rex["_ym"] == m]
     sdm = dm[dm["_sales"].isin(sales_2026_set)]
     sagg = sdm.groupby("_sales").agg(
         rev=("_rev","sum"), profit=("_profit","sum"), qty=("_qty","sum"),
@@ -1778,7 +1794,10 @@ for m in all_months:
         new_r = float(r["new_rev_amt"])/1e4
         new_pct = round(new_r/(rev/1e4)*100, 1) if rev > 0 else 0
         # TOP1客户(按收入)
-        sd_cust = sdm[sdm["_sales"]==name].groupby("_cust").agg(cr=("_rev","sum"),cp=("_profit","sum")).reset_index()
+        # [批次⑤ P1] 预分组替代 sdm[sdm["_sales"]==name]：name 来自 sagg ⊆ sdm（isin 过滤集合），
+        # 该销售员当月行集与 sdm 内过滤结果完全一致
+        _sd = _BY_YM_SALES_ALL[m].get(name, sdm.iloc[0:0])
+        sd_cust = _sd.groupby("_cust").agg(cr=("_rev","sum"),cp=("_profit","sum")).reset_index()
         top1 = sd_cust.sort_values("cr",ascending=False).head(1)
         top1_cust = str(top1["_cust"].iloc[0]) if len(top1)>0 else ""
         top1_rev = round(float(top1["cr"].iloc[0])/1e4,2) if len(top1)>0 else 0
@@ -1792,7 +1811,8 @@ for m in all_months:
         prev_m = (pd.Timestamp(m[:4]+"-"+m[5:]+"-01") - pd.DateOffset(months=1)).strftime("%Y-%m")
         anomalies = []
         if prev_m in all_months:
-            prev_dm = rex[(rex["_ym"]==prev_m)&(rex["_sales"]==name)]
+            # [批次⑤ P1] 预分组替代 rex[(rex["_ym"]==prev_m)&(rex["_sales"]==name)]（键不存在→空帧，与原布尔过滤一致）
+            prev_dm = _BY_YM_SALES_ALL.get(prev_m, {}).get(name, rex.iloc[0:0])
             prev_cust = prev_dm.groupby("_cust")["_rev"].sum().to_dict()
             for cid, cr in dict(sd_cust[["_cust","cr"]].values).items():
                 prev_r = prev_cust.get(cid, 0)
@@ -1852,7 +1872,7 @@ for dim_key, dim_label, dim_col, dim_filter in [
 ]:
     items = {}
     for m in all_months:
-        dm = rex[rex["_ym"]==m]
+        dm = _REX_BY_YM[m]  # [批次⑤ P1] 预分组，等价于 rex[rex["_ym"]==m]
         if dim_filter: dm = dm[dim_filter(dm)]
         if dim_key == "top_cat":
             dm = dm[dm[dim_col].isin(top_cat_names)]
@@ -1978,13 +1998,19 @@ if _face_visible("F"):
     }
 
     # H1 产品线毛利率
+    # [批次⑥] H1/去年H1 按产品线/品类预分组，替代循环内等值全表过滤（组内行序一致，等价）
+    _H1_BY_PLINE = {k: g for k, g in h1_data.groupby("_pline_new", sort=False)}
+    _PH1_BY_PLINE = {k: g for k, g in ph1_data.groupby("_pline_new", sort=False)}
+    _H1_BY_CAT = {k: g for k, g in h1_data.groupby("_cat", sort=False)}
+    _PH1_BY_CAT = {k: g for k, g in ph1_data.groupby("_cat", sort=False)}
+    _H1_E0, _PH1_E0 = h1_data.iloc[0:0], ph1_data.iloc[0:0]
     h1_pline_margins = []
     for _pn in sorted(h1_data["_pline_new"].dropna().unique()):
         if _pn in ("nan", "None", "", "未知"):
             continue
-        _pd = h1_data[h1_data["_pline_new"] == _pn]
+        _pd = _H1_BY_PLINE[_pn]  # [批次⑥] 预分组
         _r = float(_pd["_rev"].sum()); _p = float(_pd["_profit"].sum())
-        _ppd = ph1_data[ph1_data["_pline_new"] == _pn]
+        _ppd = _PH1_BY_PLINE.get(_pn, _PH1_E0)  # [批次⑥] 预分组（键缺→空帧，与原过滤一致）
         _pr = float(_ppd["_rev"].sum()); _pp = float(_ppd["_profit"].sum())
         h1_pline_margins.append({
             "name": _pn, "rev": round(_r / 1e4, 1), "profit": round(_p / 1e4, 1),
@@ -2000,14 +2026,14 @@ if _face_visible("F"):
     for _cn in sorted(h1_data["_cat"].dropna().unique()):
         if _cn in ("nan", "None", ""):
             continue
-        _cd = h1_data[h1_data["_cat"] == _cn]
+        _cd = _H1_BY_CAT[_cn]  # [批次⑥] 预分组
         _r = float(_cd["_rev"].sum())
         if _r < 10000:
             continue
         _p = float(_cd["_profit"].sum())
         _kad = _cd[_cd["_tier"].str.contains("KA", na=False)]
         _aar = _cd[_cd["_tier"].str.contains("AA", na=False) & ~_cd["_tier"].str.contains("KA", na=False)]
-        _pcd = ph1_data[ph1_data["_cat"] == _cn]
+        _pcd = _PH1_BY_CAT.get(_cn, _PH1_E0)  # [批次⑥] 预分组
         _pr = float(_pcd["_rev"].sum()); _pp = float(_pcd["_profit"].sum())
         h1_cat_margins.append({
             "name": _cn, "rev": round(_r / 1e4, 1), "profit": round(_p / 1e4, 1),
@@ -2055,26 +2081,34 @@ if _face_visible("F"):
         })
     h1_dept_margins.sort(key=lambda x: -x["rev"])
 
+    # [批次⑤ P1] H1/去年H1 按客户预分组，替代循环内逐客户全表布尔过滤（组内行序一致，等价）
+    _H1_BY_CUST = {k: g for k, g in h1_data.groupby("_cust", sort=False)}
+    _PH1_BY_CUST = {k: g for k, g in ph1_data.groupby("_cust", sort=False)}
+    _H1_EMPTY = h1_data.iloc[0:0]
+    _PH1_EMPTY = ph1_data.iloc[0:0]
+
     # H1 KA/AA客户毛利率（全量，含ASP/环比/新品渗透）
     h1_kaaa_cust = h1_kaaa_d.groupby("_cust").agg(rev=("_rev", "sum"), profit=("_profit", "sum"), qty=("_qty", "sum")).reset_index()
     h1_kaaa_margins = []
     for _, _row in h1_kaaa_cust.sort_values("rev", ascending=False).iterrows():
         _nm = str(_row["_cust"]); _r = float(_row["rev"]); _p = float(_row["profit"]); _q = float(_row["qty"])
-        _prev = ph1_data[(ph1_data["_cust"] == _nm) & (ph1_data["_tier"].str.contains("KA|AA", na=False))]
+        _hg = _H1_BY_CUST.get(_nm, _H1_EMPTY)    # [批次⑤ P1] 等价于 h1_data[h1_data["_cust"] == _nm]
+        _pg = _PH1_BY_CUST.get(_nm, _PH1_EMPTY)  # [批次⑤ P1] 等价于 ph1_data[ph1_data["_cust"] == _nm]
+        _prev = _pg[_pg["_tier"].str.contains("KA|AA", na=False)]
         _pr = float(_prev["_rev"].sum()); _pp = float(_prev["_profit"].sum()); _pq = float(_prev["_qty"].sum())
-        _tr = h1_data[h1_data["_cust"] == _nm]["_tier"]
+        _tr = _hg["_tier"]  # [批次⑤ P1] 预分组取数
         _tier = "KA" if any("KA" in str(t) for t in _tr) else ("AA" if any("AA" in str(t) for t in _tr) else "")
         # ASP
         _asp = round(_r / _q, 4) if _q > 0 else 0
         _pasp = round(_pr / _pq, 4) if _pq > 0 else 0
         _asp_yoy = round((_asp - _pasp) / _pasp * 100, 1) if _pasp > 0 else 0
         # 环比（最新月vs上月）
-        _cm = h1_data[(h1_data["_cust"] == _nm) & (h1_data["_d"].dt.month == _latest_m) & (h1_data["_d"].dt.year == _latest_y)]
-        _pm = h1_data[(h1_data["_cust"] == _nm) & (h1_data["_d"].dt.month == _prev_m) & (h1_data["_d"].dt.year == _prev_y)]
+        _cm = _hg[(_hg["_d"].dt.month == _latest_m) & (_hg["_d"].dt.year == _latest_y)]  # [批次⑤ P1]
+        _pm = _hg[(_hg["_d"].dt.month == _prev_m) & (_hg["_d"].dt.year == _prev_y)]      # [批次⑤ P1]
         _cm_r = float(_cm["_rev"].sum()); _pm_r = float(_pm["_rev"].sum())
         _mom = round((_cm_r - _pm_r) / _pm_r * 100, 1) if _pm_r > 0 else 0
         # 新品渗透
-        _cn = h1_data[(h1_data["_cust"] == _nm) & h1_data["_is_new"]]
+        _cn = _hg[_hg["_is_new"]]  # [批次⑤ P1]
         _new_r = float(_cn["_rev"].sum())
         _new_pct = round(_new_r / _r * 100, 1) if _r > 0 else 0
         h1_kaaa_margins.append({
@@ -2087,10 +2121,15 @@ if _face_visible("F"):
         })
 
     # ---- 8d. 新品分析（12个月存活口径）----
-    _new_prods = rex[rex["_is_new"]]["_prod"].unique()
+    # [批次⑤ P1] 按存货名称/产品品种一次性预分组（8d 新品、8g 趋势/Top5/品类映射复用），
+    # 替代循环内 rex[rex["_prod"|"_item"]==x] 全表布尔扫描（组内行序一致，等价）
+    _REX_BY_PROD = {k: g for k, g in rex.groupby("_prod", sort=False)}
+    _REX_BY_ITEM = {k: g for k, g in rex.groupby("_item", sort=False)}
+    _rex_new = rex[rex["_is_new"]]  # 本块多次复用，提升一次
+    _new_prods = _rex_new["_prod"].unique()
     np_analysis = []
     for _prod in _new_prods:
-        _pdata = rex[rex["_prod"] == _prod]
+        _pdata = _REX_BY_PROD[_prod]  # [批次⑤ P1] 预分组，等价于 rex[rex["_prod"] == _prod]
         _fd = _pdata["_d"].min()
         _we = _fd + pd.DateOffset(months=12)
         _wdata = _pdata[(_pdata["_d"] >= _fd) & (_pdata["_d"] <= _we)]
@@ -2110,11 +2149,11 @@ if _face_visible("F"):
         "count": len(np_analysis),
         "survival_rate": round(sum(1 for p in np_analysis if p["survival"] > 0) / len(np_analysis) * 100, 1) if np_analysis else 0,
         "mg": round(_np_total_profit / _np_total_rev * 100, 1) if _np_total_rev > 0 else 0,
-        "penetration": round(len(set(rex[rex["_is_new"]]["_cust"])) / rex["_cust"].nunique() * 100, 1) if rex["_cust"].nunique() > 0 else 0,
-        "promotion": round(len(set(rex[rex["_is_new"]]["_sales"]) & sales_2026_set) / len(sales_2026_set) * 100, 1) if sales_2026_set else 0,
+        "penetration": round(len(set(_rex_new["_cust"])) / rex["_cust"].nunique() * 100, 1) if rex["_cust"].nunique() > 0 else 0,
+        "promotion": round(len(set(_rex_new["_sales"]) & sales_2026_set) / len(sales_2026_set) * 100, 1) if sales_2026_set else 0,
         "total_rev": round(_np_total_rev, 1),
-        "customers": len(set(rex[rex["_is_new"]]["_cust"])),
-        "sales_people": len(set(rex[rex["_is_new"]]["_sales"]) & sales_2026_set) if "_sales" in rex.columns else 0,
+        "customers": len(set(_rex_new["_cust"])),
+        "sales_people": len(set(_rex_new["_sales"]) & sales_2026_set) if "_sales" in rex.columns else 0,
     }
 
     # ---- 8e. H1关键问题与解决方案 ----
@@ -2133,8 +2172,10 @@ if _face_visible("F"):
         if _cust["mg_yoy"] < -3 and _cust["rev"] > 100:
             # 客户产品级归因：按存货名称拆解毛利率变化
             _cn = _cust["name"]
-            _cust_26h1 = h1_data[(h1_data["_cust"] == _cn) & (h1_data["_d"] >= f"{_latest_y}-01-01") & (h1_data["_d"] <= f"{_latest_y}-06-30")]
-            _cust_25h1 = ph1_data[(ph1_data["_cust"] == _cn) & (ph1_data["_d"] >= f"{_prev_year}-01-01") & (ph1_data["_d"] <= f"{_prev_year}-06-30")]
+            _hg2 = _H1_BY_CUST.get(_cn, _H1_EMPTY)    # [批次⑤ P1] 等价于 h1_data[h1_data["_cust"] == _cn]
+            _pg2 = _PH1_BY_CUST.get(_cn, _PH1_EMPTY)  # [批次⑤ P1] 等价于 ph1_data[ph1_data["_cust"] == _cn]
+            _cust_26h1 = _hg2[(_hg2["_d"] >= f"{_latest_y}-01-01") & (_hg2["_d"] <= f"{_latest_y}-06-30")]
+            _cust_25h1 = _pg2[(_pg2["_d"] >= f"{_prev_year}-01-01") & (_pg2["_d"] <= f"{_prev_year}-06-30")]
             _cust_attr = []
             for _pn in _cust_26h1["_item"].unique():
                 _pd26 = _cust_26h1[_cust_26h1["_item"] == _pn]
@@ -2170,8 +2211,8 @@ if _face_visible("F"):
     for _cat in h1_cat_margins:
         if _cat["mg_yoy"] >= -2 or _cat["rev"] < 100:
             continue
-        _cd = h1_data[h1_data["_cat"] == _cat["name"]]
-        _pcd = ph1_data[ph1_data["_cat"] == _cat["name"]]
+        _cd = _H1_BY_CAT[_cat["name"]]  # [批次⑥] 预分组
+        _pcd = _PH1_BY_CAT.get(_cat["name"], _PH1_E0)  # [批次⑥] 预分组
         _prod_attr = []
         for _pn in _cd["_item"].unique():
             _pd = _cd[_cd["_item"] == _pn]
@@ -2205,8 +2246,8 @@ if _face_visible("F"):
     for _pl in h1_pline_margins:
         if _pl["mg_yoy"] >= -2 or _pl["rev"] < 100:
             continue
-        _pd_data = h1_data[h1_data["_pline_new"] == _pl["name"]]
-        _ppd_data = ph1_data[ph1_data["_pline_new"] == _pl["name"]]
+        _pd_data = _H1_BY_PLINE[_pl["name"]]  # [批次⑥] 预分组
+        _ppd_data = _PH1_BY_PLINE.get(_pl["name"], _PH1_E0)  # [批次⑥] 预分组
         _pline_attr = []
         for _pn in _pd_data["_item"].unique():
             _pd = _pd_data[_pd_data["_item"] == _pn]
@@ -2282,7 +2323,7 @@ if _face_visible("F"):
     _trend_months = [m for m in _all_months if m >= _trend_months_start][-24:]
     _prod_trend = {}
     for _item in _major_items:
-        _td = rex[rex["_item"] == _item]
+        _td = _REX_BY_ITEM[_item]  # [批次⑤ P1] 预分组，等价于 rex[rex["_item"] == _item]
         _monthly = _td.groupby("_ym").agg(r=("_rev", "sum"), p=("_profit", "sum"), c=("_rev", lambda x: float(x.sum()) - float(_td.loc[x.index, "_profit"].sum())), q=("_qty", "sum")).reindex(_trend_months, fill_value=0)
         _prod_trend[_item] = {
             "months": _trend_months,
@@ -2301,7 +2342,7 @@ if _face_visible("F"):
     # Top5客户
     _prod_top5 = {}
     for _item in _major_items:
-        _td = rex[rex["_item"] == _item]
+        _td = _REX_BY_ITEM[_item]  # [批次⑤ P1] 预分组，等价于 rex[rex["_item"] == _item]
         _cust_agg = _td.groupby("_cust")["_rev"].sum().sort_values(ascending=False).head(5)
         _prod_top5[_item] = [{"name": k, "rev": round(float(v) / 1e4, 1)} for k, v in _cust_agg.items()]
 
@@ -2343,7 +2384,8 @@ if _face_visible("F"):
     # 先给产品列表补充品类字段（品类统计需要）
     _cat_map = {}
     for _item_name in _major_items:
-        _cat_val = rex[rex["_item"] == _item_name]["_cat"].iloc[0] if len(rex[rex["_item"] == _item_name]) > 0 else ""
+        _tg = _REX_BY_ITEM.get(_item_name)  # [批次⑤ P1] 预分组，等价于 rex[rex["_item"] == _item_name]
+        _cat_val = _tg["_cat"].iloc[0] if _tg is not None and len(_tg) > 0 else ""
         _cat_map[_item_name] = str(_cat_val)
     for p in f_product_list:
         p["cat"] = _cat_map.get(p["name"], "")

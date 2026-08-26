@@ -58,7 +58,8 @@ from customer_analysis.trend_analysis import (
     calc_customer_forecast,
 )
 
-OUTPUT_GOLD = os.path.join(PROJECT_ROOT, "output", "gold")
+# [批次⑤ 缺陷A修复] OUTPUT_GOLD 统一从 config.settings 引入（指向包根 output/）
+from config.settings import OUTPUT_GOLD
 
 
 def generate_gold_tables(
@@ -361,6 +362,11 @@ def generate_gold_tables(
 
     # ---- 提价机会 ----
     markup = calc_markup_opportunity(cxp)
+    # [批次⑦] 只输出有效行（可提价标记=True）：category 模式下 categorical groupby
+    # 默认 observed=False 展开客户×产品叉积（真实数据 2,633,504 行 / 178.6MB），
+    # 其中有效行仅 505 行；未标记行无下游消费（2026-08-25 用户拍板确认）。
+    # 过滤后 CSV 降至几十 KB，Excel 报告（若开启）同步瘦身。
+    markup = markup[markup["可提价标记"]]
     gold["提价机会"] = _inject_tier(markup)
 
     # ---- 降价策略试算 ----

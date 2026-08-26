@@ -25,27 +25,36 @@ def build_rd_recommendations(silver, portrait_df=None):
     cxp2["客户层级"] = cxp2["客户编号"].map(tier_map).fillna("MM")
 
     rows = []
+    # [批次⑥ P4] 三处循环内重复计算提升，全部与原值逐位一致：
+    #  1) 全公司高质量/总收入占比与产品无关，原为每产品重算（800×2次全表 isin+过滤）→ 循环外算一次；
+    #  2) yoy6 / cxp2 按产品一次性预分组（groupby(sort=False) 组内行序与原布尔过滤一致），
+    #     替代每产品 yoy6[yoy6["产品品种"]==prod] 与 cxp2[...]==prod 全表扫描（800×151K 行）。
+    _recent6m = cxp2["_月"] > latest - 6
+    _high_mask_all = cxp2["客户层级"].isin(["KA", "AA", "KM"])
+    company_high_rev = cxp2[_high_mask_all & _recent6m]["rev_sum"].sum()
+    company_total_rev = cxp2[_recent6m]["rev_sum"].sum()
+    base_high_share = company_high_rev / company_total_rev * 100 if company_total_rev > 0 else 0
+    _YOY_BY_PROD = {k: g for k, g in yoy6.groupby("产品品种", sort=False)}
+    _CXP6_BY_PROD = {k: g for k, g in cxp2[_recent6m].groupby("产品品种", sort=False)}
+    _CXP6_EMPTY = cxp2.iloc[0:0]
     for prod, grp in recent6.groupby("产品品种", observed=True):
         rev = grp["rev_sum"].sum(); qty = grp["qty_sum"].sum(); profit = grp["profit_clip_sum"].sum()
         if rev <= 0 or qty <= 0: continue
         # YoY
-        yoy_grp = yoy6[yoy6["产品品种"] == prod]
-        yoy_qty = yoy_grp["qty_sum"].sum() if len(yoy_grp) else 0
+        yoy_grp = _YOY_BY_PROD.get(prod)  # [批次⑥ P4] 预分组（无→None，与原空过滤一致）
+        yoy_qty = yoy_grp["qty_sum"].sum() if yoy_grp is not None and len(yoy_grp) else 0
         yoy_growth = (qty - yoy_qty) / yoy_qty * 100 if yoy_qty > 0 else None
         # CV of monthly qty
         monthly = grp.groupby("_月")["qty_sum"].sum()
         cv = monthly.std() / monthly.mean() if monthly.mean() > 0 and len(monthly) > 1 else 0
         # customer quality
-        prod_cxp = cxp2[(cxp2["产品品种"] == prod) & (cxp2["_月"] > latest - 6)]
+        prod_cxp = _CXP6_BY_PROD.get(prod, _CXP6_EMPTY)  # [批次⑥ P4] 预分组
         high = prod_cxp[prod_cxp["客户层级"].isin(["KA", "AA", "KM"])]
         high_rev = high["rev_sum"].sum()
         hq_pen = high_rev / rev * 100 if rev > 0 else 0
         high_cust = high["客户编号"].nunique()
         total_cust = prod_cxp["客户编号"].nunique()
         # HPI: 高价值客户收入占比 / 高价值客户公司总收入占比
-        company_high_rev = cxp2[(cxp2["客户层级"].isin(["KA","AA","KM"])) & (cxp2["_月"] > latest-6)]["rev_sum"].sum()
-        company_total_rev = cxp2[cxp2["_月"] > latest-6]["rev_sum"].sum()
-        base_high_share = company_high_rev / company_total_rev * 100 if company_total_rev > 0 else 0
         hpi = (hq_pen / base_high_share) if base_high_share > 0 else 0
         margin = profit / rev * 100 if rev > 0 else 0
         asp = rev / qty if qty > 0 else 0

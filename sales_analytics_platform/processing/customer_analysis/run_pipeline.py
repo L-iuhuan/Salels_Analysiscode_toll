@@ -26,15 +26,13 @@ from shared.data_cleaning import (
     SILVER_DTYPE_CUSTOMER_MONTHLY, SILVER_DTYPE_PRODUCT_MONTHLY, SILVER_DTYPE_CUSTOMER_X_PRODUCT,
 )
 from customer_analysis.silver import build_silver_layer
-from config.settings import DATA_SHEET_NAME
+# [批次⑤ 缺陷A修复] 输入/输出目录统一从 config.settings 引入（指向包根 data/ 与 output/），
+# 与 run_all.py 的写出目录一致；原先按 processing/ 自建导致干净部署下 silver 读写错位
+from config.settings import DATA_SHEET_NAME, DATA_DIR, OUTPUT_SILVER, OUTPUT_GOLD, OUTPUT_REPORT
 from customer_analysis.portrait import calc_customer_portrait
 from customer_analysis.gold import generate_gold_tables
 from customer_analysis.report import save_gold_tables
 
-DATA_DIR = os.path.join(PROJECT_ROOT, "data")
-OUTPUT_SILVER = os.path.join(PROJECT_ROOT, "output", "silver")
-OUTPUT_GOLD = os.path.join(PROJECT_ROOT, "output", "gold")
-OUTPUT_REPORT = os.path.join(PROJECT_ROOT, "output", "report")
 PRODUCT_GOLD_PATH = os.path.join(OUTPUT_GOLD, "gold_product_portrait.csv")
 
 

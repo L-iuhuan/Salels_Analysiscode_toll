@@ -31,7 +31,14 @@ def write_excel_report(out, result_df, data_insufficient,
     Sheet布局：产品快照表、预警清单、画像分布、历史画像追踪、
     数据不足产品清单、趋势预测汇总、使用说明。
     （客户RFM分群与产品关联分析已移至客户分析报告输出）
+
+    [批次⑦] EXCEL_REPORT.product_enabled=False（默认）时跳过生成并返回 None；
+    该报告不被看板/管道消费，需要时改 config.settings.EXCEL_REPORT 恢复。
     """
+    from config.settings import EXCEL_REPORT
+    if not EXCEL_REPORT.get("product_enabled", False):
+        print("  [批次⑦] 产品生命周期 Excel 报告已按配置跳过（EXCEL_REPORT.product_enabled=False）")
+        return None
     _out_dir = output_report_path or OUTPUT_REPORT
     if _out_dir is None:
         raise ValueError("OUTPUT_REPORT 未设置，请在调用前调用 set_output_report() 或传入 output_report_path")
@@ -50,6 +57,9 @@ def write_excel_report(out, result_df, data_insufficient,
     header_fill = PatternFill(start_color="1A3C6E", end_color="1A3C6E", fill_type="solid")
     header_font = Font(color="FFFFFF", bold=True, size=10)
     header_align = Alignment(horizontal="center", vertical="center", wrap_text=True)
+    # [批次⑥ P2] 居中样式共享实例（Alignment 为值对象，多格复用产出完全一致，
+    # 原为逐格新建，818产品x~60列x多表共数万次对象构造）
+    center_align = Alignment(horizontal="center", vertical="center")
 
     # ===== Sheet 1: 产品快照表 =====
     ws1 = wb.active
@@ -63,11 +73,11 @@ def write_excel_report(out, result_df, data_insufficient,
         cell.font = header_font; cell.fill = header_fill
         cell.alignment = header_align; cell.border = border
 
-    for ri, (_, row) in enumerate(out.iterrows(), 2):
+    for ri, row in enumerate(out.itertuples(index=False, name=None), 2):  # [批次⑥ P2] itertuples 等价提速（值序列一致）
         for ci, val in enumerate(row, 1):
             cell = ws1.cell(row=ri, column=ci, value=val)
             cell.border = border
-            cell.alignment = Alignment(horizontal="center", vertical="center")
+            cell.alignment = center_align
             if ci in ratio_idx or ci in pp_idx:
                 cell.number_format = '0.00'
 
@@ -103,11 +113,11 @@ def write_excel_report(out, result_df, data_insufficient,
         cell.font = header_font; cell.fill = header_fill
         cell.alignment = header_align; cell.border = border
 
-    for ri, (_, row) in enumerate(warn_df.iterrows(), 2):
+    for ri, row in enumerate(warn_df.itertuples(index=False, name=None), 2):  # [批次⑥ P2]
         for ci, val in enumerate(row, 1):
             cell = ws2.cell(row=ri, column=ci, value=val)
             cell.border = border
-            cell.alignment = Alignment(horizontal="center", vertical="center")
+            cell.alignment = center_align
             if ci in ratio_idx or ci in pp_idx:
                 cell.number_format = '0.00'
 
@@ -133,11 +143,11 @@ def write_excel_report(out, result_df, data_insufficient,
         cell.font = header_font; cell.fill = header_fill
         cell.alignment = header_align; cell.border = border
 
-    for ri, (_, row) in enumerate(dist.iterrows(), 2):
+    for ri, row in enumerate(dist.itertuples(index=False, name=None), 2):  # [批次⑥ P2]
         for ci, val in enumerate(row, 1):
             cell = ws3.cell(row=ri, column=ci, value=val)
             cell.border = border
-            cell.alignment = Alignment(horizontal="center", vertical="center")
+            cell.alignment = center_align
 
     ws3.column_dimensions['A'].width = 16
     ws3.column_dimensions['B'].width = 12
@@ -152,10 +162,10 @@ def write_excel_report(out, result_df, data_insufficient,
             cell = ws4.cell(row=1, column=ci, value=cname)
             cell.font = header_font; cell.fill = header_fill
             cell.alignment = header_align; cell.border = border
-        for ri, (_, row) in enumerate(insuf_df.iterrows(), 2):
+        for ri, row in enumerate(insuf_df.itertuples(index=False, name=None), 2):  # [批次⑥ P2]
             for ci, val in enumerate(row, 1):
                 cell = ws4.cell(row=ri, column=ci, value=val)
-                cell.border = border; cell.alignment = Alignment(horizontal="center", vertical="center")
+                cell.border = border; cell.alignment = center_align
         min_rec = int(thr.get("min_record_months", 3))
         ws4.cell(row=1, column=8, value=f"说明：日历月龄 < {min_rec} 个月的产品，数据不足以参与任何分析。").font = Font(size=10, italic=True, color="666666")
 
@@ -171,11 +181,11 @@ def write_excel_report(out, result_df, data_insufficient,
             cell = ws8.cell(row=1, column=ci, value=cname)
             cell.font = header_font; cell.fill = header_fill
             cell.alignment = header_align; cell.border = border
-        for ri, (_, row) in enumerate(forecast_out.iterrows(), 2):
+        for ri, row in enumerate(forecast_out.itertuples(index=False, name=None), 2):  # [批次⑥ P2]
             for ci, val in enumerate(row, 1):
                 cell = ws8.cell(row=ri, column=ci, value=val)
                 cell.border = border
-                cell.alignment = Alignment(horizontal="center", vertical="center")
+                cell.alignment = center_align
                 if ci in (2, 3, 4, 5):
                     cell.number_format = '#,##0'
         up_fill = PatternFill(start_color="E8F5E9", end_color="E8F5E9", fill_type="solid")
@@ -205,11 +215,11 @@ def write_excel_report(out, result_df, data_insufficient,
             cell = ws9.cell(row=1, column=ci, value=cname)
             cell.font = header_font; cell.fill = header_fill
             cell.alignment = header_align; cell.border = border
-        for ri, (_, row) in enumerate(hist_sheet_df_clean.iterrows(), 2):
+        for ri, row in enumerate(hist_sheet_df_clean.itertuples(index=False, name=None), 2):  # [批次⑥ P2]
             for ci, val in enumerate(row, 1):
                 cell = ws9.cell(row=ri, column=ci, value=val)
                 cell.border = border
-                cell.alignment = Alignment(horizontal="center", vertical="center")
+                cell.alignment = center_align
                 if isinstance(val, float) and ci > 1:
                     cell.number_format = '0.00'
         ws9.freeze_panes = "B2"

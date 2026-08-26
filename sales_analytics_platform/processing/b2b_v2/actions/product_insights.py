@@ -295,15 +295,33 @@ def build_historical_glory(
         rev_col = "rev_sum" if "rev_sum" in grp.columns else "金额"
         profit_col = "profit_clip_sum" if "profit_clip_sum" in grp.columns else "_利润_裁剪"
 
-        for i in range(len(months) - 11):
-            window = months[i:i+12]
-            w = grp[grp["_月"].isin(window)]
-            rev = w[rev_col].sum()
-            profit = w[profit_col].sum()
-            if rev > best_rev:
-                best_rev = rev
-                best_profit = profit
-                best_period = f"{window[0]}~{window[-1]}"
+        # [批次⑥ P4] customer_monthly 每客户每月一行（groupby 聚合产物），
+        # months[i:i+12] 窗口与 grp.iloc[i:i+12] 完全等价（同序同值）；
+        # 窗口求和用 ndarray 切片 .sum() —— 与原 w[rev_col].sum() 同为
+        # np.add.reduce 同一实现同一顺序，逐位一致；
+        # 替代原"每窗口 grp[grp["_月"].isin(window)] 全组掩码扫描"（57K 次）。
+        rev_arr = grp[rev_col].to_numpy(dtype="float64", na_value=np.nan)
+        profit_arr = grp[profit_col].to_numpy(dtype="float64", na_value=np.nan)
+        if np.isnan(rev_arr).any() or np.isnan(profit_arr).any():
+            # 兜底：含 NaN 时回到原 isin 路径（Series.sum 默认 skipna，与 ndarray.sum 语义不同）
+            for i in range(len(months) - 11):
+                window = months[i:i+12]
+                w = grp[grp["_月"].isin(window)]
+                rev = w[rev_col].sum()
+                profit = w[profit_col].sum()
+                if rev > best_rev:
+                    best_rev = rev
+                    best_profit = profit
+                    best_period = f"{window[0]}~{window[-1]}"
+        else:
+            for i in range(len(months) - 11):
+                window = months[i:i+12]
+                rev = rev_arr[i:i+12].sum()
+                profit = profit_arr[i:i+12].sum()
+                if rev > best_rev:
+                    best_rev = rev
+                    best_profit = profit
+                    best_period = f"{window[0]}~{window[-1]}"
 
         if best_rev > 0:
             margin = best_profit / best_rev * 100 if best_rev > 0 else 0
@@ -320,9 +338,13 @@ def build_historical_glory(
         prod_col = "产品品种"
         rev_col = "rev_sum" if "rev_sum" in cxp.columns else "金额"
         profit_col = "profit_clip_sum" if "profit_clip_sum" in cxp.columns else "_利润_裁剪"
+        # [批次⑥ P4] 按客户一次性预分组，替代"每客户 cxp[cxp[cust_col]==cid] 全表布尔扫描"
+        # （glories 客户×151K行 object 比较，是本函数最大耗时；组内行序一致 →
+        # groupby(prod_col) 聚合与 idxmax 结果逐位一致）
+        _cxp_by_cust = {k: g for k, g in cxp.groupby(cust_col, sort=False)}
         for cid in glories:
-            cgrp = cxp[cxp[cust_col] == cid]
-            if len(cgrp) > 0:
+            cgrp = _cxp_by_cust.get(cid)
+            if cgrp is not None and len(cgrp) > 0:
                 prod_rev = cgrp.groupby(prod_col)[rev_col].sum()
                 if len(prod_rev) > 0:
                     top_prod = prod_rev.idxmax()

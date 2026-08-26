@@ -4,7 +4,10 @@
 # pandas 2.3.1 / numpy 2.4.0 / openpyxl 3.1.5 / statsmodels 0.14.6 / chinese_calendar 1.11.0
 # rapidfuzz 3.14.5 / matplotlib 3.10.3 / scikit-learn 1.8.0 / python-calamine 0.6.2 / xlsxwriter 3.2.9）
 
-pandas>=2.2,<3.0        # 后段Excel读取使用calamine引擎（pandas 2.1+才支持，留余量）
+pandas>=2.2,<2.3.2      # 后段Excel读取使用calamine引擎（pandas 2.1+才支持，留余量）
+                        # [批次⑤ 缺陷B修复] 上限收紧到 <2.3.2：pandas 2.3.2+ 起 category dtype 的
+                        # map/索引结果参与算术运算会抛 TypeError（portrait.py 产品线占比除法、
+                        # pricing_actions.py 提价空间减法两处已加防御，但仍以生产验证过的 2.3.1 为准）
 numpy>=1.26,<3.0
 openpyxl>=3.1,<4.0
 statsmodels>=0.14,<0.16

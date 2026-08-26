@@ -82,7 +82,9 @@ def load_customer_master(path: str = None) -> pd.DataFrame:
         DataFrame: 标准化列名的客户主数据（含匹配键）
     """
     if path is None:
-        data_dir = os.path.join(PROJECT_ROOT, "data")
+        # [批次⑤ 缺陷A修复] data 目录统一用 config.settings.DATA_DIR（包根 data/）
+        from config.settings import DATA_DIR
+        data_dir = DATA_DIR
         target = "所有的终端客户.xlsx"
         path = os.path.join(data_dir, target)
         if not os.path.exists(path):

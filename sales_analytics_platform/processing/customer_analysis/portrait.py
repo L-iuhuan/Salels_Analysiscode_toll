@@ -439,7 +439,14 @@ def _vec_product_line_distribution(cid_idx, cust_prod, cat_col, cat_detail_col=N
     line_cnt = rev_s.groupby("客户编号", observed=True).size().reindex(cid_idx).fillna(0)
 
     # 每行占比：分母为每客户线收入合计（对 [客户编号, cat_col] 排序后逐组 Series.sum，与逐客户版逐位一致）
-    tot_map = rev_s.index.get_level_values(0).map(rev_s.groupby("客户编号", observed=True).sum())
+    # [批次⑤ 缺陷B修复] CategoricalIndex.map() 在 pandas≥2.3.2 下保留 category dtype，
+    # 直接相除会抛 "Object with dtype category cannot perform the numpy op divide"。
+    # 这里只需要逐位置的分母数值，显式转 float64 ndarray（值与原 map 结果完全一致，
+    # 分母仍按 rev_s 行序对齐，计算结果零变化）。
+    tot_map = np.asarray(
+        rev_s.index.get_level_values(0).map(rev_s.groupby("客户编号", observed=True).sum()),
+        dtype="float64",
+    )
     shares = rev_s / tot_map
 
     # 主导产品线：groupby 内 idxmax 返回 MultiIndex 标签 (客户编号, cat_col)，

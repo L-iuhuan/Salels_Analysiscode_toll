@@ -76,6 +76,35 @@ def generate_cross_sell(
     results = []
     all_products = set(prod_score.keys())
 
+    # [批次⑥ P4] 每客户 ~750 个候选的打分/排序/理由构建是主要耗时（3032×750 dict 构建+排序）。
+    # 等价改写：
+    #  1) 候选循环只算 (dead_stock, score, prod) 轻量元组，理由文案只为最终 top-N 重构
+    #     （理由仅依赖 (cid, prod)，重构结果与原逐候选构建完全一致）；
+    #  2) heapq.nlargest 替代全量 sort —— CPython 文档保证
+    #     nlargest(n, it, key=k) == sorted(it, key=k, reverse=True)[:n]（含并列稳定性），
+    #     候选列表按 sorted(all_products - purchased) 顺序构造，并列顺序与原实现一致。
+    import heapq as _heapq
+
+    _portrait_reason_map = {
+        "成长期": "高增长潜力品种", "现金牛": "稳定贡献品种",
+        "新品观察": "新品拓展机会", "预警增长": "可关注品种",
+    }
+
+    def _build_reasons(prod, portrait, my_cats, purchased_sorted):
+        reasons = []
+        prod_cat = prod_category.get(prod, "")
+        if prod_cat and prod_cat in my_cats:
+            reasons.append(f"同品类[{prod_cat}]扩展")
+        for owned in purchased_sorted:
+            key = (owned, prod)
+            if key in assoc_map:
+                reasons.append(
+                    f"与已采购 [{owned}] 关联(置信度{assoc_map[key].get('conf', 0):.0%})"
+                )
+        if not reasons:
+            reasons.append(_portrait_reason_map.get(portrait, "基于产品画像推荐"))
+        return "; ".join(reasons)
+
     for cid, purchased in cust_products.items():
         # Products the customer hasn't purchased yet
         # 批次②.5车道B：原 set 迭代顺序随 PYTHONHASHSEED 跨进程随机（同分产品推荐漂移），
@@ -87,59 +116,43 @@ def generate_cross_sell(
 
         # Categories this customer already buys from
         my_cats = cust_categories.get(cid, set())
+        purchased_sorted = sorted(purchased)  # [批次⑥ P4] 预排一次（原为每候选 sorted(purchased)）
 
-        # Score and rank candidates
-        scored = []
+        # Score candidates（轻量元组，理由延后到 top-N 重构）
+        scored_keys = []
         for prod in candidates:
-            score = prod_score.get(prod, {}).get("score", 0)
-            portrait = prod_score.get(prod, {}).get("portrait", "")
-            reasons = []
+            s0 = prod_score.get(prod, {})
+            score = s0.get("score", 0)
 
-            # Bonus for category matching: products in categories the customer already buys
+            # Bonus for category matching
             prod_cat = prod_category.get(prod, "")
-            cat_bonus = 0
             if prod_cat and prod_cat in my_cats:
-                cat_bonus = cat_bonus_cfg
-                reasons.append(f"同品类[{prod_cat}]扩展")
+                score += cat_bonus_cfg
 
-            # Bonus for association with already-purchased products（purchased 亦排序，保证理由顺序确定）
-            assoc_bonus = 0
-            for owned in sorted(purchased):
+            # Bonus for association with already-purchased products
+            for owned in purchased_sorted:
                 key = (owned, prod)
                 if key in assoc_map:
-                    assoc_bonus += assoc_map[key].get("bonus", 0)
-                    reasons.append(
-                        f"与已采购 [{owned}] 关联(置信度{assoc_map[key].get('conf', 0):.0%})"
-                    )
+                    score += assoc_map[key].get("bonus", 0)
 
-            # Fallback reason based on product portrait
-            if not reasons:
-                portrait_reason = {
-                    "成长期": "高增长潜力品种", "现金牛": "稳定贡献品种",
-                    "新品观察": "新品拓展机会", "预警增长": "可关注品种",
-                }.get(portrait, "基于产品画像推荐")
-                reasons.append(portrait_reason)
+            scored_keys.append((s0.get("dead_stock", False), score, prod))
 
-            scored.append({
-                "产品品种": prod,
-                "score": score + cat_bonus + assoc_bonus,
-                "reason": "; ".join(reasons),
-                "portrait": portrait,
-                "dead_stock": prod_score.get(prod, {}).get("dead_stock", False),
-            })
-
-        # Sort by score descending, prioritize dead stock products too
-        scored.sort(key=lambda x: (x["dead_stock"], x["score"]), reverse=True)
-        top = scored[:max_recs]
+        # (dead_stock, score) 降序取前 N，并列保持 candidates 原顺序（与原文档等价）
+        top = _heapq.nlargest(max_recs, scored_keys, key=lambda t: (t[0], t[1]))
 
         if top:
             results.append({
                 cust_col: cid,
                 "推荐品种数": len(top),
                 "推荐品种": "; ".join(
-                    f"{r['产品品种']}({r['portrait']})" for r in top
+                    f"{prod}({prod_score.get(prod, {}).get('portrait', '')})"
+                    for _, _, prod in top
                 ),
-                "推荐理由": "; ".join(r["reason"] for r in top),
+                "推荐理由": "; ".join(
+                    _build_reasons(prod, prod_score.get(prod, {}).get("portrait", ""),
+                                   my_cats, purchased_sorted)
+                    for _, _, prod in top
+                ),
             })
 
     df = pd.DataFrame(results)
@@ -172,30 +185,42 @@ def _build_product_recommendation_scores(
     })
 
     scores = {}
+    # [批次⑥ P4] 产品画像/库龄的首匹配映射预构建（原实现每产品各做一次全表
+    # astype(str)+等值扫描，800×N 行；映射取每个键的首行，与原 iloc[0] 语义一致）
+    _portrait_map = {}
+    if product_portrait is not None and len(product_portrait) > 0:
+        pp = product_portrait
+        prod_name_col = "产品名称" if "产品名称" in pp.columns else "产品品种"
+        if "当前画像" in pp.columns:
+            _pp_keys = pp[prod_name_col].astype(str)
+            _pp_first = pd.DataFrame({"_k": _pp_keys, "_v": pp["当前画像"]}).drop_duplicates("_k")
+            _portrait_map = dict(zip(_pp_first["_k"], _pp_first["_v"]))
+    _aging_map = {}
+    if inv_aging is not None and len(inv_aging) > 0:
+        _ag_keys = inv_aging["产品品种"].astype(str)
+        _ag_first = pd.DataFrame({
+            "_k": _ag_keys,
+            "_pct": inv_aging["库龄_超1年占比"],
+            "_qty": inv_aging["库龄_1年以上"],
+        }).drop_duplicates("_k")
+        _aging_map = {r["_k"]: (r["_pct"], r["_qty"]) for r in _ag_first.to_dict("records")}
+
     for prod in pop_score.index:
         score = float(pop_score.get(prod, 0) * 10)
 
-        portrait = ""
-        if product_portrait is not None and len(product_portrait) > 0:
-            pp = product_portrait
-            prod_name_col = "产品名称" if "产品名称" in pp.columns else "产品品种"
-            match = pp[pp[prod_name_col].astype(str) == str(prod)]
-            if len(match) > 0:
-                if "当前画像" in match.columns:
-                    portrait = str(match["当前画像"].iloc[0])
-                    score += portrait_bonus.get(portrait, 0)
+        portrait = str(_portrait_map.get(str(prod), ""))  # [批次⑥ P4] 首匹配映射
+        if portrait:
+            score += portrait_bonus.get(portrait, 0)
 
         dead_stock = False
-        if inv_aging is not None and len(inv_aging) > 0:
-            age_match = inv_aging[inv_aging["产品品种"].astype(str) == str(prod)]
-            if len(age_match) > 0:
-                dead_pct = age_match["库龄_超1年占比"].iloc[0]
-                dead_qty = age_match["库龄_1年以上"].iloc[0]
-                dead_stock_threshold = ACTION_SUGGESTIONS.get("cross_sell_dead_stock_threshold", 0.15)
-                dead_stock_bonus = ACTION_SUGGESTIONS.get("cross_sell_dead_stock_bonus", 3)
-                if dead_pct > dead_stock_threshold and dead_qty > 0:
-                    dead_stock = True
-                    score += dead_stock_bonus  # Boost products with dead stock to help clear inventory
+        _am = _aging_map.get(str(prod))  # [批次⑥ P4] 首匹配映射
+        if _am is not None:
+            dead_pct, dead_qty = _am
+            dead_stock_threshold = ACTION_SUGGESTIONS.get("cross_sell_dead_stock_threshold", 0.15)
+            dead_stock_bonus = ACTION_SUGGESTIONS.get("cross_sell_dead_stock_bonus", 3)
+            if dead_pct > dead_stock_threshold and dead_qty > 0:
+                dead_stock = True
+                score += dead_stock_bonus  # Boost products with dead stock to help clear inventory
 
         scores[prod] = {"score": score, "portrait": portrait, "dead_stock": dead_stock}
 

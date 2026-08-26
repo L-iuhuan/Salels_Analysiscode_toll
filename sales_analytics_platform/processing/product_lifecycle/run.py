@@ -564,6 +564,11 @@ def run(source_path=None, skip_silver=False):
         # 开关默认关闭，口径与生产链式路径一致（不剔除负销量、不钳制毛利率）。
         result = run_analysis(source_path)
     
+    if result and not result.get("output_file") and result.get("product_count"):
+        # [批次⑦] Excel 报告按配置跳过时，以画像产物（gold_product_portrait.csv）为成功判据
+        print(f"\n[OK] 产品生命周期分析完成（Excel 报告已按配置跳过）")
+        print(f"  产品数: {result['product_count']}")
+        return "excel_skipped_by_config"
     if result and result.get("output_file"):
         print(f"\n[OK] 产品生命周期分析完成")
         print(f"  输出: {result['output_file']}")
