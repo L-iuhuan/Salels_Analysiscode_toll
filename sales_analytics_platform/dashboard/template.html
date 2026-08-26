@@ -34,19 +34,25 @@
 body{font-family:-apple-system,'Microsoft YaHei','Segoe UI',sans-serif;background:var(--bg);color:var(--text-primary);margin:0;padding:0;font-weight:var(--weight-body)}
 
 /* === UI Unification Components (v3) === */
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;border:none;font-family:inherit;font-weight:500;transition:var(--transition);border-radius:var(--radius-md);padding:6px 14px;font-size:var(--font-md);white-space:nowrap}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:var(--gap-sm);cursor:pointer;border:none;font-family:inherit;font-weight:var(--weight-heading);transition:var(--transition);border-radius:var(--radius-md);padding:6px 14px;font-size:var(--font-md);white-space:nowrap;line-height:1.5;height:32px;box-sizing:border-box}
+.btn:focus-visible{outline:none;box-shadow:0 0 0 2px var(--surface),0 0 0 4px var(--primary-300)}
 .btn-primary{background:var(--primary);color:#fff}
 .btn-primary:hover{background:var(--primary-700)}
+.btn-primary:active{background:var(--primary-800)}
 .btn-secondary{background:var(--surface);color:var(--text-secondary);border:1px solid var(--border)}
-.btn-secondary:hover{background:var(--surface-subtle);color:var(--text-primary)}
+.btn-secondary:hover{background:var(--surface-subtle);color:var(--text-primary);border-color:var(--primary-300)}
+.btn-secondary:active{background:var(--primary-50)}
 .btn-ghost{background:transparent;color:var(--text-secondary);padding:6px 10px}
 .btn-ghost:hover{color:var(--primary);background:var(--primary-50)}
-.btn-toggle{border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);color:var(--text-secondary);padding:5px 14px;font-size:var(--font-sm);font-weight:500;cursor:pointer;transition:var(--transition)}
+.btn-ghost:active{background:var(--primary-100)}
+.btn-toggle{height:28px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);color:var(--text-secondary);padding:4px 12px;font-size:var(--font-sm);font-weight:var(--weight-heading);cursor:pointer;transition:var(--transition)}
 .btn-toggle:hover{border-color:var(--primary-400);color:var(--primary)}
-.btn-toggle-group{display:flex;gap:var(--gap-sm);margin-top:var(--space-inner);margin-bottom:var(--space-inner)}
 .btn-toggle.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+.btn-toggle.active:hover{background:var(--primary-700);border-color:var(--primary-700);color:#fff}
+.btn-toggle-group{display:flex;gap:var(--gap-sm);margin-top:var(--space-inner);margin-bottom:var(--space-inner)}
 .btn:disabled{opacity:.45;cursor:not-allowed}
-.btn-sm{padding:4px 10px;font-size:var(--font-sm)}
+.btn-sm{height:24px;padding:2px 8px;font-size:var(--font-xs)}
+.btn-lg{height:36px;padding:8px 18px;font-size:var(--font-md)}
 /* === Table system v2: one canonical .data-table, old names aliased === */
 .data-table,.esr-tbl{width:100%;border-collapse:separate;border-spacing:0;font-size:var(--font-md);table-layout:auto}
 .data-table th,.esr-tbl th{padding:8px 10px;font-weight:var(--weight-heading);font-size:var(--font-xs);color:var(--text-secondary);background:var(--surface);border-bottom:2px solid var(--border);text-align:left;white-space:nowrap;position:sticky;top:0;z-index:1}
@@ -62,12 +68,25 @@ body{font-family:-apple-system,'Microsoft YaHei','Segoe UI',sans-serif;backgroun
 .brow,.d-row{padding:7px 10px}
 .crow:nth-child(even):not(.hd),.brow:nth-child(even):not(.hd),.d-row:nth-child(even):not(.hd){background:var(--surface-subtle)}
 .crow:hover,.brow:hover,.d-row:hover{background:var(--primary-50)}
+/* Grid row cells: consistent numeric font for better alignment */
+.crow > *,.brow > *,.d-row > *{font-variant-numeric:tabular-nums}
 .crow.hd,.brow.hd,.d-row.hd{font-weight:var(--weight-heading);color:var(--text-secondary);font-size:var(--font-xs);cursor:default;position:sticky;top:0;background:var(--surface);z-index:1}
 .crow.hd:hover,.brow.hd:hover,.d-row.hd:hover{background:var(--surface)}
 /* Unified form elements */
-.form-select{font-size:var(--font-md);padding:6px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);color:var(--text-primary);height:32px;cursor:pointer;transition:all 0.15s ease;font-family:inherit}.form-select:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 2px var(--primary-100)}
-.form-input{font-size:var(--font-md);padding:6px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);color:var(--text-primary);height:32px;font-family:inherit;transition:all 0.15s ease}.form-input:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 2px var(--primary-100)}
+.form-select,.form-input{font-size:var(--font-md);padding:6px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);color:var(--text-primary);height:32px;font-family:inherit;transition:all 0.15s ease;box-sizing:border-box}
+.form-select{cursor:pointer;appearance:auto;padding-right:28px}
+.form-select:focus,.form-input:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 2px var(--primary-100)}
 .form-input::placeholder{color:var(--text-tertiary)}
+/* Search inputs: unify B/D/E face search with C face */
+#bSrch,#dSrch,#eSalesSearch{min-width:120px;width:auto !important;flex:1}
+#eSalesSearch{min-width:100px}
+#tabB .fr{display:flex;gap:var(--gap-sm);align-items:center}
+#tabB .fr select,#tabB .fr input{height:32px;font-size:var(--font-sm)}
+#tabB .fr select{appearance:auto;padding-right:24px}
+#tabB .fr select:focus,#tabB .fr input:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 2px var(--primary-100)}
+#tabD .form-input{height:32px;font-size:var(--font-xs)}
+#tabD .form-input select{appearance:auto;padding-right:24px}
+#tabD .form-input:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 2px var(--primary-100)}
 /* Unified heading styles */
 .section-title{font-size:var(--font-lg);font-weight:var(--weight-heading);margin:0 0 var(--gap-sm);color:var(--text-primary)}
 .subsection-title{font-size:var(--font-md);font-weight:var(--weight-heading);margin:0 0 var(--gap-sm);color:var(--text-primary)}
@@ -666,16 +685,19 @@ TABS.ChartRegistry = {
 // Gradual migration: wraps dispose-old → init-new → register pattern.
 // Existing initCh() and buildD*/eBuild* functions can adopt this incrementally.
 TABS.charts = {
- init: function(domId, theme, opts){
- var d = document.getElementById(domId);
- if(!d) return null;
- var old = echarts.getInstanceByDom(d);
- if(old){ try{ old.dispose() }catch(e){} }
- if(d.id) delete TABS.ChartRegistry._byId[d.id];
- var c = echarts.init(d, theme || null, opts || {devicePixelRatio: window.devicePixelRatio || 2});
- TABS.ChartRegistry.register(domId, c);
- return c;
- },
+  init: function(domId, theme, opts){
+  var d = document.getElementById(domId);
+  if(!d) return null;
+  var old = echarts.getInstanceByDom(d);
+  if(old){ try{ old.dispose() }catch(e){} }
+  if(d.id) delete TABS.ChartRegistry._byId[d.id];
+  // Ensure the unified dashboard theme is registered before creating any chart
+  if(TABS.chart && TABS.chart.registerTheme) TABS.chart.registerTheme();
+  var c = echarts.init(d, theme || (TABS.chart && TABS.chart.THEME_NAME) || null, opts || {devicePixelRatio: window.devicePixelRatio || 2});
+  TABS.ChartRegistry.register(domId, c);
+  return c;
+  },
+
  get: function(id){ return TABS.ChartRegistry.get(id); },
  dispose: function(id){ TABS.ChartRegistry.dispose(id); },
  resize: function(id){
@@ -944,30 +966,45 @@ TABS.aggregate = {
 // --- ECharts Theme + Chart Templates (Phase 2.7) ---
 // Register a unified theme so all 27 charts share consistent styling.
 TABS.chart = {
- THEME_NAME: 'tabs-dashboard',
- COLORS: ['#2563EB','#0EA5E9','#10B981','#F59E0B','#EF4444','#8B5CF6','#EC4899','#6B7280'],
- // Semantic colors for cost/profit/margin charts
- SEMANTIC: {cost:'#BFDBFE',profit:'#2563EB',margin:'#F59E0B',up:'#EF4444',down:'#10B981',reference:'#6B7280'},
- // Monochromatic palettes for ordered series
- PRIMARY_SERIES: ['#2563EB','#3B82F6','#60A5FA','#93C5FD','#BFDBFE'],
- SECONDARY_SERIES: ['#0EA5E9','#38BDF8','#7DD3FC','#BAE6FD'],
- _themeRegistered: false,
- registerTheme: function(){
- if(this._themeRegistered || typeof echarts === 'undefined') return;
- var theme = {
- color: this.COLORS,
- backgroundColor: 'transparent',
- textStyle: { fontFamily: 'system-ui, -apple-system, "Microsoft YaHei", sans-serif', fontSize: 12 },
- title: { textStyle: { fontSize: 14, fontWeight: 600 }, subtextStyle: { fontSize: 11 } },
- legend: { textStyle: { fontSize: 12 }, icon: 'roundRect', itemWidth: 12, itemHeight: 8 },
- tooltip: { backgroundColor: 'rgba(30,41,59,0.95)', borderColor: 'rgba(148,163,184,0.2)', textStyle: { color: '#fff', fontSize: 12 }, extraCssText: 'border-radius:6px;box-shadow:0 2px 8px rgba(0,0,0,0.15);' },
- categoryAxis: { axisLine: { lineStyle: { color: '#CBD5E1' } }, axisTick: { show: false }, axisLabel: { color: '#64748B', fontSize: 11 }, splitLine: { show: false } },
- valueAxis: { axisLine: { show: false }, axisTick: { show: false }, axisLabel: { color: '#64748B', fontSize: 11 }, splitLine: { lineStyle: { color: '#E2E8F0', type: 'dashed' } } },
- grid: { left: '3%', right: '4%', bottom: '3%', top: '12%', containLabel: true }
- };
- echarts.registerTheme(this.THEME_NAME, theme);
- this._themeRegistered = true;
- },
+  THEME_NAME: 'tabs-dashboard',
+  COLORS: ['#2563EB','#0EA5E9','#10B981','#F59E0B','#EF4444','#8B5CF6','#EC4899','#6B7280'],
+  // Semantic colors for cost/profit/margin charts
+  SEMANTIC: {cost:'#BFDBFE',profit:'#2563EB',margin:'#F59E0B',up:'#EF4444',down:'#10B981',reference:'#6B7280'},
+  // Monochromatic palettes for ordered series
+  PRIMARY_SERIES: ['#2563EB','#3B82F6','#60A5FA','#93C5FD','#BFDBFE'],
+  SECONDARY_SERIES: ['#0EA5E9','#38BDF8','#7DD3FC','#BAE6FD'],
+  _themeRegistered: false,
+  // Read a CSS custom property from :root at runtime (so ECharts theme stays in sync with CSS tokens)
+  _css: function(name, fallback){
+   var v = (typeof getComputedStyle !== 'undefined' && getComputedStyle(document.documentElement).getPropertyValue(name)) || '';
+   return (v || fallback || '').trim();
+  },
+  // Shared default options merged into every chart (tooltip/legend/grid/axis)
+  DEFAULTS: {
+   tooltip: { trigger: 'axis', backgroundColor: 'rgba(15,23,42,0.95)', borderColor: 'rgba(148,163,184,0.2)', borderWidth: 1, padding: [8,12], textStyle: { color: '#fff', fontSize: 12 }, extraCssText: 'border-radius:8px;box-shadow:0 4px 12px rgba(15,23,42,0.15);' },
+   legend: { type: 'scroll', top: 2, textStyle: { fontSize: 11 }, icon: 'roundRect', itemWidth: 12, itemHeight: 8, itemGap: 12 },
+   grid: { left: '2%', right: '3%', bottom: '4%', top: '14%', containLabel: true },
+   xAxis: { axisLine: { lineStyle: { color: '#CBD5E1' } }, axisTick: { show: false }, axisLabel: { color: '#64748B', fontSize: 11 }, splitLine: { show: false } },
+   yAxis: { axisLine: { show: false }, axisTick: { show: false }, axisLabel: { color: '#64748B', fontSize: 11 }, splitLine: { lineStyle: { color: '#E2E8F0', type: 'dashed' } } }
+  },
+  registerTheme: function(){
+  if(this._themeRegistered || typeof echarts === 'undefined') return;
+  var c = this._css.bind(this);
+  var theme = {
+  color: this.COLORS,
+  backgroundColor: 'transparent',
+  textStyle: { fontFamily: 'system-ui, -apple-system, "Microsoft YaHei", "Segoe UI", sans-serif', fontSize: 12 },
+  title: { textStyle: { fontSize: 14, fontWeight: 600, color: c('--text-primary','#0F172A') }, subtextStyle: { fontSize: 11, color: c('--text-tertiary','#64748B') } },
+  legend: { textStyle: { fontSize: 11, color: c('--text-secondary','#475569') }, icon: 'roundRect', itemWidth: 12, itemHeight: 8, itemGap: 12 },
+  tooltip: { backgroundColor: 'rgba(15,23,42,0.95)', borderColor: 'rgba(148,163,184,0.2)', borderWidth: 1, padding: [8,12], textStyle: { color: '#fff', fontSize: 12 }, extraCssText: 'border-radius:8px;box-shadow:0 4px 12px rgba(15,23,42,0.15);' },
+  categoryAxis: { axisLine: { lineStyle: { color: c('--border','#E2E8F0') } }, axisTick: { show: false }, axisLabel: { color: c('--text-tertiary','#64748B'), fontSize: 11 }, splitLine: { show: false } },
+  valueAxis: { axisLine: { show: false }, axisTick: { show: false }, axisLabel: { color: c('--text-tertiary','#64748B'), fontSize: 11 }, splitLine: { lineStyle: { color: c('--border-light','#F1F5F9'), type: 'dashed' } } },
+  grid: { left: '2%', right: '3%', bottom: '4%', top: '14%', containLabel: true }
+  };
+  echarts.registerTheme(this.THEME_NAME, theme);
+  this._themeRegistered = true;
+  },
+
  // Create or reuse a chart instance on a DOM element
  create: function(domId){
  var d = typeof domId === 'string' ? document.getElementById(domId) : domId;
