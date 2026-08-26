@@ -152,12 +152,22 @@ class TestWarningIndices:
 class TestReportPath:
     """Excel 报告路径测试。"""
 
-    def test_returns_string_path(self, sample_gold, temp_output):
-        """save 返回字符串路径。"""
+    def test_returns_string_path(self, sample_gold, temp_output, monkeypatch):
+        """save 返回字符串路径（monkeypatch 打开开关，走完整 Excel 路径）。"""
+        from config.settings import EXCEL_REPORT
+        monkeypatch.setitem(EXCEL_REPORT, "customer_enabled", True)  # 批次⑦默认关闭,测试显式打开覆盖导出路径
         exporter = GoldExporter()
         path = exporter.save(sample_gold, output_dir=temp_output)
         assert isinstance(path, str)
         assert path.endswith(".xlsx")
+
+    def test_returns_none_when_disabled(self, sample_gold, temp_output, monkeypatch):
+        """批次⑦默认关闭时 save 返回 None（不写 Excel 只写 CSV）。"""
+        from config.settings import EXCEL_REPORT
+        monkeypatch.setitem(EXCEL_REPORT, "customer_enabled", False)
+        exporter = GoldExporter()
+        path = exporter.save(sample_gold, output_dir=temp_output)
+        assert path is None
 
 
 # ============================================================

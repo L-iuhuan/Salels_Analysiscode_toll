@@ -60,6 +60,9 @@ def estimate_true_profit(customer_row: dict, config: dict = None) -> dict:
 
 def batch_estimate_true_profit(customers_df: pd.DataFrame, config: dict = None) -> pd.DataFrame:
     """批量估算真实利润。"""
+    if customers_df is None or len(customers_df) == 0:
+        print("  [利润] 输入为空，返回空表")
+        return pd.DataFrame(columns=["客户编号", "估算真实利润", "估算真实利润率", "利润等级", "订单处理成本"])
     results = []
     for _, row in customers_df.iterrows():
         r = estimate_true_profit(row.to_dict(), config)

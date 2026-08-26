@@ -472,7 +472,7 @@ def load_product_report():
         key=os.path.getmtime, reverse=True,
     )
     if not cands:
-        print("  [C面] 未找到产品生命周期报告，回退gold快照（历史/桑基/月份缺失）")
+        print("  [C面][警告] 未找到产品生命周期报告，回退gold快照（历史/桑基/月份缺失）；若为配置关闭请检查 EXCEL_REPORT.product_enabled")
         return None, None, None, 0
     path = cands[0]
     print(f"  [C面] 产品报告: {os.path.basename(path)}")

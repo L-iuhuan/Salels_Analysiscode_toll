@@ -330,8 +330,9 @@ class TestTrueProfitEstimator(unittest.TestCase):
         """确认输出列齐全"""
         row = {"近12月毛利": 500000, "近12月收入": 1000000, "近12月数量": 5000}
         out = estimate_true_profit(row, DEFAULT_COST_CONFIG)
+        # v4.5 已删除 物流成本/售后成本/资金占用成本 三个估算字段（发版评审 2026-08-26 同步）
         expected = {"近12月毛利", "估算真实利润", "估算真实利润率", "利润等级",
-                    "订单处理成本", "物流成本", "售后成本", "资金占用成本"}
+                    "订单处理成本"}
         self.assertTrue(expected.issubset(set(out.keys())))
 
 
