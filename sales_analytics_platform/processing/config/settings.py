@@ -205,8 +205,8 @@ REPORT_RETENTION_COUNT = 10
 # 端到端 40%（客户 ~103s + 产品 ~10s，2026-08-25 真实数据）。
 # 默认关闭；需要 Excel 报告时将对应键改为 True 即可恢复，无需改代码。
 EXCEL_REPORT = {
-    "customer_enabled": False,   # 客户分析报告_v1.1_*.xlsx（reports/gold_exporter.py）
-    "product_enabled": False,    # 产品生命周期报告_v4.0_*.xlsx（product_lifecycle/report.py）
+    "customer_enabled": False,   # 客户分析报告_v1.1_*.xlsx（reports/gold_exporter.py）——关闭：56.6MB/次累积且看板不消费（⑤a 评估发现）
+    "product_enabled": True,     # 产品生命周期报告_v4.0_*.xlsx（product_lifecycle/report.py）——保留：看板 C面 load_product_report 消费其 history/sankey/月份，关闭会退化为无历史数据（批次⑦文档"不被看板消费"的论断对 C面不成立）
 }
 
 # ── 导入产品和客户配置（分拆自 settings.py P1-A）──
