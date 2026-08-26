@@ -17,7 +17,7 @@ faces:
     sections:
       - title: YTD 指标卡
         definition: 本年度 1 月至最新数据月的累计经营结果
-        koujing: 收入按不含税金额计；毛利率 = 毛利 ÷ 收入；ASP = 收入 ÷ 发货数量
+        koujing: 收入按不含税金额计；毛利率 = 毛利 ÷ 收入；ASP = 收入 ÷ 发货数量；新品渗透率 = ERP"是否新品"标记的收入 ÷ 总收入
         usage: 先看总收入和毛利率同比，再判断 KA+AA 收入占比
         update_note: 每月刷新
       - title: 常用维度摘要

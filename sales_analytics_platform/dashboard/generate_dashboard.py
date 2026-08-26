@@ -1166,11 +1166,12 @@ for cid, grp in raw_new.groupby("cid"):
     prods=prods[prods["total_qty"]>=6000].sort_values("total_rev",ascending=False)
     new_detail[cid]=[{"name":str(pr["产品品种"]),"first":str(pr["first_date"])[:10],"rev":round(float(pr["total_rev"])/1e4,1)} for _,pr in prods.iterrows()]
 # A面整体新品渗透率（全量客户YTD，与ytd_r同源rex）
-prod_first_rex = rex.groupby("_prod")["_d"].min()
-r26_new = r26[r26["_is_new"]].copy()
-r26_new["_first_date"] = r26_new["_prod"].map(prod_first_rex)
-rex_true_new = r26_new[r26_new["_first_date"]>=cutoff_new]
+# 口径拍板（未决#13，2026-08-25）：纯 ERP"是否新品"标记口径；
+# 去掉 M1 平台合并时代遗留的"近12月首发"过滤（实测滤掉 83% 标记新品收入，证据链见施工进度台账）
+rex_true_new = r26[r26["_is_new"]]
 new_pct = round(float(rex_true_new["_rev"].sum())/ytd_r*100,1) if ytd_r>0 else 0
+# A面新品渗透率卡的实际注入值（JS npctVal 用）：与上行同口径的纯标记占比
+new_flag_pct = new_pct
 
 call=[]
 for _,row in all_sorted.iterrows():
@@ -2559,6 +2560,7 @@ replacements = {
     "%%KPCT%%":str(kpct),"%%LATEST%%":latest,"%%YTD_PERIOD%%":f"{_latest_y}-01~{latest[-2:]}","%%D_HEADCOUNT%%":str(len(d_sales_list)),"%%KA_REV%%":f"{ka_kpi['rev']:,.0f}",
     "%%KA_PROFIT%%":f"{ka_kpi['profit']:,.0f}","%%KA_QTY%%":f"{ka_kpi['qty']:,.0f}",
     "%%KA_MARGIN%%":str(ka_kpi['margin']),"%%NEW_PCT%%":str(new_pct),
+    "%%NEW_PCT_PURE%%":str(new_flag_pct),
     "%%KA_REV_MOM%%":f"{ka_kpi['rev_mom']:+.1f}","%%KA_PROFIT_MOM%%":f"{ka_kpi['profit_mom']:+.1f}",
     "%%KA_ADDED%%":str(ka_kpi['added']),"%%KA_REMOVED%%":str(ka_kpi['removed']),
     "%%AA_ADDED%%":str(aa_added),"%%AA_REMOVED%%":str(aa_removed),

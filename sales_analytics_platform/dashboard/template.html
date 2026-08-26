@@ -1664,12 +1664,8 @@ TABS.refreshKPIs = function(){
  Object.keys(KAA_REV).forEach(function(k){ if(k.indexOf('%%LATEST_YEAR%%') === 0) kaaRev += KAA_REV[k] || 0; });
  }
 
- var newProdRev = 0;
- if(typeof B_CUSTS !== 'undefined' && B_CUSTS){
- B_CUSTS.forEach(function(c){ newProdRev += c.new_ytd_rev || 0; });
- }
- var npctVal = ytdRev > 0 ? (newProdRev / ytdRev * 100).toFixed(1) : '0.0';
- setKPI('kpiNew', npctVal, '%');
+  var npctVal = '%%NEW_PCT_PURE%%';
+  setKPI('kpiNew', npctVal, '%');
  setKPISub('kpiNewSub', '全量新品收入占比(YTD)');
 
  setKPI('kpiKaaRev', Math.round(kaaRev).toLocaleString(), '万元');
