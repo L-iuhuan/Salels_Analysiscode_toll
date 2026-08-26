@@ -185,12 +185,14 @@ faces:
       radar: 选中销售员与团队均值的能力九维对比
       bubble: 横轴为 YTD 收入，纵轴为毛利率，气泡大小为客户数
       teamTrend: 团队或指定销售员月度成本、毛利与毛利率趋势
-      heatmap: Top15 品类 × 销售员的 YTD 收入热力分布
+      custHeatmap: Top33客户×Top15销售员交叉的YTD利润热力分布；行按正利润合计取Top15，色阶按单元格利润95分位截断
+      waterfall: 所选销售员五维能力得分与团队均值的逐项落差拆解
+      heatmap: Top15 品类 × Top15 销售员的 YTD 收入热力分布（行按品类收入合计取Top15）
     glossary:
       - term: 能力九维
         definition: 贡献力、维系力、拓展力、定价力、新客力、激活力、升级力、优化力、抗风险力
       - term: A级销售
-        definition: 综合业绩与能力评估位于前列的销售员
+        definition: 绩效数据"能力等级"字段评定为A级的销售员（等级由绩效侧评定，看板不自算阈值）
       - term: 亚组
         definition: 按客户结构与业绩特征将销售员分为均衡型、大客户型、批量型等
 
