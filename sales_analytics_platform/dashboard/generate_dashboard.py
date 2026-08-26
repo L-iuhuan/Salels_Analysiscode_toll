@@ -2585,7 +2585,7 @@ def _build_guide_replacements(face_id, cfg):
 
 # 确保 faces.yaml 已加载
 _face_visible("A")
-_FACE_META_CACHE = {fid: _FACES_CFG.get(fid, {}) for fid in ("A", "B", "C", "D", "E")}
+_FACE_META_CACHE = {fid: _FACES_CFG.get(fid, {}) for fid in ("A", "B", "C", "D", "E", "F")}
 
 # ========== HTML ==========
 _timed("F面H1汇总+C面DATA构建", _t_seg0); _t_seg0 = _time_mod.time()
@@ -2643,6 +2643,7 @@ replacements = {
     "%%FACE_META_C%%": _build_face_meta_html("C", _FACE_META_CACHE.get("C", {})),
     "%%FACE_META_D%%": _build_face_meta_html("D", _FACE_META_CACHE.get("D", {})),
     "%%FACE_META_E%%": _build_face_meta_html("E", _FACE_META_CACHE.get("E", {})),
+    "%%FACE_META_F%%": _build_face_meta_html("F", _FACE_META_CACHE.get("F", {})),
 }
 
 # 图表级导读占位符
