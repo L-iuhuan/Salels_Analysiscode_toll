@@ -38,7 +38,8 @@ import pandas as pd
 _REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DEFAULT_PLATFORM = os.path.join(_REPO_ROOT, "sales_analytics_platform")
 DEFAULT_DATA_DIR = os.path.join(DEFAULT_PLATFORM, "data")
-# 共享盘数据目录（r14：财务月度 Excel 直接投放共享盘，全员 DSE 客户端透明解密）。
+# 共享盘数据目录：内置默认值（r14：财务月度 Excel 直接投放共享盘，全员 DSE 客户端透明解密）。
+# 可被命令行 --share-dir / 环境变量 SALES_DATA_SHARE_DIR 覆盖，显式空串 "" = 禁用共享盘扫描。
 # 单点配置纪律：与壳端 lib.rs DEFAULT_SHARE_PATH、kanban/share_config.json 同源，
 # 共享盘路径变更时三处必须同步修改。
 DIR_DATA_SHARE = r"\\192.168.8.3\财务部\办公软件\SoftwareUpdate\数据分析看板\data"
@@ -69,6 +70,7 @@ def _latest_excel(data_dir, share_dir=DIR_DATA_SHARE):
     """合并扫描本地+共享盘取 mtime 最新的"财务分析-*.xlsx"（r14）。
 
     共享盘目录不可达/不存在时 try/except OSError 静默回退纯本地（保持现状行为）。
+    share_dir 为空串/None 时跳过共享盘扫描（禁用，回退纯本地）。
     """
     def _scan(d):
         if not os.path.isdir(d):
@@ -78,10 +80,11 @@ def _latest_excel(data_dir, share_dir=DIR_DATA_SHARE):
 
     xs = _scan(data_dir)
     shared = []
-    try:
-        shared = _scan(share_dir)
-    except OSError:
-        pass  # 共享盘不可达/不存在：静默回退本地
+    if share_dir:
+        try:
+            shared = _scan(share_dir)
+        except OSError:
+            pass  # 共享盘不可达/不存在：静默回退本地
     xs += shared
     if not xs:
         return None
@@ -267,17 +270,27 @@ def main():
     ap = argparse.ArgumentParser(description="W1 快照仓 · ERP 明文快照 ingest")
     ap.add_argument("--data", default=None, help="源 Excel 路径（默认 data\\ 下最新 财务分析-*.xlsx）")
     ap.add_argument("--platform-dir", default=DEFAULT_PLATFORM, help="平台目录")
+    ap.add_argument("--share-dir", default=None,
+                    help="共享盘数据目录（默认 环境变量 SALES_DATA_SHARE_DIR > 内置 DIR_DATA_SHARE；显式传空串 \"\" = 禁用共享盘扫描）")
     args = ap.parse_args()
 
     platform = os.path.abspath(args.platform_dir)
     data_dir = os.path.join(platform, "data")
     warehouse = os.path.join(platform, "data_warehouse")
 
+    # 共享盘目录解析（r14b，高→低）：--share-dir > 环境变量 > 内置默认；空串=禁用
+    if args.share_dir is not None:
+        share_dir = args.share_dir.strip()          # 显式传空串 "" = 禁用共享盘扫描
+    else:
+        share_dir = os.environ.get("SALES_DATA_SHARE_DIR", "").strip()
+        if not share_dir:
+            share_dir = DIR_DATA_SHARE
+
     # 定位源文件
     if args.data:
         xlsx = os.path.abspath(args.data)
     else:
-        xlsx = _latest_excel(data_dir)
+        xlsx = _latest_excel(data_dir, share_dir)
     if not xlsx or not os.path.isfile(xlsx):
         print(f"[错误] 未找到源 Excel（--data 指定或 data\\ 下最新 财务分析-*.xlsx）")
         sys.exit(1)

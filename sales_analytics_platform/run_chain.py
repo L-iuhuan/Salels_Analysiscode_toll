@@ -44,7 +44,8 @@ except (AttributeError, OSError, ValueError):
 PKG = os.path.dirname(os.path.abspath(__file__))
 
 DIR_DATA = os.path.join(PKG, "data")        # 唯一输入目录：原始Excel + 部门-人员.md
-# 共享盘数据目录（r14：财务月度 Excel 直接投放共享盘，全员 DSE 客户端透明解密）。
+# 共享盘数据目录：内置默认值（r14：财务月度 Excel 直接投放共享盘，全员 DSE 客户端透明解密）。
+# 可被环境变量 SALES_DATA_SHARE_DIR / chain_config.json 的 data_share_dir 覆盖，显式空串 "" = 禁用共享盘扫描。
 # 单点配置纪律：与壳端 lib.rs DEFAULT_SHARE_PATH、kanban/share_config.json 同源，
 # 共享盘路径变更时三处必须同步修改。
 DIR_DATA_SHARE = r"\\192.168.8.3\财务部\办公软件\SoftwareUpdate\数据分析看板\data"
@@ -81,23 +82,36 @@ def load_config():
 
 
 def find_raw_excel(cfg):
-    """定位原始Excel：优先 --data / 配置项，否则合并扫描本地+共享盘取 mtime 最新（r14）。"""
+    """定位原始Excel：优先 --data / 配置项，否则合并扫描本地+共享盘取 mtime 最新（r14）。
+
+    r14b：共享盘数据目录可配置——环境变量 SALES_DATA_SHARE_DIR > chain_config.json 的
+    data_share_dir > 内置默认；显式空串 "" = 禁用共享盘扫描（回退纯本地）。
+    数据共享夹 ≠ 代码共享夹（用户拍板），故共享盘路径必须可灵活配置。
+    """
     cand = (cfg.get("raw_excel") or "").strip()
     if cand:
         p = cand if os.path.isabs(cand) else os.path.join(DIR_DATA, cand)
         if os.path.exists(p):
             return p
         print(f"[警告] 配置的 raw_excel '{cand}' 不存在，改为自动检测 data/ 目录")
+    # 共享盘目录解析（高→低）：环境变量 > chain_config data_share_dir > 内置默认；空串=禁用
+    share_dir = os.environ.get("SALES_DATA_SHARE_DIR", "").strip()
+    if not share_dir:
+        if "data_share_dir" in cfg:
+            share_dir = (cfg.get("data_share_dir") or "").strip()  # 空串=禁用
+        else:
+            share_dir = DIR_DATA_SHARE
     local = ([os.path.join(DIR_DATA, f) for f in os.listdir(DIR_DATA)
               if f.endswith(".xlsx") and not f.startswith("~$")]
              if os.path.isdir(DIR_DATA) else [])
     shared = []
-    try:
-        if os.path.isdir(DIR_DATA_SHARE):
-            shared = [os.path.join(DIR_DATA_SHARE, f) for f in os.listdir(DIR_DATA_SHARE)
-                      if f.endswith(".xlsx") and not f.startswith("~$")]
-    except OSError:
-        pass  # 共享盘不可达/不存在：静默回退纯本地（保持现状行为）
+    if share_dir:
+        try:
+            if os.path.isdir(share_dir):
+                shared = [os.path.join(share_dir, f) for f in os.listdir(share_dir)
+                          if f.endswith(".xlsx") and not f.startswith("~$")]
+        except OSError:
+            pass  # 共享盘不可达/不存在：静默回退纯本地（保持现状行为）
     if not local and not shared:
         return ""
     # 同 mtime 时优先共享盘（本地常为共享盘历史副本、mtime 一致）：r14 以共享盘为月度权威源，
