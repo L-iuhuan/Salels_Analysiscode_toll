@@ -45,7 +45,7 @@
 ## 五、数据源共享盘配置（r14，2026-08-27 拍板）
 
 - **数据共享目录独立于代码更新共享目录**，必须可配置。内置默认值 `\\192.168.8.3\财务部\财务电子档案备份\D1经营分析`（2026-08-27 用户提供；各机可用环境变量/配置覆盖）。
-- **开发机配置优先级**（高→低）：环境变量 `SALES_DATA_SHARE_DIR` > `chain_config.json` 的 `data_share_dir`（显式空串 `""` = 禁用共享盘扫描）> 内置默认。ingest_snapshot 用 `--share-dir`（空串禁用）。注意：`chain_config.json` 已去 git 跟踪（r14b），本机路径配置不会入库。
+- **开发机配置优先级**（高→低）：环境变量 `SALES_DATA_SHARE_DIR` > `chain_config.json` 的 `data_share_dir`（显式空串 `""` = 禁用共享盘扫描）> 内置默认。ingest_snapshot 用 `--share-dir`（空串禁用）。注意：`chain_config.json` 已去 git 跟踪（r14b），本机路径配置不会入库；**但仍会随 publish 同步到客户端（robocopy 不看 gitignore）——发布机不要在该文件写本机路径，机器级覆盖一律用环境变量**；当前发布内容为通用默认（stages 等，客户端在用，不可从 publish 排除）。
 - **客户端（看板壳）**：设置弹层配「数据文件共享目录」（留空 = 代码共享目录下的 data\）；主界面「从共享盘获取最新数据」按钮一键拉取最新 Excel 到本地缓存（`%LOCALAPPDATA%\KanbanRunner\data\`）再跑批，产物全在本地。
 - **安全事实**：DSE 密文 Excel 上共享盘后字节级一致（实测文件头 `00 00 5B 00`）；全员电脑有 DSE 客户端+Office，拉到本地后走现有 COM 透明解密读取，链路已验证。
 
