@@ -41,7 +41,9 @@ def calc_markup_opportunity(
     prod_total_qty = cxp.groupby(prod_col)["qty_sum"].sum()
 
     # 客户-产品级别统计
-    cp = cxp.groupby([cust_col, prod_col]).agg(
+    # [r10-a #14] observed=True：仅按实际发生的客户×产品组合聚合（categorical dtype 下默认 False
+    # 会展开全量叉积，曾产生 263 万幽灵行；本参数使源头不再生成，有效行结果不变）
+    cp = cxp.groupby([cust_col, prod_col], observed=True).agg(
         avg_price=(price_col, "mean"),
         total_rev=("rev_sum", "sum"),
         total_qty=("qty_sum", "sum"),

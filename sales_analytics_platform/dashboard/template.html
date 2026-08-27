@@ -440,9 +440,9 @@ body{font-family:-apple-system,'Microsoft YaHei','Segoe UI',sans-serif;backgroun
 
  <!-- Charts Row 3 -->
  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px">
- <div class="cb" style="margin-bottom:0"><h3><i class="fa-solid fa-building-columns" style="color:#f43f5e"></i> 客户集中度分布</h3><div style="font-size:10px;color:var(--text-tertiary);margin-bottom:4px">前1大客户销售占比统计</div><div id="chart-dominance" class="chart-container"></div></div>
- <div class="cb" style="margin-bottom:0"><h3><i class="fa-solid fa-table-cells-large" style="color:var(--success)"></i> 营收-毛利综合判断</h3><div style="font-size:10px;color:var(--text-tertiary);margin-bottom:4px">近12月营收增长与毛利率变化组合</div><div id="chart-rev-margin" class="chart-container"></div></div>
- <div class="cb" style="margin-bottom:0"><h3><i class="fa-solid fa-arrow-trend-up" style="color:var(--warning)"></i> ASP趋势方向</h3><div style="font-size:10px;color:var(--text-tertiary);margin-bottom:4px">平均售价变动方向统计</div><div id="chart-asp-trend" class="chart-container"></div></div>
+ <div class="cb" style="margin-bottom:0"><h3><i class="fa-solid fa-building-columns" style="color:#f43f5e"></i> 客户集中度分布<span class="chart-guide">%%GUIDE_C_dominance%%</span></h3><div id="chart-dominance" class="chart-container"></div></div>
+ <div class="cb" style="margin-bottom:0"><h3><i class="fa-solid fa-table-cells-large" style="color:var(--success)"></i> 营收-毛利综合判断<span class="chart-guide">%%GUIDE_C_revMargin%%</span></h3><div id="chart-rev-margin" class="chart-container"></div></div>
+ <div class="cb" style="margin-bottom:0"><h3><i class="fa-solid fa-arrow-trend-up" style="color:var(--warning)"></i> ASP趋势方向<span class="chart-guide">%%GUIDE_C_aspTrend%%</span></h3><div id="chart-asp-trend" class="chart-container"></div></div>
  </div>
 
 </div></details>
@@ -452,7 +452,6 @@ body{font-family:-apple-system,'Microsoft YaHei','Segoe UI',sans-serif;backgroun
  <!-- Sankey Chart -->
  <div class="cb">
  <h3><i class="fa-solid fa-diagram-project" style="color:#14b8a6"></i> 销量Top100产品季度画像变迁桑基图<span class="chart-guide">%%GUIDE_C_sankey%%</span></h3>
- <div style="font-size:10px;color:var(--text-tertiary);margin-bottom:4px">按近12月销量排序前100名产品，每季度末画像流转情况</div>
  <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
  <span style="font-size:11px;color:var(--text-tertiary)">最少产品数:</span>
  <input type="range" id="sankey-threshold" min="1" max="20" value="1" style="width:120px" oninput="renderSankeyWithThreshold(+this.value)">
@@ -2376,7 +2375,7 @@ var vPy=isNewY?0:Math.round((curAsp-prevAspY)*prevY.q/1e4*100)/100;
 list.push({name:nm,dR:dR,vQ:vQ,vP:vP,dP:dP,isNew:isNew,dRy:dRy,vQy:vQy,vPy:vPy});
 });
 list.sort(function(a,b){return a.dR-b.dR});
-var h='<div style="display:grid;grid-template-columns:1.5fr 0.7fr 0.6fr 0.6fr 0.6fr 0.7fr 0.6fr 0.6fr;gap:4px;font-size:11px;font-weight:600;padding:5px 8px;border-bottom:2px solid var(--border);position:sticky;top:0;background:var(--surface)"><span>名称</span><span>环比Δ</span><span>量</span><span>价</span><span>利Δ</span><span>同比Δ</span><span>量</span><span>价</span></div>';
+var h='<div style="display:grid;grid-template-columns:1.5fr 0.7fr 0.6fr 0.6fr 0.6fr 0.7fr 0.6fr 0.6fr;gap:4px;font-size:11px;font-weight:600;padding:5px 8px;border-bottom:2px solid var(--border);position:sticky;top:0;background:var(--surface)"><span>名称</span><span>环比变化</span><span>量</span><span>价</span><span>毛利变化</span><span>同比变化</span><span>量</span><span>价</span></div>';
 list.forEach(function(s,i){
 var clr=s.dR>0?'#EF4444':(s.dR<0?'#10B981':'#6B7280');
 var clrY=s.dRy>0?'#EF4444':(s.dRy<0?'#10B981':'#6B7280');
@@ -2388,7 +2387,7 @@ document.getElementById('eDecompRank').innerHTML=h;
 // Scatter
 var dsc=document.getElementById('eDecompScatter');var oldSc=echarts.getInstanceByDom(dsc);if(oldSc)oldSc.dispose();var sc=TABS.chart.create(dsc);
 var sdata=list.map(function(s){return{name:s.name,value:[s.vQ,s.vP,s.dR,s.dP]}});
-sc.setOption({tooltip:{confine:true,formatter:function(p){return'<b>'+p.name+'</b><br/>量贡献: '+p.value[0].toFixed(1)+'<br/>价贡献: '+p.value[1].toFixed(1)+'<br/>收入Δ: '+p.value[2].toFixed(1)+'<br/>毛利Δ: '+p.value[3].toFixed(1)}},grid:{left:70,right:30,top:30,bottom:55,containLabel:true},xAxis:{type:'value',name:'量贡献(万)',nameLocation:'middle',nameGap:38,nameTextStyle:{fontSize:11},axisLabel:{fontSize:10}},yAxis:{type:'value',name:'价贡献(万)',nameLocation:'middle',nameGap:45,nameTextStyle:{fontSize:11},axisLabel:{fontSize:10}},series:[{type:'scatter',large:true,data:sdata,symbolSize:function(d){return Math.max(4,Math.sqrt(Math.abs(d[2]))*1.5)},itemStyle:{color:function(p){return p.value[2]>0?'#EF4444':'#10B981'},opacity:0.7},markLine:{silent:true,symbol:'none',data:[{xAxis:0,lineStyle:{color:'#6B7280',type:'dashed'}},{yAxis:0,lineStyle:{color:'#6B7280',type:'dashed'}}]}}]});
+sc.setOption({tooltip:{confine:true,formatter:function(p){return'<b>'+p.name+'</b><br/>量贡献: '+p.value[0].toFixed(1)+'<br/>价贡献: '+p.value[1].toFixed(1)+'<br/>收入变化: '+p.value[2].toFixed(1)+'<br/>毛利变化: '+p.value[3].toFixed(1)}},grid:{left:70,right:30,top:30,bottom:55,containLabel:true},xAxis:{type:'value',name:'量贡献(万)',nameLocation:'middle',nameGap:38,nameTextStyle:{fontSize:11},axisLabel:{fontSize:10}},yAxis:{type:'value',name:'价贡献(万)',nameLocation:'middle',nameGap:45,nameTextStyle:{fontSize:11},axisLabel:{fontSize:10}},series:[{type:'scatter',large:true,data:sdata,symbolSize:function(d){return Math.max(4,Math.sqrt(Math.abs(d[2]))*1.5)},itemStyle:{color:function(p){return p.value[2]>0?'#EF4444':'#10B981'},opacity:0.7},markLine:{silent:true,symbol:'none',data:[{xAxis:0,lineStyle:{color:'#6B7280',type:'dashed'}},{yAxis:0,lineStyle:{color:'#6B7280',type:'dashed'}}]}}]});
 // Insight
 var topUp=list.filter(function(s){return s.dR>0}).slice(-2),topDown=list.filter(function(s){return s.dR<0}).slice(0,2);
 var txt='';
@@ -2400,7 +2399,7 @@ document.getElementById('eDecompInsight').innerText=txt;
  var newCount=list.filter(function(x){return x.isNew}).length;
  var driverType=Math.abs(sumVQ)>Math.abs(sumVP)?'量驱动型':'价驱动型';
  var driverMain=Math.abs(sumVQ)>Math.abs(sumVP)?'销量变化':'价格变化';
- var logicTxt='拆解公式：收入ΔR = 量贡献(vQ) + 价贡献(vP)，其中 vQ=ΔQ×上期均价，vP=Δ均价×上期销量；毛利ΔP独立核算\n';
+ var logicTxt='拆解公式：收入变化 = 量贡献(vQ) + 价贡献(vP)，其中 vQ = 销量变化 × 上期均价，vP = 价格变化 × 上期销量；毛利变化单独核算\n';
  logicTxt+='━━━ '+E_DECOMP[E_DECOMP_KEY].label+'维度汇总（'+E_SEL_MONTHS.join('+')+' vs '+(prevM||'上期')+'）━━━\n';
  logicTxt+='整体收入变化: '+(sumR>0?'+':'')+sumR.toFixed(1)+'万（量贡献 '+(sumVQ>0?'+':'')+sumVQ.toFixed(1)+'万 / 价贡献 '+(sumVP>0?'+':'')+sumVP.toFixed(1)+'万）→ '+driverType+'（'+driverMain+'主导）\n';
  logicTxt+='整体毛利变化: '+(sumDP>0?'+':'')+sumDP.toFixed(1)+'万\n';
@@ -2425,7 +2424,7 @@ var vP=isNew?0:Math.round((curAsp-prevAsp)*prev.q/1e4*100)/100;
 var dR=Math.round((cur.r-prev.r)/1e4*100)/100;
 var dwf=document.getElementById('eDecompWaterfall');var oldWf=echarts.getInstanceByDom(dwf);if(oldWf)oldWf.dispose();var wf=TABS.chart.create(dwf);
 var dPmom=Math.round((cur.p-prev.p)/1e4*100)/100;
-wf.setOption({tooltip:{confine:true,trigger:'axis',axisPointer:{type:'shadow'}},grid:{left:65,right:20,top:45,bottom:25,containLabel:true},xAxis:{type:'category',data:['量贡献','价贡献','毛利Δ']},yAxis:{type:'value',name:'万元'},series:[{type:'bar',data:[{value:vQ,itemStyle:{color:vQ>=0?'#EF4444':'#10B981'}},{value:vP,itemStyle:{color:vP>=0?'#EF4444':'#10B981'}},{value:dPmom,itemStyle:{color:dPmom>=0?'#EF4444':'#10B981'}}],label:{show:true,position:'top',fontSize:8,formatter:function(p){return(p.value>0?'+':'')+p.value.toFixed(1)}}}]});
+wf.setOption({tooltip:{confine:true,trigger:'axis',axisPointer:{type:'shadow'}},grid:{left:65,right:20,top:45,bottom:25,containLabel:true},xAxis:{type:'category',data:['量贡献','价贡献','毛利变化']},yAxis:{type:'value',name:'万元'},series:[{type:'bar',data:[{value:vQ,itemStyle:{color:vQ>=0?'#EF4444':'#10B981'}},{value:vP,itemStyle:{color:vP>=0?'#EF4444':'#10B981'}},{value:dPmom,itemStyle:{color:dPmom>=0?'#EF4444':'#10B981'}}],label:{show:true,position:'top',fontSize:8,formatter:function(p){return(p.value>0?'+':'')+p.value.toFixed(1)}}}]});
 // YoY waterfall
 var yoyMths=E_SEL_MONTHS.map(function(m){var p=m.split('-');return(parseInt(p[0])-1)+'-'+p[1]});
 var curY={r:0,p:0,q:0},prevY={r:0,p:0,q:0};
@@ -2438,7 +2437,7 @@ var vQy=isNewY?0:Math.round(dQy*prevAspY*100)/100;
 var vPy=isNewY?0:Math.round(((curY.q>0?curY.r/curY.q:0)-prevAspY)*prevY.q/1e4*100)/100;
 var dPy=Math.round((curY.p-prevY.p)/1e4*100)/100;
 var dwf2=document.getElementById('eDecompWaterfallYoy');var oldWf2=echarts.getInstanceByDom(dwf2);if(oldWf2)oldWf2.dispose();var wf2=TABS.chart.create(dwf2);
-wf2.setOption({tooltip:{confine:true,trigger:'axis',axisPointer:{type:'shadow'}},grid:{left:65,right:20,top:45,bottom:25,containLabel:true},xAxis:{type:'category',data:['量贡献','价贡献','毛利Δ']},yAxis:{type:'value',name:'万元'},series:[{type:'bar',data:[{value:vQy,itemStyle:{color:vQy>=0?'#EF4444':'#10B981'}},{value:vPy,itemStyle:{color:vPy>=0?'#EF4444':'#10B981'}},{value:dPy,itemStyle:{color:dPy>=0?'#EF4444':'#10B981'}}],label:{show:true,position:'top',fontSize:8,formatter:function(p){return(p.value>0?'+':'')+p.value.toFixed(1)}}}]});
+wf2.setOption({tooltip:{confine:true,trigger:'axis',axisPointer:{type:'shadow'}},grid:{left:65,right:20,top:45,bottom:25,containLabel:true},xAxis:{type:'category',data:['量贡献','价贡献','毛利变化']},yAxis:{type:'value',name:'万元'},series:[{type:'bar',data:[{value:vQy,itemStyle:{color:vQy>=0?'#EF4444':'#10B981'}},{value:vPy,itemStyle:{color:vPy>=0?'#EF4444':'#10B981'}},{value:dPy,itemStyle:{color:dPy>=0?'#EF4444':'#10B981'}}],label:{show:true,position:'top',fontSize:8,formatter:function(p){return(p.value>0?'+':'')+p.value.toFixed(1)}}}]});
 }
 // E tab refresh hook (Phase 3.4 — replaces monkey patch with bus event)
 TABS.bus.on('eRefreshed', function(){ setTimeout(function(){eDecompBuild()}, 200); });
