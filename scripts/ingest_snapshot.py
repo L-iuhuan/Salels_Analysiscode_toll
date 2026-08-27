@@ -28,6 +28,7 @@ import hashlib
 import json
 import os
 import re
+import shutil
 import sys
 import time
 
@@ -37,6 +38,10 @@ import pandas as pd
 _REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DEFAULT_PLATFORM = os.path.join(_REPO_ROOT, "sales_analytics_platform")
 DEFAULT_DATA_DIR = os.path.join(DEFAULT_PLATFORM, "data")
+# 共享盘数据目录（r14：财务月度 Excel 直接投放共享盘，全员 DSE 客户端透明解密）。
+# 单点配置纪律：与壳端 lib.rs DEFAULT_SHARE_PATH、kanban/share_config.json 同源，
+# 共享盘路径变更时三处必须同步修改。
+DIR_DATA_SHARE = r"\\192.168.8.3\财务部\办公软件\SoftwareUpdate\数据分析看板\data"
 DATA_WAREHOUSE = os.path.join(DEFAULT_PLATFORM, "data_warehouse")
 
 _SHA_HEAD = 8 * 1024 * 1024  # sha256 前 8MB
@@ -60,12 +65,30 @@ def is_encrypted(path):
         return f.read(4) != b"PK\x03\x04"
 
 
-def _latest_excel(data_dir):
-    xs = [f for f in os.listdir(data_dir)
-          if f.startswith("财务分析-") and f.endswith(".xlsx") and not f.startswith("~$")]
+def _latest_excel(data_dir, share_dir=DIR_DATA_SHARE):
+    """合并扫描本地+共享盘取 mtime 最新的"财务分析-*.xlsx"（r14）。
+
+    共享盘目录不可达/不存在时 try/except OSError 静默回退纯本地（保持现状行为）。
+    """
+    def _scan(d):
+        if not os.path.isdir(d):
+            return []
+        return [os.path.join(d, f) for f in os.listdir(d)
+                if f.startswith("财务分析-") and f.endswith(".xlsx") and not f.startswith("~$")]
+
+    xs = _scan(data_dir)
+    shared = []
+    try:
+        shared = _scan(share_dir)
+    except OSError:
+        pass  # 共享盘不可达/不存在：静默回退本地
+    xs += shared
     if not xs:
         return None
-    return os.path.join(data_dir, max(xs, key=lambda n: os.path.getmtime(os.path.join(data_dir, n))))
+    # 同 mtime 时优先共享盘（本地常为共享盘历史副本、mtime 一致）：r14 以共享盘为月度权威源
+    def _rank(p):
+        return (os.path.getmtime(p), 1 if p in shared else 0)
+    return max(xs, key=_rank)
 
 
 def _resolve_sheet(ws_names, prefer):
@@ -258,6 +281,14 @@ def main():
     if not xlsx or not os.path.isfile(xlsx):
         print(f"[错误] 未找到源 Excel（--data 指定或 data\\ 下最新 财务分析-*.xlsx）")
         sys.exit(1)
+    # r14 保护：最终确定的源若是共享盘 UNC 路径，先复制到本地 data\ 再用本地副本继续——
+    # COM 只读本地文件，避免 UNC+COM 未验证路径；DSE 密文共享盘/本地字节级一致，复制即可。
+    if xlsx.startswith("\\\\"):
+        os.makedirs(data_dir, exist_ok=True)
+        local_copy = os.path.join(data_dir, os.path.basename(xlsx))
+        shutil.copy2(xlsx, local_copy)
+        xlsx = local_copy
+        print(f"[数据] 源为共享盘 UNC，已复制到本地副本（COM 只读本地文件）: {xlsx}")
     print(f"[源] {xlsx}")
     st = os.stat(xlsx)
     enc = is_encrypted(xlsx)

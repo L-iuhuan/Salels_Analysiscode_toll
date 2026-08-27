@@ -44,6 +44,10 @@ except (AttributeError, OSError, ValueError):
 PKG = os.path.dirname(os.path.abspath(__file__))
 
 DIR_DATA = os.path.join(PKG, "data")        # 唯一输入目录：原始Excel + 部门-人员.md
+# 共享盘数据目录（r14：财务月度 Excel 直接投放共享盘，全员 DSE 客户端透明解密）。
+# 单点配置纪律：与壳端 lib.rs DEFAULT_SHARE_PATH、kanban/share_config.json 同源，
+# 共享盘路径变更时三处必须同步修改。
+DIR_DATA_SHARE = r"\\192.168.8.3\财务部\办公软件\SoftwareUpdate\数据分析看板\data"
 DIR_PROC = os.path.join(PKG, "processing")  # 前段代码
 DIR_OUT = os.path.join(PKG, "output")       # 唯一输出目录：silver/gold/report（前段写、后段读、也可做其它分析）
 DIR_DASH = os.path.join(PKG, "dashboard")   # 后段代码 + 生成的看板
@@ -77,18 +81,35 @@ def load_config():
 
 
 def find_raw_excel(cfg):
-    """定位原始Excel：优先 --data / 配置项，否则自动找 data/ 里最新的 .xlsx。"""
+    """定位原始Excel：优先 --data / 配置项，否则合并扫描本地+共享盘取 mtime 最新（r14）。"""
     cand = (cfg.get("raw_excel") or "").strip()
     if cand:
         p = cand if os.path.isabs(cand) else os.path.join(DIR_DATA, cand)
         if os.path.exists(p):
             return p
         print(f"[警告] 配置的 raw_excel '{cand}' 不存在，改为自动检测 data/ 目录")
-    if not os.path.isdir(DIR_DATA):
+    local = ([os.path.join(DIR_DATA, f) for f in os.listdir(DIR_DATA)
+              if f.endswith(".xlsx") and not f.startswith("~$")]
+             if os.path.isdir(DIR_DATA) else [])
+    shared = []
+    try:
+        if os.path.isdir(DIR_DATA_SHARE):
+            shared = [os.path.join(DIR_DATA_SHARE, f) for f in os.listdir(DIR_DATA_SHARE)
+                      if f.endswith(".xlsx") and not f.startswith("~$")]
+    except OSError:
+        pass  # 共享盘不可达/不存在：静默回退纯本地（保持现状行为）
+    if not local and not shared:
         return ""
-    xs = [os.path.join(DIR_DATA, f) for f in os.listdir(DIR_DATA)
-          if f.endswith(".xlsx") and not f.startswith("~$")]
-    return max(xs, key=os.path.getmtime) if xs else ""   # 最新的一份
+    # 同 mtime 时优先共享盘（本地常为共享盘历史副本、mtime 一致）：r14 以共享盘为月度权威源，
+    # 保证不带 --data 时确定性选中共享盘文件并复制进本地 data\
+    def _rank(p):
+        return (os.path.getmtime(p), 1 if p in shared else 0)
+    best = max(local + shared, key=_rank)   # 最新的一份
+    if best in shared:
+        print(f"[数据] 数据源: 共享盘 ({os.path.basename(best)})")
+    else:
+        print(f"[数据] 数据源: 本地 ({os.path.basename(best)})")
+    return best
 
 
 def run_subprocess(cmd, cwd, title):
