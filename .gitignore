@@ -46,3 +46,6 @@ project_analysis/unified_compare/**/*.csv
 
 # kanban 为锟斤拷锟斤拷 git 锟街库（锟斤拷锟斤拷携 Python 锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷锟诫本锟街匡拷
 kanban/
+
+# r14b: 本机运行配置(数据共享目录等机器相关配置防入库)
+sales_analytics_platform/chain_config.json
