@@ -8,10 +8,10 @@
 
 | 步骤 | 动作 | 命令/位置 | 验证点 |
 |---|---|---|---|
-| 1 | 新月度 Excel 放入 data\ | `data\财务分析-<月>.xlsx` | 文件名与月份一致；DSE 加密不影响（读取走 COM 兜底） |
+| 1 | 新月度 Excel 投放数据共享目录（或本地 data\） | 数据共享目录（配置见第五节）或 `data\财务分析-<月>.xlsx` | 文件名与月份一致；DSE 加密不影响（读取走 COM 兜底）；流水线自动合并扫描共享盘+本地取最新 |
 | 2 | 落快照仓 | `python scripts\ingest_snapshot.py` | 生成 `data_warehouse\<YYYYMM>\erp_snapshot.parquet`（明文，Python 写不加密）；控制台报行数 |
-| 3 | 全量跑批 | `python run_chain.py --data data\财务分析-<月>.xlsx` | [STAGE 1/6]~[STAGE 6/6] 全过；末尾"全部通过"；看板 dashboard_a.html 更新 |
-| 4 | 数据对拍 | `python scripts\golden_diff.py --baseline baseline\<当前基线>\summary.json --platform-dir sales_analytics_platform` | 漂移数=已登记数（当前 55：41 F面插拔+2 ASP_AXIS+2 B_LIST_LIMIT+10 提价过滤），**0 待查明** |
+| 3 | 全量跑批 | `python run_chain.py`（自动取共享盘+本地最新；显式 `--data <路径>` 永远优先） | [STAGE 1/6]~[STAGE 6/6] 全过；末尾"全部通过"；看板 dashboard_a.html 更新 |
+| 4 | 数据对拍 | `python scripts\golden_diff.py --baseline baseline\<当前基线>\summary.json --platform-dir sales_analytics_platform` | 漂移数=已登记数（基线 20260827 起重新计，当前 0），**0 待查明** |
 | 5 | 测试门禁 | `python scripts\run_all_tests.py` | 全量 93/93 passed（勿只跑子集） |
 | 6 | JS 门禁 | `python scripts\check_js_syntax.py` | `JS: ALL OK (N blocks)` |
 | 7 | 性能门禁 | `python scripts\perf_smoke.py` | 端到端 <600s、看板段 <180s（实测 ~255s/~76s） |
@@ -38,9 +38,16 @@
 
 ## 四、基线管理
 
-- 当前对拍基线：`baseline\20260825_july\summary.json`
+- 当前对拍基线：`baseline\20260827\summary.json`（20260825_july 因 r10 期有意变更过期，r14 重冻入库）
 - 换基线时机：口径正式变更（如 observed=True 拍板后）→ `python scripts\freeze_baseline.py` 新基线 + 台账登记变更原因
 - 基线只增不删（历史可回溯）
 
+## 五、数据源共享盘配置（r14，2026-08-27 拍板）
+
+- **数据共享目录独立于代码更新共享目录**，必须可配置。内置默认值 `\\192.168.8.3\财务部\办公软件\SoftwareUpdate\数据分析看板\data`（占位；真实数据共享夹路径确定后改内置默认或各机配置）。
+- **开发机配置优先级**（高→低）：环境变量 `SALES_DATA_SHARE_DIR` > `chain_config.json` 的 `data_share_dir`（显式空串 `""` = 禁用共享盘扫描）> 内置默认。ingest_snapshot 用 `--share-dir`（空串禁用）。注意：`chain_config.json` 已去 git 跟踪（r14b），本机路径配置不会入库。
+- **客户端（看板壳）**：设置弹层配「数据文件共享目录」（留空 = 代码共享目录下的 data\）；主界面「从共享盘获取最新数据」按钮一键拉取最新 Excel 到本地缓存（`%LOCALAPPDATA%\KanbanRunner\data\`）再跑批，产物全在本地。
+- **安全事实**：DSE 密文 Excel 上共享盘后字节级一致（实测文件头 `00 00 5B 00`）；全员电脑有 DSE 客户端+Office，拉到本地后走现有 COM 透明解密读取，链路已验证。
+
 ---
-*创建：2026-08-26（发版评审 r7 迭代，台账 #8 流程固化）*
+*创建：2026-08-26（发版评审 r7 迭代，台账 #8 流程固化）；r14 数据源共享盘：2026-08-27*
