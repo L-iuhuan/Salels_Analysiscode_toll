@@ -31,12 +31,14 @@ import os
 import pandas as pd
 import numpy as np
 
-from config.settings import ERP_COL_MAP, DATA_SHEET_NAME
+from config.settings import ERP_COL_MAP, DATA_SHEET_NAME, PKG_ROOT
 
 # 共享Silver层输出目录（产品和客户管道共用）
 OUTPUT_SILVER = os.path.abspath(
     os.path.join(os.path.dirname(__file__), "..", "output", "silver")
 )
+# r16：COM 解密成功后注入 parquet 快照的落仓根（与 scripts\ingest_snapshot.py 同款）
+_WAREHOUSE_ROOT = os.path.join(PKG_ROOT, "data_warehouse")
 
 
 def get_excel_engine():
@@ -106,20 +108,52 @@ def find_matching_snapshot(xlsx_path, warehouse_root):
 def read_excel_auto(*args, **kwargs):
     """pd.read_excel wrapper — 自动选择最快可用引擎 (calamine > openpyxl)。
 
-    W1 快照仓加固：若目标文件已被 DSE 加密（文件头非 ZIP/PK），calamine/openpyxl 均读不了，
-    直接抛明确中文错误引导先跑 scripts/ingest_snapshot.py（避免引擎报晦涩英文 traceback）。
+    W1 快照仓加固 + r16：目标文件已被 DSE 加密（文件头非 ZIP/PK）时 calamine/openpyxl 均读不了，
+    改走 COM 解密兜底（全员 DSE+Office 透明解密，约 1-2 分钟），成功后注入 data_warehouse
+    parquet 快照供后续快速命中；COM 也失败才抛明确中文错误。明文文件行为零变化。
     """
     if args and isinstance(args[0], (str, os.PathLike)) and os.path.isfile(str(args[0])):
-        if is_encrypted_excel(str(args[0])):
-            raise RuntimeError(
-                "数据文件已被 DSE 加密（文件头非 ZIP/PK，calamine/openpyxl 均无法读取）。\n"
-                "请在明文窗口先运行：python scripts\\ingest_snapshot.py 生成 data_warehouse 快照后再跑批。"
-            )
+        path = str(args[0])
+        if is_encrypted_excel(path):
+            return _read_encrypted_com_fallback(path, args, kwargs)
     if 'engine' not in kwargs:
         engine = get_excel_engine()
         if engine:
             kwargs['engine'] = engine
     return pd.read_excel(*args, **kwargs)
+
+
+def _read_encrypted_com_fallback(path, args, kwargs):
+    """[r16] DSE 密文：COM 解密读取 + 注入 parquet 快照（快照 miss + calamine 失败后）。
+
+    sheet 语义与 pandas 一致：指定字符串 sheet 不存在 → ValueError（调用方照旧回退）；
+    未指定/0 → 首个 sheet。COM 失败才抛 RuntimeError（原报错文案补充 COM 也失败的指引）。
+    """
+    from shared.excel_com import read_encrypted_com, write_erp_snapshot
+    sheet_name = args[1] if len(args) > 1 else kwargs.get("sheet_name", 0)
+    print(f"[COM兜底] DSE 加密文件，走 COM 解密读取（约 1-2 分钟）…: {os.path.basename(path)}")
+    try:
+        if isinstance(sheet_name, str) and sheet_name:
+            df, used_sheet = read_encrypted_com(path, sheet_name, strict=True)
+            if df is None:
+                # 与 pandas 语义一致：指定 sheet 不存在 → 抛错（调用方按现状回退）
+                raise ValueError(f"Worksheet named '{sheet_name}' not found（COM 解密读取）")
+        else:
+            df, used_sheet = read_encrypted_com(path, 0, strict=False)
+    except (RuntimeError, ValueError):
+        raise
+    except Exception as e:
+        raise RuntimeError(
+            "数据文件已被 DSE 加密（文件头非 ZIP/PK，calamine/openpyxl 均无法读取），"
+            "且 COM 解密也失败，请确认本机装有 Office 且 DSE 客户端正常。\n"
+            f"（COM 错误: {type(e).__name__}: {e}）"
+        ) from e
+    # 注入 parquet 快照（best-effort：写失败仅告警，不影响本次读取；后续跑批直接命中快照不再走 COM）
+    try:
+        write_erp_snapshot(df, path, _WAREHOUSE_ROOT, used_sheet)
+    except Exception as e:
+        print(f"  [注入警告] 快照注入失败（不影响本次 COM 读取）: {type(e).__name__}: {e}")
+    return df
 
 
 def validate_required_columns(

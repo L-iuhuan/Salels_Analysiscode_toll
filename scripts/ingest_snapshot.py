@@ -27,7 +27,6 @@ import datetime
 import hashlib
 import json
 import os
-import re
 import shutil
 import sys
 import time
@@ -45,20 +44,22 @@ DEFAULT_DATA_DIR = os.path.join(DEFAULT_PLATFORM, "data")
 DIR_DATA_SHARE = r"\\192.168.8.3\财务部\财务电子档案备份\D1经营分析"
 DATA_WAREHOUSE = os.path.join(DEFAULT_PLATFORM, "data_warehouse")
 
-_SHA_HEAD = 8 * 1024 * 1024  # sha256 前 8MB
+# r16：COM 解密读 + 快照写入小工具统一从共享层导入（原 _read_encrypted_com/_derive_period/...
+# 已抽取到 shared\excel_com.py，此处仅导入，行为不变）
+_PROC_DIR = os.path.join(DEFAULT_PLATFORM, "processing")
+if _PROC_DIR not in sys.path:
+    sys.path.insert(0, _PROC_DIR)
+from shared.excel_com import (  # noqa: E402
+    read_encrypted_com, derive_period,
+    coerce_object_columns, coerce_datetime_columns, sha256_head,
+)
+
 # 关键数值列合计：逻辑名 → 源列候选（raw 列名 vs 重命名后列名）
 SUM_COLS = {
     "金额": ["金额", "RMB 未税金额小计"],
     "利润": ["利润"],
     "数量": ["数量", "发货数量"],
 }
-
-
-def _sha256_head(path, n=_SHA_HEAD):
-    h = hashlib.sha256()
-    with open(path, "rb") as f:
-        h.update(f.read(n))
-    return h.hexdigest()
 
 
 def is_encrypted(path):
@@ -94,13 +95,6 @@ def _latest_excel(data_dir, share_dir=DIR_DATA_SHARE):
     return max(xs, key=_rank)
 
 
-def _resolve_sheet(ws_names, prefer):
-    """优先 prefer（DATA_SHEET_NAME），缺失回退首个 sheet。"""
-    if prefer in ws_names:
-        return prefer
-    return ws_names[0] if ws_names else None
-
-
 def _read_plain(path, sheet_name):
     sys.path.insert(0, os.path.join(DEFAULT_PLATFORM, "processing"))
     from shared.data_cleaning import read_excel_auto
@@ -109,97 +103,6 @@ def _read_plain(path, sheet_name):
     except Exception:
         # sheet 名不匹配（年份翻页等）时回退首个 sheet
         return read_excel_auto(path, sheet_name=0)
-
-
-def _naive_cell(v):
-    """COM 返回的 datetime 单元：去时区（win32timezone 非标准，pandas 会推断成无法序列化的 datetime64[tz]）。"""
-    if isinstance(v, datetime.datetime):
-        if v.tzinfo is not None:
-            try:
-                return v.replace(tzinfo=None)
-            except Exception:
-                return v
-    return v
-
-
-def _read_encrypted_com(path, sheet_name, strict=False):
-    """DSE 加密文件：COM 解密读（ReadOnly 打开，读目标 sheet UsedRange，首行作列名）。
-
-    用 DispatchEx 创建新实例（避免 attach 到残留/损坏的 Excel 实例导致 Workbooks 不可用）。
-    strict=True 时 sheet 不存在返回 (None, None)，不回退首个 sheet（客户信息表等可选 sheet 用）。
-    """
-    import win32com.client
-    excel = win32com.client.DispatchEx("Excel.Application")
-    # 已有 Excel 实例时 Visible/DisplayAlerts 可能不可设置，失败不阻断（解密读仍可用）
-    for attr, val in (("Visible", False), ("DisplayAlerts", False), ("EnableEvents", False)):
-        try:
-            setattr(excel, attr, val)
-        except Exception:
-            pass
-    wb = None
-    try:
-        t0 = time.time()
-        wb = excel.Workbooks.Open(path, ReadOnly=True, UpdateLinks=0, IgnoreReadOnlyRecommended=True)
-        names = [wb.Sheets(i).Name for i in range(1, wb.Sheets.Count + 1)]
-        if strict and sheet_name not in names:
-            return None, None
-        target = sheet_name if strict else _resolve_sheet(names, sheet_name)
-        ws = wb.Sheets(names.index(target) + 1)
-        used = ws.UsedRange
-        data = used.Value
-        print(f"  [COM] 打开 {time.time() - t0:.1f}s | sheet='{target}' | UsedRange {used.Rows.Count}x{used.Columns.Count}")
-        # 归一为二维
-        if not isinstance(data, (tuple, list)):
-            data = ((data,),)
-        rows = list(data)
-        # COM 日期单元可能带非标准时区（win32timezone），先逐单元去时区，避免 pandas 推断出
-        # 无法迭代/序列化的 datetime64[tz] 列
-        rows = [[_naive_cell(c) for c in r] for r in rows]
-        # 列名去重：COM 表头可能有重复列（如"细分市场（新）"出现两次），重名会使 df[col] 返回 DataFrame
-        cols = [str(c) for c in rows[0]]
-        seen = {}
-        out_cols = []
-        for c in cols:
-            if c in seen:
-                seen[c] += 1
-                out_cols.append(f"{c}_{seen[c]}")
-            else:
-                seen[c] = 0
-                out_cols.append(c)
-        df = pd.DataFrame([list(r) for r in rows[1:]], columns=out_cols)
-        # 清理 COM 幽灵空列/空行
-        df = df.dropna(axis=1, how="all").dropna(axis=0, how="all")
-        return df, target
-    finally:
-        if wb is not None:
-            try:
-                wb.Close(False)
-            except Exception:
-                pass
-        try:
-            excel.Quit()
-        except Exception:
-            pass
-
-
-def _derive_period(df, filename):
-    """YYYYMM：优先数据最大月份（发货日期/日期列），回退文件名"财务分析-X月"。"""
-    for col in df.columns:
-        if "发货日期" in str(col) or "日期" in str(col):
-            try:
-                d = pd.to_datetime(df[col], errors="coerce").dropna()
-                if len(d):
-                    return d.max().strftime("%Y%m")
-            except Exception:
-                pass
-            break
-    m = re.search(r"(\d{1,2})月", filename)
-    if m:
-        month = int(m.group(1))
-        now = datetime.datetime.now()
-        year = now.year if month <= now.month else now.year - 1
-        return f"{year}{month:02d}"
-    return datetime.datetime.now().strftime("%Y%m")
 
 
 def _column_sums(df):
@@ -216,44 +119,10 @@ def _column_sums(df):
     return sums
 
 
-def _coerce_object_columns(df):
-    """混合类型 object 列统一为字符串（保留 NaN 为空），保证 pyarrow 可写。
-
-    ERP 原始列如"产品品类（新）"可能是 str 与 int 混排（如数值型品类码），
-    pyarrow 无法推断单一类型。仅处理 object 列中的非字符串单元：
-    str 原样、NaN/None 留空、其他转 str；不影响 金额/利润/数量 等数值列合计。
-    """
-    df = df.copy()
-    for c in df.columns:
-        if df[c].dtype == object:
-            mask = ~df[c].map(lambda x: isinstance(x, str))
-            if mask.any():
-                df[c] = df[c].map(
-                    lambda x: x if isinstance(x, str)
-                    else (None if x is None or pd.isna(x) else str(x)))
-    return df
-
-
-def _coerce_datetime_columns(df):
-    """tz-aware datetime64 列 → 字符串（去掉时区、格式化为 naive 时间串）。
-
-    COM 返回的日期带 win32timezone 非标准时区，pandas tz_localize / pyarrow 序列化均无法处理；
-    strip tzinfo 后转 "YYYY-MM-DD HH:MM:SS" 字符串，pd.to_datetime 可再解析（stage_silver 正是如此）。
-    """
-    df = df.copy()
-    for c in df.columns:
-        if pd.api.types.is_datetime64_any_dtype(df[c]):
-            if getattr(df[c].dtype, "tz", None) is not None:
-                df[c] = df[c].map(
-                    lambda v: None if pd.isna(v)
-                    else v.replace(tzinfo=None).strftime("%Y-%m-%d %H:%M:%S"))
-    return df
-
-
 def _read_sheet_optional(path, sheet_name, enc):
     """读取可选 sheet（如客户信息表）；sheet 不存在或读取失败返回 None，绝不回退到首个 sheet。"""
     if enc:
-        df, _used = _read_encrypted_com(path, sheet_name, strict=True)
+        df, _used = read_encrypted_com(path, sheet_name, strict=True)
         return df
     sys.path.insert(0, os.path.join(DEFAULT_PLATFORM, "processing"))
     from shared.data_cleaning import read_excel_auto
@@ -313,7 +182,7 @@ def main():
 
     t0 = time.time()
     if enc:
-        df, sheet_used = _read_encrypted_com(xlsx, DATA_SHEET_NAME)
+        df, sheet_used = read_encrypted_com(xlsx, DATA_SHEET_NAME)
         decrypt_path = "com"
     else:
         df = _read_plain(xlsx, DATA_SHEET_NAME)
@@ -331,12 +200,12 @@ def main():
     print(f"  数量合计: {sums['数量']:,.2f}")
 
     # 生成快照
-    period = _derive_period(df, os.path.basename(xlsx))
+    period = derive_period(df, os.path.basename(xlsx))
     out_dir = os.path.join(warehouse, period)
     os.makedirs(out_dir, exist_ok=True)
     pq_path = os.path.join(out_dir, "erp_snapshot.parquet")
-    df = _coerce_object_columns(df)      # 混合类型 object 列统一为字符串，保证 pyarrow 可写
-    df = _coerce_datetime_columns(df)    # tz-aware datetime 列转 naive（COM 时区 pyarrow 无法序列化）
+    df = coerce_object_columns(df)      # 混合类型 object 列统一为字符串，保证 pyarrow 可写
+    df = coerce_datetime_columns(df)    # tz-aware datetime 列转 naive（COM 时区 pyarrow 无法序列化）
     df.to_parquet(pq_path, index=False)
     print(f"\n[写] {pq_path}")
 
@@ -345,8 +214,8 @@ def main():
     cust_df = _read_sheet_optional(xlsx, "客户信息表", enc)
     cust_rows = None
     if cust_df is not None:
-        cust_df = _coerce_object_columns(cust_df)
-        cust_df = _coerce_datetime_columns(cust_df)
+        cust_df = coerce_object_columns(cust_df)
+        cust_df = coerce_datetime_columns(cust_df)
         cust_pq = os.path.join(out_dir, "cust_info.parquet")
         cust_df.to_parquet(cust_pq, index=False)
         cust_rows = int(len(cust_df))
@@ -360,7 +229,7 @@ def main():
             "name": os.path.basename(xlsx),
             "size": st.st_size,
             "mtime": st.st_mtime,
-            "sha256_8mb": _sha256_head(xlsx),
+            "sha256_8mb": sha256_head(xlsx),
         },
         "ingest": {
             "time": datetime.datetime.now().astimezone().isoformat(timespec="seconds"),

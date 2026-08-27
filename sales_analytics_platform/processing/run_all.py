@@ -186,8 +186,10 @@ def stage_silver(source_path: str) -> tuple:
     from data_pipeline.validator import SimpleValidator
     _validator = SimpleValidator()
 
-    # ── 数据源选择（W1 快照仓）：优先 data_warehouse 匹配快照，否则直读 Excel；加密且无快照→报错 ──
-    from shared.data_cleaning import find_matching_snapshot, is_encrypted_excel
+    # ── 数据源选择（W1 快照仓）：优先 data_warehouse 匹配快照，否则直读 Excel ──
+    # r16：加密且无快照时不再在此报错退出——交 read_excel_auto 的 COM 解密兜底
+    # （全员 DSE+Office 透明解密，成功还注入 parquet 快照），COM 也失败才抛错。
+    from shared.data_cleaning import find_matching_snapshot
     warehouse_root = os.path.join(PROJECT_ROOT, "..", "data_warehouse")
     _snap = find_matching_snapshot(source_path, warehouse_root)
     if _snap is not None:
@@ -196,11 +198,6 @@ def stage_silver(source_path: str) -> tuple:
               f"源: {_man.get('source', {}).get('name', '')}）")
         raw = pd.read_parquet(_pq_path)
     else:
-        if is_encrypted_excel(source_path):
-            print("[错误] 数据文件已被 DSE 加密（文件头非 ZIP/PK，calamine/openpyxl 均无法读取），"
-                  "且 data_warehouse 无匹配快照。")
-            print("       请先在明文窗口运行：python scripts\\ingest_snapshot.py 生成快照，再跑批。")
-            sys.exit(1)
         print(f"  读取: {source_path}")
         raw = read_excel_auto(source_path, sheet_name=DATA_SHEET_NAME)
     _validator.validate_raw(raw)  # V1: 源数据验证
