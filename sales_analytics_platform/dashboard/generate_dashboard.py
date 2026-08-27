@@ -2586,11 +2586,28 @@ def _build_face_meta_html(face_id, cfg):
 
 
 def _build_guide_replacements(face_id, cfg):
-    """生成图表级导读占位符，未配置的图表返回空字符串。"""
+    """生成图表级导读占位符，未配置的图表返回空字符串。
+
+    [r7] faces.yaml 配置 chart_guides_detailed 的图表升级为
+    "灰字导读 + 答疑按钮"，弹层内容经 %%GUIDE_DETAILS_JSON%% 注入 TABS.GUIDE_DETAIL。
+    """
     reps = {}
     guides = (cfg or {}).get("chart_guides", {}) or {}
+    details = (cfg or {}).get("chart_guides_detailed", {}) or {}
     for chart_id, guide in guides.items():
-        reps[f"%%GUIDE_{face_id}_{chart_id}%%"] = guide or ""
+        short = guide or ""
+        if chart_id in details and details[chart_id]:
+            key = f"{face_id}_{chart_id}"
+            reps[f"%%GUIDE_{face_id}_{chart_id}%%"] = (
+                f'<span class="chart-guide-wrap"><span class="chart-guide">{short}</span>'
+                f'<button type="button" class="chart-guide-btn" data-guide-key="{key}" '
+                f'aria-label="图表详细说明" onclick="TABS.popover.toggle(this,event)">'
+                f'<i class="fa-solid fa-circle-question"></i></button></span>'
+            )
+        else:
+            reps[f"%%GUIDE_{face_id}_{chart_id}%%"] = (
+                f'<span class="chart-guide">{short}</span>' if short else ""
+            )
     return reps
 
 
@@ -2655,10 +2672,15 @@ replacements = {
     "%%FACE_META_D%%": _build_face_meta_html("D", _FACE_META_CACHE.get("D", {})),
     "%%FACE_META_E%%": _build_face_meta_html("E", _FACE_META_CACHE.get("E", {})),
     "%%FACE_META_F%%": _build_face_meta_html("F", _FACE_META_CACHE.get("F", {})),
+    "%%GUIDE_DETAILS_JSON%%": json.dumps(
+        {f"{_fid}_{_cid}": _txt
+         for _fid, _fcfg in _FACE_META_CACHE.items()
+         for _cid, _txt in ((_fcfg.get("chart_guides_detailed") or {}).items())},
+        ensure_ascii=False),
 }
 
 # 图表级导读占位符
-for _fid in ("A", "B", "C", "D", "E"):
+for _fid in ("A", "B", "C", "D", "E", "F"):
     replacements.update(_build_guide_replacements(_fid, _FACE_META_CACHE.get(_fid, {})))
 
 html = template
@@ -2727,7 +2749,9 @@ if not _NO_CACHE and _fp is not None and _fp_cur is not None:
             # ASP 轴边界源自 fingerprinted 的 rex 数据，缓存原始浮点值
             "asp_axis": _asp_axis_cache,
         }
-        _cache_obj = {"fingerprint": _fp_cur, "payload": _cache_payload}
+        _cache_obj = {"fingerprint": _fp_cur, "payload": _cache_payload,
+                      "total_sec": round(_time_mod.time() - _PROG_START, 1),
+                      "dashboard_sec": round(_time_mod.time() - _t_seg0, 1)}
         with open(PREAGG_PATH, "w", encoding="utf-8") as _f:
             json.dump(_cache_obj, _f, ensure_ascii=False)
         print(f"  [缓存] 已写入 {PREAGG_PATH}")

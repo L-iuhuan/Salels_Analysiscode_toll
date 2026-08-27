@@ -96,12 +96,12 @@ body{font-family:-apple-system,'Microsoft YaHei','Segoe UI',sans-serif;backgroun
 .subsection-title{font-size:var(--font-md);font-weight:var(--weight-heading);margin:0 0 var(--gap-sm);color:var(--text-primary)}
 
 /* --- Face-level metadata bar (three-layer explanation system) --- */
-.face-meta{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow-sm);margin-bottom:var(--space-card);overflow:hidden;transition:var(--transition)}
+.face-meta{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow-sm);margin-bottom:var(--space-card);position:relative;overflow:visible;transition:var(--transition)}
 .face-meta:hover{box-shadow:var(--shadow-md)}
 .face-meta-summary{display:flex;align-items:center;gap:var(--gap-sm);padding:var(--space-inner) var(--gap-md);cursor:pointer;font-size:var(--font-sm);color:var(--text-secondary);user-select:none}
 .face-meta-summary:hover{color:var(--primary);background:var(--primary-50)}
 .face-meta-summary i{color:var(--primary);font-size:var(--font-md)}
-.face-meta-body{display:none;padding:var(--space-inner) var(--gap-md) var(--gap-md);border-top:1px solid var(--border-light);background:var(--surface-subtle)}
+.face-meta-body{display:none;position:absolute;top:100%;left:0;right:0;z-index:45;padding:var(--space-inner) var(--gap-md) var(--gap-md);border:1px solid var(--border);border-top:1px solid var(--border-light);background:var(--surface);box-shadow:var(--shadow-lg);max-height:70vh;overflow-y:auto}
 .face-meta-body.open{display:block}
 .face-meta-theme{font-size:var(--font-sm);color:var(--text-primary);margin-bottom:var(--gap-sm);line-height:1.5}
 .face-meta-desc{font-size:var(--font-xs);color:var(--text-tertiary);margin-bottom:var(--space-inner);line-height:1.5}
@@ -112,6 +112,12 @@ body{font-family:-apple-system,'Microsoft YaHei','Segoe UI',sans-serif;backgroun
 .face-meta-row span{color:var(--text-tertiary);font-weight:var(--weight-muted);margin-right:4px}
 .face-meta-row:last-child{margin-bottom:0}
 .chart-guide{font-size:var(--font-xs);color:var(--text-tertiary);font-weight:var(--weight-muted);margin-left:var(--gap-sm);vertical-align:middle}
+.chart-guide-wrap{display:inline-flex;align-items:center;gap:4px;vertical-align:middle}
+.chart-guide-btn{width:16px;height:16px;padding:0;border:none;background:transparent;color:var(--text-tertiary);cursor:pointer;font-size:12px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center}
+.chart-guide-btn:hover{color:var(--primary);background:var(--primary-50)}
+.chart-guide-popover{position:absolute;z-index:55;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);box-shadow:var(--shadow-lg);padding:12px;width:340px;max-width:calc(100vw - 40px);max-height:60vh;overflow-y:auto;font-size:var(--font-sm);line-height:1.6;color:var(--text-secondary)}
+.chart-guide-popover .cg-title{font-weight:var(--weight-heading);color:var(--text-primary);margin-bottom:8px;font-size:var(--font-sm)}
+.chart-guide-popover p{margin:0 0 6px}
 /* Empty state v2 */
 .empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:var(--gap-lg) var(--gap-md);color:var(--text-tertiary);text-align:center;gap:var(--gap-sm)}
 .empty-state i{font-size:28px;opacity:0.4}
@@ -425,7 +431,7 @@ body{font-family:-apple-system,'Microsoft YaHei','Segoe UI',sans-serif;backgroun
  <div class="cb" style="margin-bottom:0"><h3><i class="fa-solid fa-chart-pie" style="color:#8B5CF6"></i> 帕累托分类分布<span class="chart-guide">%%GUIDE_C_pareto%%</span></h3><div id="chart-pareto" class="chart-container"></div></div>
  </div>
 
- <!-- Charts Row 2 -->
+<details class="cb" style="margin-bottom:14px;padding:0" ontoggle="if(this.open)this.querySelectorAll('.chart-container').forEach(function(el){var c=echarts.getInstanceByDom(el);if(c)c.resize()})"><summary style="cursor:pointer;padding:10px 12px;font-size:var(--font-sm);font-weight:var(--weight-heading);color:var(--text-secondary)">▸ 更多分布图（管理层摘要 / 毛利率斜率 / 动能×健康 / 客户集中度 / 营收-毛利 / ASP方向）</summary><div style="padding:0 10px 10px">
  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px">
  <div class="cb" style="margin-bottom:0"><h3><i class="fa-solid fa-rectangle-ad" style="color:var(--warning)"></i> 管理层摘要分布</h3><div id="chart-summary" class="chart-container"></div></div>
  <div class="cb" style="margin-bottom:0"><h3><i class="fa-solid fa-chart-area" style="color:#06b6d4"></i> 毛利率趋势斜率分布</h3><div id="chart-slope" class="chart-container"></div></div>
@@ -439,6 +445,7 @@ body{font-family:-apple-system,'Microsoft YaHei','Segoe UI',sans-serif;backgroun
  <div class="cb" style="margin-bottom:0"><h3><i class="fa-solid fa-arrow-trend-up" style="color:var(--warning)"></i> ASP趋势方向</h3><div style="font-size:10px;color:var(--text-tertiary);margin-bottom:4px">平均售价变动方向统计</div><div id="chart-asp-trend" class="chart-container"></div></div>
  </div>
 
+</div></details>
  <!-- Scatter Chart (full width) -->
  <div class="cb"><h3><i class="fa-solid fa-bullseye" style="color:#8B5CF6"></i> 毛利率 vs 增长率矩阵（气泡大小=销量，颜色=风险等级）<span class="chart-guide">%%GUIDE_C_scatter%%</span></h3><div id="chart-scatter" class="chart-container" style="height:500px"></div></div>
 
@@ -577,10 +584,10 @@ body{font-family:-apple-system,'Microsoft YaHei','Segoe UI',sans-serif;backgroun
  <div id="fDeptRadar" style="width:100%;height:240px"></div>
  </div>
  </div>
- <div class="cb" style="padding:10px;margin-bottom:10px"><h3 style="margin:0 0 6px;font-size:var(--font-md)">品类维度H1对比（万元） <span style="font-size:10px;color:var(--text-tertiary)">[点击品类筛选下方产品 · 点击列头排序]</span></h3>
+ <div class="cb" style="padding:10px;margin-bottom:10px"><h3 style="margin:0 0 6px;font-size:var(--font-md)">品类维度H1对比（万元） <span class="chart-guide">%%GUIDE_F_catTable%%</span></h3>
  <div id="fCatH1Table" style="max-height:300px;overflow-y:auto;font-size:12px;margin-bottom:12px"></div>
  </div>
- <div class="cb" style="padding:10px;margin-bottom:10px"><h3 style="margin:0 0 6px;font-size:var(--font-md)">产品维度H1对比（万元） <span style="font-size:10px;color:var(--text-tertiary)">[近12月>10万 · 点击行展开趋势 · 点击列头排序]</span></h3>
+ <div class="cb" style="padding:10px;margin-bottom:10px"><h3 style="margin:0 0 6px;font-size:var(--font-md)">产品维度H1对比（万元） <span class="chart-guide">%%GUIDE_F_prodTable%%</span></h3>
  <div id="fProductTable" style="max-height:500px;overflow-y:auto;font-size:12px"></div>
  <div style="font-size:10px;color:var(--text-tertiary);padding:6px 8px;margin-top:4px;border-top:1px dashed var(--border);line-height:1.6">
  <b>代次说明</b>（数据口径：%%Y0%%年1月至今）：<span style="color:var(--danger)">新品</span> = ERP标记"是否新品"=是 且首次出现≤12个月 ｜ <span style="color:#F59E0B">1年+</span> = 首次出现≤12个月（无新品标记） ｜ <span style="color:#2563EB">2年+</span> = 存货名称以Q1结尾 或 首次出现12~24个月 ｜ 无标记 = 成熟产品（首次出现>24个月）<br>
@@ -1297,17 +1304,55 @@ TABS.navigate = function(tab, context){
 };
 
 // --- Face-level metadata toggle (three-layer explanation system) ---
+TABS.closeAllFaceMeta = function(){
+ document.querySelectorAll('.face-meta-body.open').forEach(function(b){
+  b.classList.remove('open'); b.style.display='none';
+  var id=b.id.replace('faceMetaBody','');
+  var sum=document.getElementById('faceMetaSummary'+id);
+  if(sum){var ic=sum.querySelector('i');if(ic)ic.className='fa-solid fa-circle-info';}
+ });
+ TABS._activeFaceMeta=null;
+};
 TABS.toggleFaceMeta = function(faceId){
  var body = document.getElementById('faceMetaBody' + faceId);
  if(!body) return;
- var isOpen = body.classList.toggle('open');
- body.style.display = isOpen ? 'block' : 'none';
+ var willOpen = !body.classList.contains('open');
+ TABS.closeAllFaceMeta();
+ if(willOpen){ body.classList.add('open'); body.style.display='block'; TABS._activeFaceMeta=faceId; }
  var sum = document.getElementById('faceMetaSummary' + faceId);
- if(sum){
- var icon = sum.querySelector('i');
- if(icon) icon.className = isOpen ? 'fa-solid fa-chevron-down' : 'fa-solid fa-circle-info';
- }
+ if(sum){ var icon = sum.querySelector('i'); if(icon) icon.className = body.classList.contains('open') ? 'fa-solid fa-chevron-down' : 'fa-solid fa-circle-info'; }
 };
+TABS.GUIDE_DETAIL = %%GUIDE_DETAILS_JSON%%;
+TABS.popover = {
+ _el:null,_btn:null,
+ toggle:function(btn,evt){
+  if(evt)evt.stopPropagation();
+  if(this._btn===btn){this.close();return}
+  this.close();
+  var key=btn.getAttribute('data-guide-key');
+  var html=(TABS.GUIDE_DETAIL&&TABS.GUIDE_DETAIL[key])||'暂无详细说明';
+  var pop=document.createElement('div');
+  pop.className='chart-guide-popover';
+  pop.innerHTML='<div class="cg-title">图表口径与读图指引</div><div>'+html+'</div>';
+  document.body.appendChild(pop);
+  var rect=btn.getBoundingClientRect();
+  var left=rect.left+rect.width/2-170, top=rect.bottom+8;
+  if(left<10)left=10;
+  if(left+pop.offsetWidth>window.innerWidth-10)left=window.innerWidth-pop.offsetWidth-10;
+  if(top+pop.offsetHeight>window.innerHeight-10&&rect.top>pop.offsetHeight+16)top=rect.top-pop.offsetHeight-8;
+  pop.style.left=left+'px';pop.style.top=top+'px';
+  this._el=pop;this._btn=btn;
+  pop.addEventListener('click',function(e){e.stopPropagation()});
+ },
+ close:function(){ if(this._el){this._el.remove();this._el=null} this._btn=null; }
+};
+document.addEventListener('click',function(e){
+ if(TABS._activeFaceMeta){
+  var meta=document.getElementById('faceMeta'+TABS._activeFaceMeta);
+  if(meta&&!meta.contains(e.target))TABS.closeAllFaceMeta();
+ }
+ if(TABS.popover._el&&TABS.popover._btn&&!TABS.popover._btn.contains(e.target)&&!TABS.popover._el.contains(e.target))TABS.popover.close();
+});;
 
 
 %%DATA_BLOCK%%
@@ -2122,6 +2167,7 @@ document.getElementById('marginTable').innerHTML=h||'<div style="text-align:cent
 setTimeout(function(){renderMarginTable()},300);
 
 // ===== A面客户列表 =====
+/* SA≈43行(KA+AA)全量渲染安全;若>200行再引入分页 */
 (function(){var h='';SA.forEach(function(c){var mc=c.g>0?'up':'down',ma=c.g>0?'<i class=\"fa-solid fa-arrow-up\"></i>':'<i class=\"fa-solid fa-arrow-down\"></i>',yc=c.y>0?'up':'down',ya=c.y>0?'<i class=\"fa-solid fa-arrow-up\"></i>':'<i class=\"fa-solid fa-arrow-down\"></i>';var safeName=c.n.replace(/"/g,'&quot;');h+='<div class="crow">';h+='<span class="cn" data-name="'+safeName+'">'+c.n+'</span>';h+='<span>'+Math.round(c.r).toLocaleString()+'</span>';var mgVal=c.r>0?(c.p/c.r*100).toFixed(1):'0.0';h+='<span style="font-size:10px">'+mgVal+'%</span>';h+='<span>'+Math.round(c.p).toLocaleString()+'</span>';h+='<span style="font-size:10px">'+(c.asp||0).toFixed(4)+'</span>';h+='<span class="'+mc+'">'+ma+Math.abs(c.g)+'%</span>';h+='<span class="'+yc+'">'+ya+Math.abs(c.y)+'%</span>';var npct=c.npct||0;h+='<span style="font-size:10px">'+npct+'%</span>';var added=c.added||0,removed=c.removed||0;h+='<span style="font-size:10px;color:'+(added>0?'#10B981':'var(--text-tertiary)')+'">'+(added>0?'+':'')+added+'</span>';h+='<span style="font-size:10px;color:'+(removed>0?'#EF4444':'var(--text-tertiary)')+'">'+(removed>0?'-':'')+removed+'</span>';h+='<span style="font-size:10px">'+c.d+'</span>';h+='<span style="font-size:10px">'+(c.s||'')+'</span>';h+='<span style="font-size:10px">'+c.o+'</span>';h+='</div>'});document.getElementById('saList').innerHTML=h;document.getElementById('saList').addEventListener('click',function(e){var el=e.target.closest('.cn');if(el){var name=el.getAttribute('data-name');if(name)TABS.navigate('B',{customerName:name})}})})();
 
 // ===== A面产品变迁 =====

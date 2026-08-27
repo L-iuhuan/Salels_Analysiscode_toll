@@ -183,6 +183,9 @@ def build_draft(month):
     caliber_lines = []
     for s in rsec:
         caliber_lines.append(f"【{s['title']}】{s['definition']}。{s['koujing']}")
+    # [r7] R面术语表也渲染进口径节（与其他面 glossary 渲染对齐）
+    for _g in (faces["R"].get("glossary") or []):
+        caliber_lines.append(f"【术语·{_g['term']}】{_g['definition']}")
     caliber = "\n".join(caliber_lines)
 
     md = f"""# 风险与行动 · {month[:4]}-{month[4:]}
