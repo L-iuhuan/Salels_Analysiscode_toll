@@ -32,6 +32,8 @@ import pandas as pd
 import numpy as np
 
 from config.settings import ERP_COL_MAP, DATA_SHEET_NAME, PKG_ROOT
+# r17 身份键：快照匹配与 COM 注入共用 excel_com 的全量/头部哈希（弃 mtime 作身份键）
+from shared.excel_com import sha256_full as _sha256_full, sha256_head as _sha256_head
 
 # 共享Silver层输出目录（产品和客户管道共用）
 OUTPUT_SILVER = os.path.abspath(
@@ -71,20 +73,40 @@ def is_encrypted_excel(path) -> bool:
         return False
 
 
+def _snapshot_source_matches(src, cur):
+    """按可用身份键比较 manifest source 与当前源（r17 多级 fallback）。
+
+    1. manifest 有 sha256_full → name+size+sha256_full 匹配（主键，宪法 R3）
+    2. 只有 sha256_8mb（旧 ingest 快照）→ name+size+sha256_8mb 匹配
+    3. 都没有（legacy）→ name+mtime 匹配
+    """
+    if "sha256_full" in src and "sha256_full" in cur:
+        return src["size"] == cur["size"] and src["sha256_full"] == cur["sha256_full"]
+    if "sha256_8mb" in src and "sha256_8mb" in cur:
+        return src["size"] == cur["size"] and src["sha256_8mb"] == cur["sha256_8mb"]
+    return src.get("mtime") == cur.get("mtime")
+
+
 def find_matching_snapshot(xlsx_path, warehouse_root):
-    """W1 快照仓：在 data_warehouse 下找与源 Excel（name+mtime）匹配的快照。
+    """W1 快照仓：在 data_warehouse 下找与源 Excel 匹配的快照（r17 身份键迁移）。
 
     返回 (parquet_path, manifest) 或 None。
-    匹配条件：manifest.source.name == basename(xlsx_path) 且
-    manifest.source.mtime == xlsx_path 的 mtime（mtime 一致即同一文件版本）。
-    xlsx_path 不存在时（如已移走但 mtime 无法校验）仅按 name 匹配。
+    匹配键（r17，宪法 R3）：name+size+sha256_full 全量哈希——弃 mtime（run_chain 的
+    os.utime 抬升会使本地副本/UNC 源 mtime 系统性不等，作键必 miss）；向后兼容多级
+    fallback（见 _snapshot_source_matches）。xlsx_path 不存在时（已移走）仅按 name 匹配。
     """
     if not os.path.isdir(warehouse_root):
         return None
     name = os.path.basename(xlsx_path)
-    cur_mtime = None
+    cur = None
     if os.path.exists(xlsx_path):
-        cur_mtime = os.stat(xlsx_path).st_mtime
+        st = os.stat(xlsx_path)
+        cur = {
+            "size": st.st_size,
+            "mtime": st.st_mtime,
+            "sha256_full": _sha256_full(xlsx_path),
+            "sha256_8mb": _sha256_head(xlsx_path),
+        }
     for ym in sorted(os.listdir(warehouse_root), reverse=True):
         mf = os.path.join(warehouse_root, ym, "manifest.json")
         if not os.path.isfile(mf):
@@ -97,8 +119,8 @@ def find_matching_snapshot(xlsx_path, warehouse_root):
         src = man.get("source", {}) if isinstance(man, dict) else {}
         if src.get("name") != name:
             continue
-        if cur_mtime is not None and src.get("mtime") != cur_mtime:
-            continue  # 源文件已变化，快照过期
+        if cur is not None and not _snapshot_source_matches(src, cur):
+            continue  # 源已变化，快照过期
         pq = os.path.join(warehouse_root, ym, "erp_snapshot.parquet")
         if os.path.isfile(pq):
             return pq, man

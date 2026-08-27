@@ -10,11 +10,12 @@ DSE/亿赛通密文 Excel（文件头非 ZIP/PK）无法被 calamine/openpyxl �
   read_encrypted_com(path, sheet_name, strict=False)  → (df, used_sheet)
        COM 解密读；strict=True 时指定 sheet 不存在返回 (None, None)。
        源为 UNC 路径时先复制到本地临时文件再 COM（COM 只读本地文件）。
-  write_erp_snapshot(df, source_path, warehouse_root, sheet_name)
+  write_erp_snapshot(df, source_path, warehouse_root, sheet_name, read_seconds=None)
        COM 成功后按 ingest 同款落仓：data_warehouse\<YYYYMM>\erp_snapshot.parquet + manifest
-       （manifest 提供 name+mtime 匹配键，供 find_matching_snapshot 命中）。
-  derive_period / coerce_object_columns / coerce_datetime_columns / sha256_head
-       （ingest_snapshot 与流水线注入共用的小工具，从 ingest 原样迁来，行为不变）
+       （r17：manifest source 写 name+size+sha256_full 作身份键，弃 mtime；补全审计字段
+       columns/columns_hash/sums/read_seconds；原子写）。
+  derive_period / coerce_object_columns / coerce_datetime_columns / sha256_head / sha256_full
+  / column_sums（ingest_snapshot 与流水线注入共用的小工具，从 ingest 原样迁来，行为不变）
 
 调用方：
   - scripts\ingest_snapshot.py（原 _read_encrypted_com/_derive_period/... 改从此导入，行为不变）
@@ -64,8 +65,19 @@ def read_encrypted_com(path, sheet_name, strict=False):
     import win32com.client
     cleanup = None
     if isinstance(path, str) and path.startswith("\\\\"):
-        _local = os.path.join(tempfile.gettempdir(), "dse_com_" + os.path.basename(path))
-        shutil.copy2(path, _local)
+        # gamma 加固：mkstemp 唯一名（并发互踩防护）+ 保留扩展名（COM 依赖扩展名推断格式）
+        # + copy2 失败删半成品再 raise（避免残留半截临时文件）
+        fd, _local = tempfile.mkstemp(prefix="dse_com_",
+                                      suffix=os.path.splitext(os.path.basename(path))[1] or ".tmp")
+        os.close(fd)
+        try:
+            shutil.copy2(path, _local)
+        except Exception:
+            try:
+                os.remove(_local)
+            except OSError:
+                pass
+            raise
         path = _local
         cleanup = _local
     excel = win32com.client.DispatchEx("Excel.Application")
@@ -187,11 +199,48 @@ def sha256_head(path, n=_SHA_HEAD):
     return h.hexdigest()
 
 
-def write_erp_snapshot(df, source_path, warehouse_root, sheet_name):
-    """COM 解密成功后按 ingest 同款落仓：写 data_warehouse\<YYYYMM>\erp_snapshot.parquet + manifest。
+def sha256_full(path, chunk=1024 * 1024):
+    """全量文件 sha256（r17，宪法 R3：8MB 头会漏检文件后部修正，作身份键必须全量）。"""
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        for blk in iter(lambda: f.read(chunk), b""):
+            h.update(blk)
+    return h.hexdigest()
 
-    manifest 提供 name+mtime 匹配键（find_matching_snapshot 契约）；保守策略：目标 period 目录
-    已有 manifest 且其 source.name 与当前源不同时不覆盖（避免挤占他人快照，如同名周期下的副本）。
+
+# 关键数值列合计：逻辑名 → 源列候选（raw 列名 vs 重命名后列名）
+SUM_COLS = {
+    "金额": ["金额", "RMB 未税金额小计"],
+    "利润": ["利润"],
+    "数量": ["数量", "发货数量"],
+}
+
+
+def column_sums(df):
+    """关键数值列合计（金额/利润/数量），取源列候选第一个存在的列。
+
+    r17：从 scripts\ingest_snapshot.py 迁入共享层，供 ingest 与快照注入复用。
+    """
+    sums = {}
+    for logical, cands in SUM_COLS.items():
+        for c in cands:
+            if c in df.columns:
+                s = pd.to_numeric(df[c], errors="coerce").sum()
+                sums[logical] = round(float(s), 2) if pd.notna(s) else None
+                break
+        else:
+            sums[logical] = None
+    return sums
+
+
+def write_erp_snapshot(df, source_path, warehouse_root, sheet_name, read_seconds=None):
+    """COM 解密成功后按 ingest 同款落仓：写 data_warehouse\<YYYYMM>\erp_snapshot.parquet + manifest（r17 升级）。
+
+    manifest source 写 name+size+sha256_full（身份键，弃 mtime；mtime 仅保留展示/审计），
+    并补全 ingest 同款审计字段（columns / columns_hash / sums / read_seconds）。
+    保守策略：目标 period 目录已有 manifest 且其 source.name 与当前源不同时不覆盖（避免挤占
+    他人快照，如同名周期下的副本）；同名且 sha256_full 相同视为同源允许覆盖更新。
+    写入原子化：manifest 先写同目录临时文件再 os.replace。
     返回 parquet 路径；被跳过/无写入返回 None。写仓失败由调用方捕获（仅告警不阻断读取）。
     """
     period = derive_period(df, os.path.basename(source_path))
@@ -205,6 +254,7 @@ def write_erp_snapshot(df, source_path, warehouse_root, sheet_name):
                 print(f"  [注入跳过] data_warehouse/{period}/manifest.json 已属于其他源"
                       f"（{existing.get('source', {}).get('name')}），不覆盖；本次 COM 结果直接使用")
                 return None
+            # 同名：sha256_full 相同视为同源允许覆盖更新（不同则源已变，同样允许覆盖为新版本）
         except (json.JSONDecodeError, OSError):
             pass  # manifest 损坏/不可读 → 覆盖重写
     os.makedirs(out_dir, exist_ok=True)
@@ -213,26 +263,41 @@ def write_erp_snapshot(df, source_path, warehouse_root, sheet_name):
     df = coerce_datetime_columns(df)
     df.to_parquet(pq_path, index=False)
     st = os.stat(source_path)
+    cols_hash = hashlib.sha256("\n".join(str(c) for c in df.columns).encode("utf-8")).hexdigest()
     manifest = {
         "source": {
             "name": os.path.basename(source_path),
             "size": st.st_size,
-            "mtime": st.st_mtime,
-            "sha256_8mb": sha256_head(source_path),
+            "mtime": st.st_mtime,                        # 展示/审计，不作身份键
+            "sha256_full": sha256_full(source_path),
         },
         "ingest": {
             "time": datetime.datetime.now().astimezone().isoformat(timespec="seconds"),
             "decrypt_path": "com",
             "sheet": sheet_name,
             "period": period,
+            "read_seconds": round(read_seconds, 1) if read_seconds is not None else None,
         },
         "data": {
             "row_count": int(len(df)),
             "column_count": int(len(df.columns)),
+            "columns_hash": cols_hash,
+            "columns": [str(c) for c in df.columns],
+            "sums": column_sums(df),
         },
         "cust_info": {"file": None, "row_count": None},
     }
-    with open(mf_path, "w", encoding="utf-8") as f:
-        json.dump(manifest, f, ensure_ascii=False, indent=2)
+    # 原子写：先写同目录临时文件再 os.replace（避免半写 manifest 被并发读）
+    fd, tmp_mf = tempfile.mkstemp(suffix=".json", prefix="manifest_", dir=out_dir)
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            json.dump(manifest, f, ensure_ascii=False, indent=2)
+        os.replace(tmp_mf, mf_path)
+    except Exception:
+        try:
+            os.remove(tmp_mf)
+        except OSError:
+            pass
+        raise
     print(f"  [注入] 已写 parquet+manifest（period={period}）: {pq_path}")
     return pq_path

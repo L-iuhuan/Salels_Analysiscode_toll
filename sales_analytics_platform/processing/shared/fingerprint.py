@@ -7,7 +7,10 @@ Dashboard 自缓存指纹（批次③ 车道D 与 车道P 共享契约）。
   fingerprints_equal(a, b) -> bool
 
  指纹键（严格按共享接口契约）：
-  excel          : {name, size, mtime, sha256_8mb}（data/ 最新 xlsx；excel_path 可显式传入）
+  excel          : {name, size, sha256_full}（data/ 最新 xlsx；excel_path 可显式传入）
+                   （r17 迁移：弃 mtime + 8MB 头——宪法 R3 财务可能原地修正文件后部，
+                    且 run_chain 的 os.utime 抬升使 UNC 源与本地副本 mtime 系统性不等，
+                    mtime 作身份键必误判；name+size+sha256_full 全量哈希约 1-2s 可忽略）
   settings       : processing/config/settings*.py 三个文件拼接（LF 归一）后的 sha256
   dashboard_code : dashboard/generate_dashboard.py（LF 归一）sha256
   template       : dashboard/template.html（LF 归一）sha256
@@ -19,8 +22,9 @@ Dashboard 自缓存指纹（批次③ 车道D 与 车道P 共享契约）。
   其内容在两路径（全算/缓存命中）都实时从 md 现算（同 C面毛利率轴"永远现算"模式），
   人工审定编辑不需要使缓存失效，否则"改文档→秒级重渲染"流程会被门禁误拦。
 
- 说明：存量 preagg.json 指纹缺 dept_md 键时，fingerprints_equal（严格 ==）判"不新鲜"，
-       促使一次全量重跑重盖戳（批次③车道P 契约扩展行为）。
+  说明：存量 preagg.json 指纹缺 dept_md 键时，fingerprints_equal（严格 ==）判"不新鲜"，
+        促使一次全量重跑重盖戳（批次③车道P 契约扩展行为）。r17 指纹算法变更 → 同样促使
+        一次全量重跑重盖戳（预期）。
 
 
 缓存文件约定（车道D 使用）：output/dashboard/preagg.json = {"fingerprint": {...}, "payload": {...}}
@@ -28,8 +32,6 @@ Dashboard 自缓存指纹（批次③ 车道D 与 车道P 共享契约）。
 import hashlib
 import json
 import os
-
-_SHA_HEAD_SIZE = 8 * 1024 * 1024  # 与批次⓪ _baseline_common 一致的 8MB 头部指纹
 
 
 def _sha256_text(s: str) -> str:
@@ -42,17 +44,24 @@ def _read_lf_norm(path: str) -> str:
         return f.read().replace("\r\n", "\n").replace("\r", "\n")
 
 
+def _sha256_full(path: str) -> str:
+    """全量文件 sha256（r17，宪法 R3：8MB 头会漏检文件后部修正）。"""
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        for blk in iter(lambda: f.read(1024 * 1024), b""):
+            h.update(blk)
+    return h.hexdigest()
+
+
 def _excel_fingerprint(excel_path: str):
+    """Excel 身份指纹（r17）：name+size+sha256_full，弃 mtime（作身份键会被 utime 抬升破坏）。"""
     if not excel_path or not os.path.isfile(excel_path):
         return None
     st = os.stat(excel_path)
-    with open(excel_path, "rb") as f:
-        head = f.read(_SHA_HEAD_SIZE)
     return {
         "name": os.path.basename(excel_path),
         "size": st.st_size,
-        "mtime": st.st_mtime,
-        "sha256_8mb": hashlib.sha256(head).hexdigest(),
+        "sha256_full": _sha256_full(excel_path),
     }
 
 

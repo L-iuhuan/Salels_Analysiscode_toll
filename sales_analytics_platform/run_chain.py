@@ -110,8 +110,11 @@ def find_raw_excel(cfg):
             if os.path.isdir(share_dir):
                 shared = [os.path.join(share_dir, f) for f in os.listdir(share_dir)
                           if f.endswith(".xlsx") and not f.startswith("~$")]
+            else:
+                # r17 必修-4：共享盘已配置但不可达 → 显式告警（被显式禁用时 share_dir 为空、静默）
+                print(f"[警告] 共享盘不可达或扫描失败（{share_dir}），已回退本地数据源（可能非最新）")
         except OSError:
-            pass  # 共享盘不可达/不存在：静默回退纯本地（保持现状行为）
+            print(f"[警告] 共享盘不可达或扫描失败（{share_dir}），已回退本地数据源（可能非最新）")
     if not local and not shared:
         return ""
     # 同 mtime 时优先共享盘（本地常为共享盘历史副本、mtime 一致）：r14 以共享盘为月度权威源，

@@ -29,6 +29,7 @@ import json
 import os
 import shutil
 import sys
+import tempfile
 import time
 
 import numpy as np
@@ -50,16 +51,9 @@ _PROC_DIR = os.path.join(DEFAULT_PLATFORM, "processing")
 if _PROC_DIR not in sys.path:
     sys.path.insert(0, _PROC_DIR)
 from shared.excel_com import (  # noqa: E402
-    read_encrypted_com, derive_period,
-    coerce_object_columns, coerce_datetime_columns, sha256_head,
+    read_encrypted_com, derive_period, column_sums,
+    coerce_object_columns, coerce_datetime_columns, sha256_head, sha256_full,
 )
-
-# 关键数值列合计：逻辑名 → 源列候选（raw 列名 vs 重命名后列名）
-SUM_COLS = {
-    "金额": ["金额", "RMB 未税金额小计"],
-    "利润": ["利润"],
-    "数量": ["数量", "发货数量"],
-}
 
 
 def is_encrypted(path):
@@ -103,20 +97,6 @@ def _read_plain(path, sheet_name):
     except Exception:
         # sheet 名不匹配（年份翻页等）时回退首个 sheet
         return read_excel_auto(path, sheet_name=0)
-
-
-def _column_sums(df):
-    """关键数值列合计（金额/利润/数量），取源列候选第一个存在的列。"""
-    sums = {}
-    for logical, cands in SUM_COLS.items():
-        for c in cands:
-            if c in df.columns:
-                s = pd.to_numeric(df[c], errors="coerce").sum()
-                sums[logical] = round(float(s), 2) if pd.notna(s) else None
-                break
-        else:
-            sums[logical] = None
-    return sums
 
 
 def _read_sheet_optional(path, sheet_name, enc):
@@ -192,7 +172,7 @@ def main():
     print(f"[读] {len(df)} 行 x {len(df.columns)} 列 | {read_s:.1f}s | 路径={decrypt_path} | sheet={sheet_used}")
 
     # 对账数字
-    sums = _column_sums(df)
+    sums = column_sums(df)
     print("\n[对账表]")
     print(f"  行数   : {len(df):,}")
     print(f"  金额合计: {sums['金额']:,.2f}")
@@ -228,8 +208,9 @@ def main():
         "source": {
             "name": os.path.basename(xlsx),
             "size": st.st_size,
-            "mtime": st.st_mtime,
-            "sha256_8mb": sha256_head(xlsx),
+            "mtime": st.st_mtime,                       # 展示/审计，不作身份键
+            "sha256_8mb": sha256_head(xlsx),            # 保留兼容（旧 find_matching_snapshot）
+            "sha256_full": sha256_full(xlsx),           # r17 身份键（宪法 R3 全量哈希）
         },
         "ingest": {
             "time": datetime.datetime.now().astimezone().isoformat(timespec="seconds"),
@@ -251,8 +232,18 @@ def main():
         },
     }
     mf_path = os.path.join(out_dir, "manifest.json")
-    with open(mf_path, "w", encoding="utf-8") as f:
-        json.dump(manifest, f, ensure_ascii=False, indent=2)
+    # r17 原子写：先写同目录临时文件再 os.replace（避免半写 manifest 被并发读）
+    fd, tmp_mf = tempfile.mkstemp(suffix=".json", prefix="manifest_", dir=out_dir)
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            json.dump(manifest, f, ensure_ascii=False, indent=2)
+        os.replace(tmp_mf, mf_path)
+    except Exception:
+        try:
+            os.remove(tmp_mf)
+        except OSError:
+            pass
+        raise
     print(f"[写] {mf_path}")
     print(f"\n[OK] 快照已生成（period={period}，decrypt={decrypt_path}）")
     sys.exit(0)
