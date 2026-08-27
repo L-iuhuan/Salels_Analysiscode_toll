@@ -460,56 +460,39 @@ def build_c_sankey(table, history):
     return {"nodes": nodes, "links": links}
 
 def load_product_report():
-    """定位并读取最新产品生命周期报告Excel（含历史/桑基/数据月份）。
+    """读取 Gold 层产品三件套（快照 + 历史画像 + 元数据）。
 
-    返回 (df_snapshot, df_history, data_month, insuff_count)。
-    若未找到报告则返回 (None, None, None, 0)，调用方回退gold快照（无历史/桑基/月份）。
+    [r10-b] 替代原"读产品生命周期报告 Excel"消费路径（S5：看板只消费预聚合数据）。
+    返回 (df_snapshot, df_history, data_month, insuff_count)，签名与旧版完全一致，
+    调用方 build_c_data/build_c_history/build_c_sankey 零改动。
+    快照缺失时返回 (None, None, None, 0)，调用方回退降级。
     """
-    report_dir = os.path.join(PROJECT, "output", "report")
-    cands = sorted(
-        [f for f in glob.glob(os.path.join(report_dir, "产品生命周期报告_v4.0_*.xlsx"))
-         if not os.path.basename(f).startswith("~$")],
-        key=os.path.getmtime, reverse=True,
-    )
-    if not cands:
-        print("  [C面][警告] 未找到产品生命周期报告，回退gold快照（历史/桑基/月份缺失）；若为配置关闭请检查 EXCEL_REPORT.product_enabled")
+    gold_dir = os.path.join(PROJECT, "output", "gold")
+    snap_path = os.path.join(gold_dir, "gold_product_portrait.csv")
+    hist_path = os.path.join(gold_dir, "gold_product_portrait_history.csv")
+    meta_path = os.path.join(gold_dir, "gold_product_portrait_meta.json")
+    if not os.path.exists(snap_path):
+        print("  [C面][警告] 未找到 gold 产品快照 CSV（先跑全量管道生成），回退降级：history/sankey/data_month 缺失")
         return None, None, None, 0
-    path = cands[0]
-    print(f"  [C面] 产品报告: {os.path.basename(path)}")
-    xls = pd.ExcelFile(path, engine="calamine")
-    def _sheet(frag):
-        for nm in xls.sheet_names:
-            if frag in nm:
-                return nm
-        return None
-    df_snap = pd.read_excel(path, sheet_name=_sheet("产品快照表") or xls.sheet_names[0], engine="calamine")
+    df_snap = pd.read_csv(snap_path, encoding="utf-8-sig")
     df_snap.columns = [str(c).strip() for c in df_snap.columns]
-    # 历史：主表自带 _t-N 列（Format A）则用主表，否则读"历史画像追踪"（Format B）
-    hist_name = _sheet("历史画像追踪")
-    has_hist_cols = any(re.match(r"当前画像_t-\d+", str(c)) for c in df_snap.columns)
-    if has_hist_cols:
-        df_hist = df_snap
-    elif hist_name:
-        df_hist = pd.read_excel(path, sheet_name=hist_name, engine="calamine")
+    df_hist = None
+    if os.path.exists(hist_path):
+        df_hist = pd.read_csv(hist_path, encoding="utf-8-sig")
         df_hist.columns = [str(c).strip() for c in df_hist.columns]
-    else:
-        df_hist = None
-    # 数据月份
-    data_month = None
-    if "最新数据月份" in df_snap.columns:
-        dm = df_snap["最新数据月份"].dropna()
-        if not dm.empty:
-            data_month = str(dm.iloc[0])
-    # 数据不足产品数
-    insuff = 0
-    insuff_name = _sheet("数据不足")
-    if insuff_name:
+    data_month, insuff = None, 0
+    if os.path.exists(meta_path):
         try:
-            insuff = len(pd.read_excel(path, sheet_name=insuff_name, engine="calamine"))
-        except Exception:
-            insuff = 0
+            with open(meta_path, encoding="utf-8") as f:
+                meta = json.load(f)
+            data_month = meta.get("data_month")
+            insuff = int(meta.get("insuff_count", 0) or 0)
+        except Exception as _e:
+            print(f"  [C面][警告] meta JSON 读取失败: {_e}")
+    print(f"  [C面] gold快照: {os.path.basename(snap_path)} ({len(df_snap)}行)"
+          + (f" | gold历史: {len(df_hist.columns) - 1}个_t-N列" if df_hist is not None else " | 无历史CSV")
+          + f" | 数据月份: {data_month} | 数据不足: {insuff}")
     return df_snap, df_hist, data_month, insuff
-
 
 def build_c_data(prod_df, hist_df=None, data_month=None, insuff_count=0):
     """构建完整的C面DATA对象。

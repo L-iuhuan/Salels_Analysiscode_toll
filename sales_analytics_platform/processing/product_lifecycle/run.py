@@ -508,6 +508,21 @@ def run_analysis(source_path, df=None):
     gold_path = os.path.join(OUTPUT_GOLD, "gold_product_portrait.csv")
     out.to_csv(gold_path, index=False, encoding="utf-8-sig")
     print(f"  Gold层: {gold_path}")
+    # [r10-b C面迁gold] 历史画像追踪 + 元数据落 Gold 层（替代看板读 Excel 报告，配合 settings.product_enabled=False）
+    import json  # 函数内局部导入，避免动模块头 import 区
+    if hist_sheet_df is not None and len(hist_sheet_df) > 0:
+        hist_path = os.path.join(OUTPUT_GOLD, "gold_product_portrait_history.csv")
+        hist_sheet_df.to_csv(hist_path, index=False, encoding="utf-8-sig")
+        print(f"  Gold层(历史): {hist_path}  ({len(hist_sheet_df)}行 x {len(hist_sheet_df.columns)}列)")
+    _meta = {
+        "data_month": str(out["最新数据月份"].iloc[0]) if ("最新数据月份" in out.columns and len(out)) else None,
+        "insuff_count": int(len(data_insufficient)) if data_insufficient else 0,
+        "hist_intervals": list(hist_intervals),
+    }
+    _meta_path = os.path.join(OUTPUT_GOLD, "gold_product_portrait_meta.json")
+    with open(_meta_path, "w", encoding="utf-8") as _mf:
+        json.dump(_meta, _mf, ensure_ascii=False, indent=2)
+    print(f"  Gold层(meta): {_meta_path}")
 
     return {
         "output_file": output_file,
