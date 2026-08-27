@@ -23,6 +23,7 @@ if PROJECT_ROOT not in sys.path:
 
 from shared.data_cleaning import (
     read_excel_auto, rename_erp_columns, build_cust_info, load_silver_table,
+    find_matching_snapshot,
     SILVER_DTYPE_CUSTOMER_MONTHLY, SILVER_DTYPE_PRODUCT_MONTHLY, SILVER_DTYPE_CUSTOMER_X_PRODUCT,
 )
 from customer_analysis.silver import build_silver_layer
@@ -34,6 +35,8 @@ from customer_analysis.gold import generate_gold_tables
 from customer_analysis.report import save_gold_tables
 
 PRODUCT_GOLD_PATH = os.path.join(OUTPUT_GOLD, "gold_product_portrait.csv")
+# r15（未决#16）：raw_data 回退源快照优先——data_warehouse 与 run_all.py stage_silver 同款
+DATA_WAREHOUSE = os.path.join(PROJECT_ROOT, "..", "data_warehouse")
 
 
 def run(
@@ -89,13 +92,23 @@ def run(
                     # mtime 最新（与 run_chain.find_raw_excel 同口径；字母序会在多月度文件并存时取错）
                     source_path = os.path.join(DATA_DIR, max(xlsx_files, key=lambda n: os.path.getmtime(os.path.join(DATA_DIR, n))))
             if source_path:
-                raw_temp = read_excel_auto(source_path, sheet_name=DATA_SHEET_NAME)
+                # [r15 修复/未决#16] silver 缓存有效被跳过时 raw_data 为空，回退源改"快照优先"：
+                # 按 name+mtime 在 data_warehouse 找匹配快照（与 silver 阶段同款 find_matching_snapshot），
+                # 命中读 parquet（明文秒级，避免 DSE 密文直读崩溃）；无匹配快照才回退现有 Excel 读取路径。
+                _snap = find_matching_snapshot(source_path, DATA_WAREHOUSE)
+                if _snap is not None:
+                    _pq_path, _man = _snap
+                    raw_temp = pd.read_parquet(_pq_path)
+                    print(f"  客户属性数据从 data_warehouse 快照加载 "
+                          f"({os.path.basename(os.path.dirname(_pq_path))}/erp_snapshot.parquet)")
+                else:
+                    raw_temp = read_excel_auto(source_path, sheet_name=DATA_SHEET_NAME)
                 _keep_cols = ["销售模式", "终端客户名称_客户类别", "实际业务员"]
                 raw_data = raw_temp[[c for c in _keep_cols if c in raw_temp.columns]].copy()
                 # 映射客户编号（终端客户简称 → 客户编号）
                 if "终端客户简称" in raw_temp.columns:
                     raw_data["客户编号"] = raw_temp["终端客户简称"]
-                print(f"  客户属性数据从源文件加载 ({len(raw_data)} 行)")
+                print(f"  客户属性数据就绪 ({len(raw_data)} 行)")
         else:
             print(f"  客户属性数据使用预加载DataFrame ({len(raw_data)} 行)")
 
