@@ -115,7 +115,7 @@ body{font-family:-apple-system,'Microsoft YaHei','Segoe UI',sans-serif;backgroun
 .chart-guide-wrap{display:inline-flex;align-items:center;gap:4px;vertical-align:middle}
 .chart-guide-btn{width:16px;height:16px;padding:0;border:none;background:transparent;color:var(--text-tertiary);cursor:pointer;font-size:12px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center}
 .chart-guide-btn:hover{color:var(--primary);background:var(--primary-50)}
-.chart-guide-popover{position:absolute;z-index:55;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);box-shadow:var(--shadow-lg);padding:12px;width:340px;max-width:calc(100vw - 40px);max-height:60vh;overflow-y:auto;font-size:var(--font-sm);line-height:1.6;color:var(--text-secondary)}
+.chart-guide-popover{position:fixed;z-index:55;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);box-shadow:var(--shadow-lg);padding:12px;width:340px;max-width:calc(100vw - 40px);max-height:60vh;overflow-y:auto;font-size:var(--font-sm);line-height:1.6;color:var(--text-secondary)}
 .chart-guide-popover .cg-title{font-weight:var(--weight-heading);color:var(--text-primary);margin-bottom:8px;font-size:var(--font-sm)}
 .chart-guide-popover p{margin:0 0 6px}
 /* Empty state v2 */
@@ -1314,6 +1314,7 @@ TABS.closeAllFaceMeta = function(){
  TABS._activeFaceMeta=null;
 };
 TABS.toggleFaceMeta = function(faceId){
+ TABS.popover&&TABS.popover.close();
  var body = document.getElementById('faceMetaBody' + faceId);
  if(!body) return;
  var willOpen = !body.classList.contains('open');
@@ -1327,6 +1328,7 @@ TABS.popover = {
  _el:null,_btn:null,
  toggle:function(btn,evt){
   if(evt)evt.stopPropagation();
+  TABS.closeAllFaceMeta&&TABS.closeAllFaceMeta();
   if(this._btn===btn){this.close();return}
   this.close();
   var key=btn.getAttribute('data-guide-key');
@@ -1352,7 +1354,9 @@ document.addEventListener('click',function(e){
   if(meta&&!meta.contains(e.target))TABS.closeAllFaceMeta();
  }
  if(TABS.popover._el&&TABS.popover._btn&&!TABS.popover._btn.contains(e.target)&&!TABS.popover._el.contains(e.target))TABS.popover.close();
-});;
+});
+window.addEventListener('scroll',function(){TABS.popover.close();TABS.closeAllFaceMeta&&TABS.closeAllFaceMeta();},true);
+window.addEventListener('resize',function(){TABS.popover.close();},true);;
 
 
 %%DATA_BLOCK%%
@@ -2053,6 +2057,7 @@ TABS._tabInitialized = {};
 TABS._cInitialized = false; // Tab C (product lifecycle) lazy init flag
 
 function switchTab(t){
+ TABS.popover&&TABS.popover.close();TABS.closeAllFaceMeta&&TABS.closeAllFaceMeta();
  document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active')});
  var btn=document.getElementById('btn'+t);if(btn)btn.classList.add('active');
  document.querySelectorAll('.tab-content').forEach(function(p){p.classList.remove('active')});
