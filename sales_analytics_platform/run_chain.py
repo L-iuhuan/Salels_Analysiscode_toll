@@ -46,9 +46,9 @@ PKG = os.path.dirname(os.path.abspath(__file__))
 DIR_DATA = os.path.join(PKG, "data")        # 唯一输入目录：原始Excel + 部门-人员.md
 # 共享盘数据目录：内置默认值（r14：财务月度 Excel 直接投放共享盘，全员 DSE 客户端透明解密）。
 # 可被环境变量 SALES_DATA_SHARE_DIR / chain_config.json 的 data_share_dir 覆盖，显式空串 "" = 禁用共享盘扫描。
-# 单点配置纪律：与壳端 lib.rs DEFAULT_SHARE_PATH、kanban/share_config.json 同源，
-# 共享盘路径变更时三处必须同步修改。
-DIR_DATA_SHARE = r"\\192.168.8.3\财务部\办公软件\SoftwareUpdate\数据分析看板\data"
+# 单点配置纪律：数据共享夹独立于代码共享夹（r14b 用户拍板）；本默认值与
+# scripts\ingest_snapshot.py、壳端 lib.rs DEFAULT_DATA_SHARE_PATH 三处同源，变更时必须同步修改。
+DIR_DATA_SHARE = r"\\192.168.8.3\财务部\财务电子档案备份\D1经营分析"
 DIR_PROC = os.path.join(PKG, "processing")  # 前段代码
 DIR_OUT = os.path.join(PKG, "output")       # 唯一输出目录：silver/gold/report（前段写、后段读、也可做其它分析）
 DIR_DASH = os.path.join(PKG, "dashboard")   # 后段代码 + 生成的看板

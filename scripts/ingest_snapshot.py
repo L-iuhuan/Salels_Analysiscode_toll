@@ -40,9 +40,9 @@ DEFAULT_PLATFORM = os.path.join(_REPO_ROOT, "sales_analytics_platform")
 DEFAULT_DATA_DIR = os.path.join(DEFAULT_PLATFORM, "data")
 # 共享盘数据目录：内置默认值（r14：财务月度 Excel 直接投放共享盘，全员 DSE 客户端透明解密）。
 # 可被命令行 --share-dir / 环境变量 SALES_DATA_SHARE_DIR 覆盖，显式空串 "" = 禁用共享盘扫描。
-# 单点配置纪律：与壳端 lib.rs DEFAULT_SHARE_PATH、kanban/share_config.json 同源，
-# 共享盘路径变更时三处必须同步修改。
-DIR_DATA_SHARE = r"\\192.168.8.3\财务部\办公软件\SoftwareUpdate\数据分析看板\data"
+# 单点配置纪律：数据共享夹独立于代码共享夹（r14b 用户拍板）；本默认值与
+# run_chain.py、壳端 lib.rs DEFAULT_DATA_SHARE_PATH 三处同源，变更时必须同步修改。
+DIR_DATA_SHARE = r"\\192.168.8.3\财务部\财务电子档案备份\D1经营分析"
 DATA_WAREHOUSE = os.path.join(DEFAULT_PLATFORM, "data_warehouse")
 
 _SHA_HEAD = 8 * 1024 * 1024  # sha256 前 8MB
