@@ -26,14 +26,19 @@ import datetime
 import hashlib
 import json
 import os
+import pickle
 import re
 import shutil
+import subprocess
+import sys
 import tempfile
 import time
 
 import pandas as pd
 
 _SHA_HEAD = 8 * 1024 * 1024  # sha256 前 8MB
+# r18 ①：COM 子进程超时上限（DSE 弹窗未处理/Excel 异常时防无限阻塞；正常读取 60-90s）
+_COM_TIMEOUT = 300
 
 
 def naive_cell(v):
@@ -54,32 +59,14 @@ def resolve_sheet(ws_names, prefer):
     return ws_names[0] if ws_names else None
 
 
-def read_encrypted_com(path, sheet_name, strict=False):
-    """DSE 加密文件：COM 解密读（ReadOnly 打开，读目标 sheet UsedRange，首行作列名）。
+def _read_com_in_process(path, sheet_name, strict):
+    """子进程/主进程共用的实际 COM 读取逻辑（r18 ① 抽离，返回值可 pickle）。
 
-    用 DispatchEx 创建新实例（避免 attach 到残留/损坏的 Excel 实例导致 Workbooks 不可用）。
+    DSE 加密文件：COM 解密读（ReadOnly 打开，读目标 sheet UsedRange，首行作列名）。
     strict=True 时 sheet 不存在返回 (None, None)，不回退首个 sheet（可选 sheet 用）。
-    UNC 源（\\ 开头）先复制到本地临时文件再 COM（COM 只读本地文件，规避 UNC+COM 未验证路径）。
-    返回 (DataFrame, used_sheet) 或 (None, None)。
+    本函数不处理 UNC（父进程已转本地临时副本）。返回 (DataFrame, used_sheet) 或 (None, None)。
     """
     import win32com.client
-    cleanup = None
-    if isinstance(path, str) and path.startswith("\\\\"):
-        # gamma 加固：mkstemp 唯一名（并发互踩防护）+ 保留扩展名（COM 依赖扩展名推断格式）
-        # + copy2 失败删半成品再 raise（避免残留半截临时文件）
-        fd, _local = tempfile.mkstemp(prefix="dse_com_",
-                                      suffix=os.path.splitext(os.path.basename(path))[1] or ".tmp")
-        os.close(fd)
-        try:
-            shutil.copy2(path, _local)
-        except Exception:
-            try:
-                os.remove(_local)
-            except OSError:
-                pass
-            raise
-        path = _local
-        cleanup = _local
     excel = win32com.client.DispatchEx("Excel.Application")
     # 已有 Excel 实例时 Visible/DisplayAlerts 可能不可设置，失败不阻断（解密读仍可用）
     for attr, val in (("Visible", False), ("DisplayAlerts", False), ("EnableEvents", False)):
@@ -131,9 +118,114 @@ def read_encrypted_com(path, sheet_name, strict=False):
             excel.Quit()
         except Exception:
             pass
+
+
+def _com_read_worker_main():
+    """子进程入口：`python -m shared.excel_com <path> <sheet> <strict> <out_pkl>`（r18 ①）。
+
+    worker 内自行把 processing 目录加入 sys.path（壳端三层嵌套 spawn 下不依赖调用方 cwd）；
+    结果 df 用 pickle 写回（不用 parquet——COM df 的 object 列正是 pyarrow 序列化问题）。
+    成功写 (df, used_sheet) 或 (None, None)；异常写 ("error", type, msg) 并 exit 1。
+    """
+    _PROC = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+    if _PROC not in sys.path:
+        sys.path.insert(0, _PROC)
+    path, sheet_str, strict_str, out_pkl = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
+    sheet = int(sheet_str) if sheet_str.isdigit() else sheet_str
+    strict = strict_str.lower() == "true"
+    try:
+        result = _read_com_in_process(path, sheet, strict)
+        with open(out_pkl, "wb") as f:
+            pickle.dump(result, f)
+    except BaseException as e:  # noqa: BLE001 —— worker 兜底：把错误写回父进程
+        try:
+            with open(out_pkl, "wb") as f:
+                pickle.dump(("error", type(e).__name__, str(e)), f)
+        except Exception:
+            pass
+        sys.exit(1)
+
+
+def read_encrypted_com(path, sheet_name, strict=False):
+    """DSE 加密文件：COM 解密读（r18 ①：COM 读取在子进程执行 + 300s 超时）。
+
+    COM 在独立子进程中执行，超时/非零退出即杀进程树并抛 RuntimeError——
+    防 DSE 未登录/Excel 弹窗在主进程内无限阻塞。UNC 源先复制到本地临时文件再 COM
+    （mkstemp 唯一名加固保留，finally 清理）；sheet 语义与 _read_com_in_process 一致。
+    返回 (DataFrame, used_sheet) 或 (None, None)。
+    """
+    cleanup = None
+    if isinstance(path, str) and path.startswith("\\\\"):
+        # r17 gamma 加固保留：mkstemp 唯一名 + 保留扩展名 + copy2 失败删半成品再 raise
+        fd, _local = tempfile.mkstemp(prefix="dse_com_",
+                                      suffix=os.path.splitext(os.path.basename(path))[1] or ".tmp")
+        os.close(fd)
+        try:
+            shutil.copy2(path, _local)
+        except Exception:
+            try:
+                os.remove(_local)
+            except OSError:
+                pass
+            raise
+        path = _local
+        cleanup = _local
+    out_fd, out_pkl = tempfile.mkstemp(suffix=".pkl", prefix="dse_com_out_")
+    os.close(out_fd)
+    try:
+        _PROC = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+        cmd = [sys.executable, "-m", "shared.excel_com",
+               path, str(sheet_name), "True" if strict else "False", out_pkl]
+        env = os.environ.copy()
+        env["PYTHONIOENCODING"] = "utf-8"  # worker stdout 按 UTF-8 捕获（防 GBK 管道解码错乱）
+        try:
+            proc = subprocess.run(cmd, cwd=_PROC, capture_output=True, text=True,
+                                  encoding="utf-8", errors="replace",
+                                  timeout=_COM_TIMEOUT, env=env)
+        except subprocess.TimeoutExpired as e:
+            # 杀进程树：Excel COM 可能已起 EXCEL.EXE 子进程，仅杀 python 会残留
+            try:
+                subprocess.run(["taskkill", "/F", "/T", "/PID", str(e.pid)],
+                               capture_output=True, timeout=15)
+            except Exception:
+                pass
+            raise RuntimeError(
+                "COM 读取超时（超过 300s），可能 DSE 客户端弹窗未处理或 Excel 异常，"
+                "请检查本机 Excel 与 DSE 客户端状态后重试。")
+        if proc.returncode != 0:
+            detail = ""
+            try:
+                with open(out_pkl, "rb") as f:
+                    r = pickle.load(f)
+                if isinstance(r, (tuple, list)) and len(r) == 3 and r[0] == "error":
+                    detail = f"{r[1]}: {r[2]}"
+            except Exception:
+                pass
+            msg = (f"COM 读取失败（子进程 exit={proc.returncode}），"
+                   f"请检查本机 Excel 与 DSE 客户端状态后重试。")
+            if detail:
+                msg += f"\n（COM 错误: {detail}）"
+            if proc.stderr.strip():
+                msg += f"\n{proc.stderr.strip()[-2000:]}"
+            raise RuntimeError(msg)
+        with open(out_pkl, "rb") as f:
+            result = pickle.load(f)
+        if isinstance(result, (tuple, list)) and len(result) == 3 and result[0] == "error":
+            raise RuntimeError(f"COM 读取失败: {result[1]}: {result[2]}")
+        if proc.stdout.strip():
+            # 透传 worker 的 [COM] 读取行（成功时展示；stdout 已捕获防管道死锁）
+            for line in proc.stdout.splitlines():
+                print(line.rstrip())
+        return result
+    finally:
         if cleanup and os.path.exists(cleanup):
             try:
                 os.remove(cleanup)
+            except OSError:
+                pass
+        if os.path.exists(out_pkl):
+            try:
+                os.remove(out_pkl)
             except OSError:
                 pass
 
@@ -189,6 +281,35 @@ def coerce_datetime_columns(df):
                 df[c] = df[c].map(
                     lambda v: None if pd.isna(v)
                     else v.replace(tzinfo=None).strftime("%Y-%m-%d %H:%M:%S"))
+    return df
+
+
+def coerce_numeric_object_columns(df):
+    """r18 ②：COM 路径 df 类型归一（值不变，dtype 对齐 calamine/快照语义）。
+
+    根治"COM 读出 df 的 object 列让 silver parquet 双写失败"：
+      1. 先 coerce_object_columns：object 列非 str 单元统一为 str（修 产品品类 等 str/int 混排列，
+         与快照路径同款）。
+      2. 再对"纯数字串"object 列 pd.to_numeric 转数值（修 单位成本 等："0.0426900000" → 0.04269，
+         数值等价——pandas 读 CSV 时本就会把纯数字串推断为数值，故经 golden_diff 读取后
+         dtype/合计与基线一致，CSV 零漂移红线不受影响）。
+      3. 含非数值的列保持 str（品类码/编号等标识，不做无损之外的值改动）。
+    红线：值不变——纯数字列转数值是数值等价（前导零列 pandas 读 CSV 时本就会剥离，与基线一致）。
+    """
+    df = coerce_object_columns(df)
+    for c in df.columns:
+        if df[c].dtype != object:
+            continue
+        non_null = df[c].dropna()
+        if non_null.empty:
+            continue
+        try:
+            num = pd.to_numeric(non_null, errors="coerce")
+            if num.isna().any():
+                continue  # 含非数值（标识/品类码）→ 保持 str
+            df[c] = pd.to_numeric(df[c], errors="coerce")
+        except Exception:
+            continue
     return df
 
 
@@ -301,3 +422,8 @@ def write_erp_snapshot(df, source_path, warehouse_root, sheet_name, read_seconds
         raise
     print(f"  [注入] 已写 parquet+manifest（period={period}）: {pq_path}")
     return pq_path
+
+
+if __name__ == "__main__":
+    # r18 ①：COM 子进程入口（read_encrypted_com 以 `python -m shared.excel_com ...` spawn）
+    _com_read_worker_main()

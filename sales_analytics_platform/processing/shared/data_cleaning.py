@@ -151,7 +151,7 @@ def _read_encrypted_com_fallback(path, args, kwargs):
     sheet 语义与 pandas 一致：指定字符串 sheet 不存在 → ValueError（调用方照旧回退）；
     未指定/0 → 首个 sheet。COM 失败才抛 RuntimeError（原报错文案补充 COM 也失败的指引）。
     """
-    from shared.excel_com import read_encrypted_com, write_erp_snapshot
+    from shared.excel_com import read_encrypted_com, write_erp_snapshot, coerce_numeric_object_columns
     sheet_name = args[1] if len(args) > 1 else kwargs.get("sheet_name", 0)
     print(f"[COM兜底] DSE 加密文件，走 COM 解密读取（约 1-2 分钟）…: {os.path.basename(path)}")
     try:
@@ -170,6 +170,9 @@ def _read_encrypted_com_fallback(path, args, kwargs):
             "且 COM 解密也失败，请确认本机装有 Office 且 DSE 客户端正常。\n"
             f"（COM 错误: {type(e).__name__}: {e}）"
         ) from e
+    # r18 ②：COM 读出 df 类型归一（值不变，dtype 对齐 calamine/快照语义）——
+    # 根治 COM object 列让 silver 两份 parquet 双写失败（CSV 零漂移红线：数值等价转换）
+    df = coerce_numeric_object_columns(df)
     # 注入 parquet 快照（best-effort：写失败仅告警，不影响本次读取；后续跑批直接命中快照不再走 COM）
     try:
         write_erp_snapshot(df, path, _WAREHOUSE_ROOT, used_sheet)

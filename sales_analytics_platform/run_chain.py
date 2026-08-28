@@ -90,7 +90,12 @@ def find_raw_excel(cfg):
     """
     cand = (cfg.get("raw_excel") or "").strip()
     if cand:
-        p = cand if os.path.isabs(cand) else os.path.join(DIR_DATA, cand)
+        # r18 ③：解析顺序——绝对路径直用；相对路径先按当前目录(cwd)原样解析，不存在再拼 DIR_DATA；
+        # 都不存在则按现状告警并回退自动检测（帮助文本已注明）
+        if os.path.isabs(cand):
+            p = cand
+        else:
+            p = cand if os.path.exists(cand) else os.path.join(DIR_DATA, cand)
         if os.path.exists(p):
             return p
         print(f"[警告] 配置的 raw_excel '{cand}' 不存在，改为自动检测 data/ 目录")
@@ -228,7 +233,8 @@ def _gate_dashboard_only(raw_path):
 
 def main():
     ap = argparse.ArgumentParser(description="看板流水线 · 一键编排器")
-    ap.add_argument("--data", default=None, help="原始Excel路径（默认自动找 data/ 最新）")
+    ap.add_argument("--data", default=None,
+                    help="原始Excel路径（默认自动找 data/ 最新；绝对路径直用；相对路径先按当前目录解析、不存在再拼 data\ 目录）")
     ap.add_argument("--skip-processing", action="store_true", help="跳过数据处理，直接用 output/ 现有结果生成看板")
     ap.add_argument("--dashboard-only", action="store_true",
                     help="只看板快速模式：跳过数据处理，要求预聚合缓存 output/dashboard/preagg.json 指纹新鲜，过期/缺失则报错退出")
