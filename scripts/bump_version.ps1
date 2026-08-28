@@ -8,14 +8,14 @@
 
     用法：
         手动运行（默认当前目录，需在流水线代码所在目录执行）：
-            powershell -File tools\bump_version.ps1
+            powershell -File scripts\bump_version.ps1
         指定流水线代码目录：
-            powershell -File tools\bump_version.ps1 -CodeDir .\code
+            powershell -File scripts\bump_version.ps1 -CodeDir .\code
         加入 git pre-push 钩子（.git/hooks/pre-push，内容二选一）：
             # 1) 直接在流水线代码目录执行
-            powershell -File "%~dp0..\tools\bump_version.ps1" -CodeDir "%~dp0code"
+            powershell -File "%~dp0..\scripts\bump_version.ps1" -CodeDir "%~dp0code"
             # 2) 或在仓库根目录执行
-            powershell -File "$(git rev-parse --show-toplevel)\tools\bump_version.ps1" -CodeDir "$(git rev-parse --show-toplevel)\code"
+            powershell -File "$(git rev-parse --show-toplevel)\scripts\bump_version.ps1" -CodeDir "$(git rev-parse --show-toplevel)\code"
 
     输出格式（写进 version.txt）：
         v<shorthash> @ yyyy-MM-dd HH:mm
