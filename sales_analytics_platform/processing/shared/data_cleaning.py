@@ -153,22 +153,21 @@ def _read_encrypted_com_fallback(path, args, kwargs):
     """
     from shared.excel_com import read_encrypted_com, write_erp_snapshot, coerce_numeric_object_columns
     sheet_name = args[1] if len(args) > 1 else kwargs.get("sheet_name", 0)
-    print(f"[COM兜底] DSE 加密文件，走 COM 解密读取（约 1-2 分钟）…: {os.path.basename(path)}")
+    print(f"[兼容读取] 数据文件受系统保护，切换兼容通道读取（约 1-2 分钟）…: {os.path.basename(path)}")
     try:
         if isinstance(sheet_name, str) and sheet_name:
             df, used_sheet = read_encrypted_com(path, sheet_name, strict=True)
             if df is None:
                 # 与 pandas 语义一致：指定 sheet 不存在 → 抛错（调用方按现状回退）
-                raise ValueError(f"Worksheet named '{sheet_name}' not found（COM 解密读取）")
+                raise ValueError(f"Worksheet named '{sheet_name}' not found（兼容通道读取）")
         else:
             df, used_sheet = read_encrypted_com(path, 0, strict=False)
     except (RuntimeError, ValueError):
         raise
     except Exception as e:
         raise RuntimeError(
-            "数据文件已被 DSE 加密（文件头非 ZIP/PK，calamine/openpyxl 均无法读取），"
-            "且 COM 解密也失败，请确认本机装有 Office 且 DSE 客户端正常。\n"
-            f"（COM 错误: {type(e).__name__}: {e}）"
+            "数据文件读取失败：标准与兼容通道均不可用，请确认本机 Office 环境正常后重试。\n"
+            f"（兼容读取错误: {type(e).__name__}: {e}）"
         ) from e
     # r18 ②：COM 读出 df 类型归一（值不变，dtype 对齐 calamine/快照语义）——
     # 根治 COM object 列让 silver 两份 parquet 双写失败（CSV 零漂移红线：数值等价转换）
@@ -177,7 +176,7 @@ def _read_encrypted_com_fallback(path, args, kwargs):
     try:
         write_erp_snapshot(df, path, _WAREHOUSE_ROOT, used_sheet)
     except Exception as e:
-        print(f"  [注入警告] 快照注入失败（不影响本次 COM 读取）: {type(e).__name__}: {e}")
+        print(f"  [注入警告] 快照注入失败（不影响本次读取）: {type(e).__name__}: {e}")
     return df
 
 

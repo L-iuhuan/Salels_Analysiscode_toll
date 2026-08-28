@@ -19,3 +19,4 @@ python-calamine>=0.2,<1.0  # 必需：前后段Excel读取引擎，缺失会报 
 xlsxwriter>=3.1,<4.0       # 必需：gold 报告 Excel 导出(reports/gold_exporter.py)，漏装会在客户分析阶段崩溃
 pyarrow>=14,<21            # 必需：Silver层 Parquet 双写/读取(shared/data_cleaning.py,批次② 车道C；生产验证版本 20.0.0)
 pywin32>=306,<312          # 必需：DSE 密文 Excel COM 解密兜底(shared/excel_com.py, r16/r17；生产验证版本 306；便携 Python 需安装)
+pyyaml>=6.0,<7.0           # 必需：R面看板 faces.yaml/风险面 yaml 解析(dashboard/generate_risk_face.py 顶层import + generate_dashboard.py 延迟import, r19 干净测试实测缺失致 R面静默降级；生产验证版本 6.0)

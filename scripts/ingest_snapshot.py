@@ -150,11 +150,11 @@ def main():
         local_copy = os.path.join(data_dir, os.path.basename(xlsx))
         shutil.copy2(xlsx, local_copy)
         xlsx = local_copy
-        print(f"[数据] 源为共享盘 UNC，已复制到本地副本（COM 只读本地文件）: {xlsx}")
+        print(f"[数据] 源为共享盘 UNC，已复制到本地副本（兼容通道只读本地文件）: {xlsx}")
     print(f"[源] {xlsx}")
     st = os.stat(xlsx)
     enc = is_encrypted(xlsx)
-    print(f"  大小 {st.st_size/1e6:.1f}MB | mtime {st.st_mtime} | 加密: {'是(COM)' if enc else '否(calamine)'}")
+    print(f"  大小 {st.st_size/1e6:.1f}MB | mtime {st.st_mtime} | 读取通道: {'兼容' if enc else '标准'}")
 
     # 读取（按加密路径）
     sys.path.insert(0, os.path.join(platform, "processing"))

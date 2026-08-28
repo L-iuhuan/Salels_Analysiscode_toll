@@ -476,7 +476,10 @@ def run_analysis(source_path, df=None):
     zombie_count = (out['当前画像'] == '清仓/偶发').sum()
 
     print(f"\n{'='*50}")
-    print(f"报告已生成：{output_file}")
+    if output_file:
+        print(f"报告已生成：{output_file}")
+    else:
+        print("Excel 报告：按配置跳过")
     print(f"{'='*50}")
     n_products_total = len(out) + insuf_count
     print(f"产品总数: {n_products_total}")

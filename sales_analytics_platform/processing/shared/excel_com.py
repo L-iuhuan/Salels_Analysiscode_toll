@@ -85,7 +85,7 @@ def _read_com_in_process(path, sheet_name, strict):
         ws = wb.Sheets(names.index(target) + 1)
         used = ws.UsedRange
         data = used.Value
-        print(f"  [COM] 打开 {time.time() - t0:.1f}s | sheet='{target}' | UsedRange {used.Rows.Count}x{used.Columns.Count}")
+        print(f"  [兼容读取] 打开 {time.time() - t0:.1f}s | sheet='{target}' | UsedRange {used.Rows.Count}x{used.Columns.Count}")
         # 归一为二维
         if not isinstance(data, (tuple, list)):
             data = ((data,),)
@@ -190,8 +190,8 @@ def read_encrypted_com(path, sheet_name, strict=False):
             except Exception:
                 pass
             raise RuntimeError(
-                "COM 读取超时（超过 300s），可能 DSE 客户端弹窗未处理或 Excel 异常，"
-                "请检查本机 Excel 与 DSE 客户端状态后重试。")
+                "兼容通道读取超时（超过 300s），可能系统保护客户端弹窗未处理或 Excel 异常，"
+                "请检查本机 Excel 环境后重试。")
         if proc.returncode != 0:
             detail = ""
             try:
@@ -201,17 +201,17 @@ def read_encrypted_com(path, sheet_name, strict=False):
                     detail = f"{r[1]}: {r[2]}"
             except Exception:
                 pass
-            msg = (f"COM 读取失败（子进程 exit={proc.returncode}），"
-                   f"请检查本机 Excel 与 DSE 客户端状态后重试。")
+            msg = (f"兼容通道读取失败（exit={proc.returncode}），"
+                   f"请检查本机 Excel 环境后重试。")
             if detail:
-                msg += f"\n（COM 错误: {detail}）"
+                msg += f"\n（兼容读取错误: {detail}）"
             if proc.stderr.strip():
                 msg += f"\n{proc.stderr.strip()[-2000:]}"
             raise RuntimeError(msg)
         with open(out_pkl, "rb") as f:
             result = pickle.load(f)
         if isinstance(result, (tuple, list)) and len(result) == 3 and result[0] == "error":
-            raise RuntimeError(f"COM 读取失败: {result[1]}: {result[2]}")
+            raise RuntimeError(f"兼容通道读取失败: {result[1]}: {result[2]}")
         if proc.stdout.strip():
             # 透传 worker 的 [COM] 读取行（成功时展示；stdout 已捕获防管道死锁）
             for line in proc.stdout.splitlines():
@@ -373,7 +373,7 @@ def write_erp_snapshot(df, source_path, warehouse_root, sheet_name, read_seconds
                 existing = json.load(f)
             if existing.get("source", {}).get("name") != os.path.basename(source_path):
                 print(f"  [注入跳过] data_warehouse/{period}/manifest.json 已属于其他源"
-                      f"（{existing.get('source', {}).get('name')}），不覆盖；本次 COM 结果直接使用")
+                      f"（{existing.get('source', {}).get('name')}），不覆盖；本次读取结果直接使用")
                 return None
             # 同名：sha256_full 相同视为同源允许覆盖更新（不同则源已变，同样允许覆盖为新版本）
         except (json.JSONDecodeError, OSError):
