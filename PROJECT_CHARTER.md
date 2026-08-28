@@ -14,7 +14,7 @@
 | R3 | **输入变化必须触发重算，不得静默复用旧缓存**——指纹 = 源 Excel（路径+大小+mtime+SHA256）+ `settings*.py` 拼接哈希 + 代码指纹（git HEAD） | 复制 Excel 改一行金额再跑，断言指纹更新且 Silver 重新生成；改 settings_customer 阈值，断言 Gold 重新生成 |
 | R4 | **任何代码/配置变更后必须通过 golden-diff 回归**——数值字段容差 1e-6，计数/字符串/日期字段严格相等；意外漂移 = 阻塞 | `scripts/golden_diff.py` 报告零意外漂移 |
 
-## 二、强规（必须遵守，例外须记录，6 条）
+## 二、强规（必须遵守，例外须记录，9 条）
 
 | # | 条文 | 检查方式 |
 |---|---|---|
@@ -26,6 +26,7 @@
 | S6 | **文件放置与发布纪律**——工程文档入 `project_analysis\`，平台文档入 `sales_analytics_platform\`；产出文件不散落根目录；每批开工打 `pre-batch-N` tag、验收通过打 `batch-N-done` tag 并推送；**改了 `sales_analytics_platform\` 代码/配置，收工必须跑 publish（`kanban\tools\publish_to_share.ps1`）或在台账登记未同步原因**；共享盘只出核心代码（看板产物/数据/快照仓不上盘） | 每批验收时检查根目录无新增散件；`git tag` 有对应记录；publish 自检报告落后版本数 |
 | S7 | **废弃文件不直接删除**——一律移入 `_deprecated\`（保留原相对路径）并在 `_deprecated\README.md` 登记表记录（原路径/日期/原因/决策人）；`_deprecated\` 内文件**禁止后续开发参考、引用、复制、import**；物理删除须"确认不可逆废弃"后单独 commit | grep 代码无 `_deprecated` 引用；登记表与实际文件一致 |
 | S8 | **等价性验证必须用生产数据路径做 before/after 对拍**——重构/向量化的对拍输入必须经 `load_silver_table`（生产 dtype 语义：categorical/float32/observed=False）加载；禁止用 read_csv 默认推断的临时数据做对拍输入（批次②.5 曾因此漏过 6 处漂移，被 golden_diff 门禁拦截） | 对拍脚本注明输入来源；抽查 dtype 与生产一致 |
+| S9 | **发布白名单最小集**（2026-08-28 用户拍板）——共享盘代码同步只出"最小可运行集"，白名单制维护于 `kanban\tools\publish_to_share.ps1`（`$whitelistDirs`/`$whitelistFiles`：run_chain.py + processing\ + dashboard\（模板/口径/风险 md，排全部生成 html）+ requirements.txt + chain_config.json + 部门-人员-职务对应.md）；过程/测试/实验/文档文件（docs\、test\、*.bat、conftest.py、README.md 等）保留本地不上盘；**新增客户端运行时必需文件必须显式加入白名单并在台账登记**；对账删除共享盘 code\ 顶层白名单外文件（自清洁） | 发布前 `-DryRun` 干跑审查白名单与对账删除清单；发布后共享盘 code\ 顶层无白名单外文件 |
 
 ## 三、建议（默认遵守，可不阻塞，5 条）
 
