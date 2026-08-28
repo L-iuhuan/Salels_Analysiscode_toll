@@ -33,12 +33,53 @@ import subprocess
 import sys
 import tempfile
 import time
+import warnings
 
 import pandas as pd
+
+# 消除 `python -m shared.excel_com` 与 shared 包经 data_cleaning 已导入本模块叠加时的
+# runpy 良性告警（"found in sys.modules after import of package ..."，无实际影响）
+warnings.filterwarnings("ignore", message=".*found in sys.modules.*")
 
 _SHA_HEAD = 8 * 1024 * 1024  # sha256 前 8MB
 # r18 ①：COM 子进程超时上限（DSE 弹窗未处理/Excel 异常时防无限阻塞；正常读取 60-90s）
 _COM_TIMEOUT = 300
+
+# r20：COM 呼叫被拒退避重试——Excel COM 服务器正忙/有未关闭弹窗时拒绝呼叫，
+# 三码捕获后 sleep 1.5s 重试，上限 30 次（约 45s 窗口，覆盖对方关掉弹窗/忙完的时间）
+_CALL_REJECTED_HRESULTS = (-2147418111, -2147418109, -2147418110)  # RPC_E_CALL_REJECTED / SERVERCALL_REJECTED / RETRYLATER
+_COM_RETRY_DELAY = 1.5   # 秒
+_COM_RETRY_MAX = 30
+
+
+def _is_call_rejected(e):
+    """判断异常是否为"呼叫被拒"类（RPC_E_CALL_REJECTED 等三码）。"""
+    hr = getattr(e, "hresult", None)
+    if hr is None and getattr(e, "args", None):
+        hr = e.args[0]
+    return hr in _CALL_REJECTED_HRESULTS
+
+
+def _com_call(fn, *args, **kwargs):
+    """COM 呼叫退避重试包装：呼叫被拒时 sleep 1.5s 重试，上限 30 次（约 45s 窗口）。
+
+    每次重试打印可观测日志；超过上限且最后一次错误为呼叫被拒类 → 抛 RuntimeError 并附
+    中性引导（不出现 DSE/加密/解密/COM 字样的用户可见文案）。
+    """
+    attempts = 0
+    while True:
+        try:
+            return fn(*args, **kwargs)
+        except Exception as e:
+            if not _is_call_rejected(e):
+                raise
+            if attempts >= _COM_RETRY_MAX:
+                raise RuntimeError(
+                    "对方 Excel 正忙或有未关闭的弹窗——请关闭其他 Excel 窗口/对话框后重试。"
+                ) from e
+            attempts += 1
+            print(f"  [兼容读取] 对方 Excel 正忙，等待重试 ({attempts}/{_COM_RETRY_MAX})…")
+            time.sleep(_COM_RETRY_DELAY)
 
 
 def naive_cell(v):
@@ -67,7 +108,7 @@ def _read_com_in_process(path, sheet_name, strict):
     本函数不处理 UNC（父进程已转本地临时副本）。返回 (DataFrame, used_sheet) 或 (None, None)。
     """
     import win32com.client
-    excel = win32com.client.DispatchEx("Excel.Application")
+    excel = _com_call(win32com.client.DispatchEx, "Excel.Application")
     # 已有 Excel 实例时 Visible/DisplayAlerts 可能不可设置，失败不阻断（解密读仍可用）
     for attr, val in (("Visible", False), ("DisplayAlerts", False), ("EnableEvents", False)):
         try:
@@ -77,15 +118,20 @@ def _read_com_in_process(path, sheet_name, strict):
     wb = None
     try:
         t0 = time.time()
-        wb = excel.Workbooks.Open(path, ReadOnly=True, UpdateLinks=0, IgnoreReadOnlyRecommended=True)
-        names = [wb.Sheets(i).Name for i in range(1, wb.Sheets.Count + 1)]
+        # 全部 COM 呼叫套 _com_call 退避重试（对方 Excel 正忙/有弹窗时 RPC_E_CALL_REJECTED 等）
+        wb = _com_call(excel.Workbooks.Open, path, ReadOnly=True, UpdateLinks=0,
+                       IgnoreReadOnlyRecommended=True)
+        sheet_count = _com_call(lambda: wb.Sheets.Count)
+        names = [_com_call(lambda i=i: wb.Sheets(i).Name) for i in range(1, sheet_count + 1)]
         if strict and sheet_name not in names:
             return None, None
         target = sheet_name if strict else resolve_sheet(names, sheet_name)
-        ws = wb.Sheets(names.index(target) + 1)
-        used = ws.UsedRange
-        data = used.Value
-        print(f"  [兼容读取] 打开 {time.time() - t0:.1f}s | sheet='{target}' | UsedRange {used.Rows.Count}x{used.Columns.Count}")
+        ws = _com_call(lambda: wb.Sheets(names.index(target) + 1))
+        used = _com_call(lambda: ws.UsedRange)
+        data = _com_call(lambda: used.Value)
+        rows_n = _com_call(lambda: used.Rows.Count)
+        cols_n = _com_call(lambda: used.Columns.Count)
+        print(f"  [兼容读取] 打开 {time.time() - t0:.1f}s | sheet='{target}' | UsedRange {rows_n}x{cols_n}")
         # 归一为二维
         if not isinstance(data, (tuple, list)):
             data = ((data,),)
@@ -111,11 +157,11 @@ def _read_com_in_process(path, sheet_name, strict):
     finally:
         if wb is not None:
             try:
-                wb.Close(False)
+                _com_call(wb.Close, False)
             except Exception:
                 pass
         try:
-            excel.Quit()
+            _com_call(excel.Quit)
         except Exception:
             pass
 
