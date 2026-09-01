@@ -190,13 +190,14 @@ def stage_silver(source_path: str) -> tuple:
     # r16：加密且无快照时不再在此报错退出——交 read_excel_auto 的 COM 解密兜底
     # （全员 DSE+Office 透明解密，成功还注入 parquet 快照），COM 也失败才抛错。
     from shared.data_cleaning import find_matching_snapshot
+    from shared.snapshot_container import load_snapshot_frame  # r21：kbdat 容器内存解密直读
     warehouse_root = os.path.join(PROJECT_ROOT, "..", "data_warehouse")
     _snap = find_matching_snapshot(source_path, warehouse_root)
     if _snap is not None:
         _pq_path, _man = _snap
-        print(f"  数据源: data_warehouse 快照（{os.path.basename(os.path.dirname(_pq_path))}/erp_snapshot.parquet，"
+        print(f"  数据源: data_warehouse 快照（{os.path.basename(os.path.dirname(_pq_path))}/{os.path.basename(_pq_path)}，"
               f"源: {_man.get('source', {}).get('name', '')}）")
-        raw = pd.read_parquet(_pq_path)
+        raw = load_snapshot_frame(_pq_path)
     else:
         print(f"  读取: {source_path}")
         raw = read_excel_auto(source_path, sheet_name=DATA_SHEET_NAME)
@@ -211,13 +212,21 @@ def stage_silver(source_path: str) -> tuple:
     # 无快照 sheet 时回退 build_cust_info（与"源文件无客户信息表"口径一致）
     _cust_pq = None
     if _snap is not None:
-        _cust_pq_cand = os.path.join(os.path.dirname(_pq_path), "cust_info.parquet")
-        if os.path.isfile(_cust_pq_cand):
-            _cust_pq = _cust_pq_cand
+        # r21：cust_info 同款 parquet 优先、加密容器 .kbdat 回退
+        for _cand in ("cust_info.parquet", "cust_info.kbdat"):
+            _p = os.path.join(os.path.dirname(_pq_path), _cand)
+            if os.path.isfile(_p):
+                _cust_pq = _p
+                break
     try:
         if _cust_pq is not None:
-            cust_info = pd.read_parquet(_cust_pq)
+            cust_info = load_snapshot_frame(_cust_pq)
             print(f"  客户信息表: data_warehouse 快照（{len(cust_info)} 行）")
+        elif _snap is not None and _man.get("cust_info", {}).get("file") is None:
+            # r21：快照 manifest 已判定源文件无"客户信息表"sheet → 跳过约 60s 的兼容通道
+            # 探测（225MB 全量开一次只为发现 sheet 不存在），直接走 build_cust_info——
+            # 与"探测后 sheet 不存在"路径结果完全一致，少一次 COM 暴露即少一次"正忙"风险
+            raise ValueError("快照 manifest 判定源无客户信息表，跳过探测直接构建")
         else:
             cust_info = read_excel_auto(source_path, sheet_name="客户信息表")
         raw = raw.merge(cust_info[["客户编号", "渠道类型", "客户等级", "所属区域"]], on="客户编号", how="left")

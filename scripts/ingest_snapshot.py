@@ -54,6 +54,7 @@ from shared.excel_com import (  # noqa: E402
     read_encrypted_com, derive_period, column_sums,
     coerce_object_columns, coerce_datetime_columns, sha256_head, sha256_full,
 )
+from shared.snapshot_container import write_container  # noqa: E402  # r21：加密容器（分发形态）
 
 
 def is_encrypted(path):
@@ -188,6 +189,9 @@ def main():
     df = coerce_datetime_columns(df)    # tz-aware datetime 列转 naive（COM 时区 pyarrow 无法序列化）
     df.to_parquet(pq_path, index=False)
     print(f"\n[写] {pq_path}")
+    kb_path = os.path.join(out_dir, "erp_snapshot.kbdat")  # r21：加密容器，随发布分发
+    write_container(df, kb_path)
+    print(f"[写] {kb_path}（加密容器，发布分发用）")
 
     # 客户信息表 sheet 一并入快照（stage_silver 需要；源文件没有该 sheet 则记 None，
     # 跑批时回退 build_cust_info 从 ERP 列构建客户属性）
@@ -198,6 +202,7 @@ def main():
         cust_df = coerce_datetime_columns(cust_df)
         cust_pq = os.path.join(out_dir, "cust_info.parquet")
         cust_df.to_parquet(cust_pq, index=False)
+        write_container(cust_df, os.path.join(out_dir, "cust_info.kbdat"))  # r21：加密容器
         cust_rows = int(len(cust_df))
         print(f"[写] {cust_pq}（客户信息表 {cust_rows} 行）")
     else:

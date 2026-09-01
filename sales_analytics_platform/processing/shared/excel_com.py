@@ -17,9 +17,17 @@ DSE/亿赛通密文 Excel（文件头非 ZIP/PK）无法被 calamine/openpyxl �
   derive_period / coerce_object_columns / coerce_datetime_columns / sha256_head / sha256_full
   / column_sums（ingest_snapshot 与流水线注入共用的小工具，从 ingest 原样迁来，行为不变）
 
-调用方：
+  调用方：
   - scripts\ingest_snapshot.py（原 _read_encrypted_com/_derive_period/... 改从此导入，行为不变）
   - processing\shared\data_cleaning.read_excel_auto 的 COM 兜底（快照 miss + calamine 失败后）
+
+  r21（2026-09-01，客户机"对方 Excel 正忙"排障落地）：
+    ①忙码表补齐 RETRYLATER 等三码（r20 注释声称含、数值实缺）；
+    ②DispatchEx 直连微软 Excel 本尊 CLSID，失败回退 ProgID（免疫 WPS 抢注 Excel.Application）；
+    ③持续正忙→结束自有实例重开新实例（共 3 轮），全部耗尽才抛中性指引 RuntimeError；
+    ④重试痕迹改打 stderr，失败时并入报错、成功时透传（此前 30 次重试日志全被吞）；
+    ⑤超时路径 run()→Popen 自管 PID（r18 的 e.pid 实为 AttributeError，杀进程树从未生效）。
+
 """
 
 import datetime
@@ -43,13 +51,28 @@ warnings.filterwarnings("ignore", message=".*found in sys.modules.*")
 
 _SHA_HEAD = 8 * 1024 * 1024  # sha256 前 8MB
 # r18 ①：COM 子进程超时上限（DSE 弹窗未处理/Excel 异常时防无限阻塞；正常读取 60-90s）
-_COM_TIMEOUT = 300
+# r21：300→420——抗忙"弃实例重开"最多 3 轮（每轮退避≈18s+呼叫耗时），需给足预算防正常轮次被误杀
+_COM_TIMEOUT = 420
 
-# r20：COM 呼叫被拒退避重试——Excel COM 服务器正忙/有未关闭弹窗时拒绝呼叫，
-# 三码捕获后 sleep 1.5s 重试，上限 30 次（约 45s 窗口，覆盖对方关掉弹窗/忙完的时间）
-_CALL_REJECTED_HRESULTS = (-2147418111, -2147418109, -2147418110)  # RPC_E_CALL_REJECTED / SERVERCALL_REJECTED / RETRYLATER
-_COM_RETRY_DELAY = 1.5   # 秒
-_COM_RETRY_MAX = 30
+# r20：COM 呼叫被拒退避重试——Excel COM 服务器正忙/有未关闭弹窗时拒绝呼叫
+# r21：忙码表补齐——r20 注释即声称含 RETRYLATER 但数值一直缺失（RPC_E_SERVERCALL_RETRYLATER
+#       = -2147417846 不在表内）；另补 RPC_E_RETRY / RPC_E_SERVERCALL_REJECTED
+_CALL_REJECTED_HRESULTS = (
+    -2147418111,  # RPC_E_CALL_REJECTED          被呼叫方拒绝
+    -2147418109,  # 0x80010003                   呼叫终止类
+    -2147418110,  # RPC_E_CALL_CANCELED          呼叫被取消
+    -2147417847,  # RPC_E_RETRY                  服务器请稍后再试
+    -2147417846,  # RPC_E_SERVERCALL_RETRYLATER  服务器忙稍后重试
+    -2147417845,  # RPC_E_SERVERCALL_REJECTED    消息过滤器拒绝
+)
+_COM_RETRY_DELAY = 1.5    # 秒
+_COM_RETRY_MAX = 12       # r21：单轮退避上限（12×1.5s≈18s/轮，配合实例重开轮数）
+_COM_INSTANCE_ROUNDS = 3  # r21：持续正忙时"弃实例→重开新实例"总轮数（含首轮）
+_MS_EXCEL_CLSID = "{00024500-0000-0000-C000-000000000046}"  # r21：微软 Excel 本尊 CLSID（直连绕过 ProgID 抢注）
+
+
+class _ComBusyExhausted(Exception):
+    """r21 内部信号：单轮退避预算耗尽（对方持续正忙）——上层据此弃实例重开，不直接面向用户。"""
 
 
 def _is_call_rejected(e):
@@ -61,10 +84,12 @@ def _is_call_rejected(e):
 
 
 def _com_call(fn, *args, **kwargs):
-    """COM 呼叫退避重试包装：呼叫被拒时 sleep 1.5s 重试，上限 30 次（约 45s 窗口）。
+    """COM 呼叫退避重试包装：呼叫被拒时 sleep 1.5s 重试（上限 _COM_RETRY_MAX 次/轮）。
 
-    每次重试打印可观测日志；超过上限且最后一次错误为呼叫被拒类 → 抛 RuntimeError 并附
-    中性引导（不出现 DSE/加密/解密/COM 字样的用户可见文案）。
+    r21 两改：①重试日志改打 stderr——父进程失败时会把 stderr 尾部并进报错；此前重试
+    痕迹全写 stdout 被捕获吞掉，报错时零可观测（2026-08-31 客户机排障实锤）；
+    ②预算耗尽改抛内部 _ComBusyExhausted，由 _read_com_in_process 决定"弃实例重开"
+    还是转最终 RuntimeError（用户可见文案保持中性，不出现 DSE/加密/解密/COM 字样）。
     """
     attempts = 0
     while True:
@@ -74,11 +99,11 @@ def _com_call(fn, *args, **kwargs):
             if not _is_call_rejected(e):
                 raise
             if attempts >= _COM_RETRY_MAX:
-                raise RuntimeError(
-                    "对方 Excel 正忙或有未关闭的弹窗——请关闭其他 Excel 窗口/对话框后重试。"
-                ) from e
+                raise _ComBusyExhausted(
+                    f"持续正忙：呼叫被拒 {attempts} 次") from e
             attempts += 1
-            print(f"  [兼容读取] 对方 Excel 正忙，等待重试 ({attempts}/{_COM_RETRY_MAX})…")
+            print(f"  [兼容读取] 对方 Excel 正忙，等待重试 ({attempts}/{_COM_RETRY_MAX})…",
+                  file=sys.stderr)
             time.sleep(_COM_RETRY_DELAY)
 
 
@@ -100,27 +125,100 @@ def resolve_sheet(ws_names, prefer):
     return ws_names[0] if ws_names else None
 
 
-def _read_com_in_process(path, sheet_name, strict):
-    """子进程/主进程共用的实际 COM 读取逻辑（r18 ① 抽离，返回值可 pickle）。
+def _excel_pids():
+    """当前本机 EXCEL.EXE 的 PID 集合（tasklist CSV 解析；失败返回空集，仅用于进程归属）。"""
+    try:
+        out = subprocess.run(
+            ["tasklist", "/FO", "CSV", "/NH", "/FI", "IMAGENAME eq EXCEL.EXE"],
+            capture_output=True, text=True, timeout=10).stdout
+        pids = set()
+        for line in out.splitlines():
+            parts = [p.strip('"') for p in line.split('","')]
+            if len(parts) >= 2 and parts[1].isdigit():
+                pids.add(int(parts[1]))
+        return pids
+    except Exception:
+        return set()
 
-    DSE 加密文件：COM 解密读（ReadOnly 打开，读目标 sheet UsedRange，首行作列名）。
-    strict=True 时 sheet 不存在返回 (None, None)，不回退首个 sheet（可选 sheet 用）。
-    本函数不处理 UNC（父进程已转本地临时副本）。返回 (DataFrame, used_sheet) 或 (None, None)。
+
+def _kill_spawned(pid):
+    """r21：结束本 worker 自己拉起、已卡住的 EXCEL.EXE（仅限自有 PID，绝不碰用户进程）。"""
+    if not pid:
+        return
+    try:
+        subprocess.run(["taskkill", "/F", "/T", "/PID", str(pid)],
+                       capture_output=True, timeout=15)
+        print(f"  [兼容读取] 已结束卡住的读取进程 PID {pid}", file=sys.stderr)
+    except Exception:
+        pass
+
+
+def _best_effort_close(wb, excel):
+    """r21：收尾关闭——短重试（3 次、间隔 1s），不占 _com_call 的完整退避预算；
+    失败不阻断（进程残留由超时路径的杀进程树与下轮 _kill_spawned 兜底）。"""
+    for _ in range(3):
+        if wb is None:
+            break
+        try:
+            wb.Close(False)
+            wb = None
+        except Exception:
+            time.sleep(1.0)
+    for _ in range(3):
+        if excel is None:
+            break
+        try:
+            excel.Quit()
+            excel = None
+        except Exception:
+            time.sleep(1.0)
+
+
+def _read_com_once(path, sheet_name, strict):
+    """单实例一轮读取（r21 自 _read_com_in_process 拆出）。返回 (df, used_sheet) 或 (None, None)。
+
+    r21 两改：①DispatchEx 直连微软 Excel 本尊 CLSID，起不来再回退 ProgID——免疫 WPS 等
+    对 Excel.Application ProgID 的抢注（主力 WPS 机器上该劫持真实存在）；
+    ②持续正忙（_ComBusyExhausted）时先结束自己拉起的实例再上抛，交上层重开新实例。
+    归属自查：Hwnd 反查 PID 优先；失败回退"派发前后 EXCEL.EXE 差集"（唯一新增才认定；
+    理论上存在与用户同时刻手启 Excel 的窄竞争，最坏影响为多杀一个刚启动的空实例）。
     """
     import win32com.client
-    excel = _com_call(win32com.client.DispatchEx, "Excel.Application")
-    # 已有 Excel 实例时 Visible/DisplayAlerts 可能不可设置，失败不阻断（解密读仍可用）
-    for attr, val in (("Visible", False), ("DisplayAlerts", False), ("EnableEvents", False)):
-        try:
-            setattr(excel, attr, val)
-        except Exception:
-            pass
+    pids_before = _excel_pids()
+    excel = None
+    pid = None
+    channel = "直连"
     wb = None
     try:
+        try:
+            excel = _com_call(win32com.client.DispatchEx, _MS_EXCEL_CLSID)
+        except _ComBusyExhausted:
+            raise
+        except Exception as e_cls:
+            # CLSID 通道起不来（如 Office 注册损坏）→ 回退 ProgID 通道
+            print(f"  [兼容读取] 直连通道不可用（{type(e_cls).__name__}），改走常规通道",
+                  file=sys.stderr)
+            channel = "常规"
+            excel = _com_call(win32com.client.DispatchEx, "Excel.Application")
+        try:
+            import win32process
+            _tid, pid = win32process.GetWindowThreadProcessId(excel.Hwnd)
+            if not pid:
+                raise ValueError("empty pid")
+        except Exception:
+            diff = _excel_pids() - pids_before
+            pid = next(iter(diff)) if len(diff) == 1 else None
+        # 已有 Excel 实例时 Visible/DisplayAlerts 可能不可设置，失败不阻断（解密读仍可用）
+        for attr, val in (("Visible", False), ("DisplayAlerts", False), ("EnableEvents", False)):
+            try:
+                setattr(excel, attr, val)
+            except Exception:
+                pass
         t0 = time.time()
-        # 全部 COM 呼叫套 _com_call 退避重试（对方 Excel 正忙/有弹窗时 RPC_E_CALL_REJECTED 等）
-        wb = _com_call(excel.Workbooks.Open, path, ReadOnly=True, UpdateLinks=0,
-                       IgnoreReadOnlyRecommended=True)
+        # 全部 COM 呼叫套 _com_call 退避重试（对方 Excel 正忙/有弹窗时 RPC_E_CALL_REJECTED 等）；
+        # Workbooks 属性访问一并包进 lambda，防"创建成功但取属性时被拒"漏保护
+        wb = _com_call(lambda: excel.Workbooks.Open(
+            path, ReadOnly=True, UpdateLinks=0, IgnoreReadOnlyRecommended=True))
         sheet_count = _com_call(lambda: wb.Sheets.Count)
         names = [_com_call(lambda i=i: wb.Sheets(i).Name) for i in range(1, sheet_count + 1)]
         if strict and sheet_name not in names:
@@ -131,7 +229,8 @@ def _read_com_in_process(path, sheet_name, strict):
         data = _com_call(lambda: used.Value)
         rows_n = _com_call(lambda: used.Rows.Count)
         cols_n = _com_call(lambda: used.Columns.Count)
-        print(f"  [兼容读取] 打开 {time.time() - t0:.1f}s | sheet='{target}' | UsedRange {rows_n}x{cols_n}")
+        print(f"  [兼容读取] 打开 {time.time() - t0:.1f}s | sheet='{target}' | "
+              f"UsedRange {rows_n}x{cols_n} | 通道={channel}")
         # 归一为二维
         if not isinstance(data, (tuple, list)):
             data = ((data,),)
@@ -154,16 +253,34 @@ def _read_com_in_process(path, sheet_name, strict):
         # 清理 COM 幽灵空列/空行
         df = df.dropna(axis=1, how="all").dropna(axis=0, how="all")
         return df, target
+    except _ComBusyExhausted:
+        _kill_spawned(pid)
+        raise
     finally:
-        if wb is not None:
-            try:
-                _com_call(wb.Close, False)
-            except Exception:
-                pass
+        _best_effort_close(wb, excel)
+
+
+def _read_com_in_process(path, sheet_name, strict):
+    """子进程/主进程共用的实际 COM 读取入口（r18 ① 抽离，返回值可 pickle）。
+
+    r21 抗忙三段式：单轮内每个呼叫退避重试（_com_call）；整轮持续正忙（_ComBusyExhausted）
+    则弃实例（杀自有 PID）重开新实例再试，共 _COM_INSTANCE_ROUNDS 轮；全部耗尽才抛
+    RuntimeError（附中性指引）。DSE 加密文件：ReadOnly 打开，读目标 sheet UsedRange，
+    首行作列名；strict=True 时 sheet 不存在返回 (None, None)。本函数不处理 UNC
+    （父进程已转本地临时副本）。返回 (DataFrame, used_sheet) 或 (None, None)。
+    """
+    last = None
+    for rnd in range(1, _COM_INSTANCE_ROUNDS + 1):
         try:
-            _com_call(excel.Quit)
-        except Exception:
-            pass
+            return _read_com_once(path, sheet_name, strict)
+        except _ComBusyExhausted as e:
+            last = e
+            print(f"  [兼容读取] 第 {rnd}/{_COM_INSTANCE_ROUNDS} 轮读取持续正忙，"
+                  f"弃当前实例后重开", file=sys.stderr)
+    raise RuntimeError(
+        "对方 Excel 持续正忙（已自动重开读取实例仍失败）——请关闭本机 WPS/Excel 窗口"
+        "及未处理的对话框后重试；若仍失败，请在任务管理器结束残留 EXCEL.EXE 后重跑。"
+    ) from last
 
 
 def _com_read_worker_main():
@@ -223,21 +340,23 @@ def read_encrypted_com(path, sheet_name, strict=False):
         cmd = [sys.executable, "-m", "shared.excel_com",
                path, str(sheet_name), "True" if strict else "False", out_pkl]
         env = os.environ.copy()
-        env["PYTHONIOENCODING"] = "utf-8"  # worker stdout 按 UTF-8 捕获（防 GBK 管道解码错乱）
+        env["PYTHONIOENCODING"] = "utf-8"  # worker stdout/stderr 按 UTF-8 捕获（防 GBK 管道解码错乱）
+        # r21：run()→Popen 自管 PID——TimeoutExpired 无 pid 属性，r18 的 str(e.pid) 实为
+        # AttributeError 被吞，超时路径此前从未真正杀过进程树
+        proc = subprocess.Popen(cmd, cwd=_PROC, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                text=True, encoding="utf-8", errors="replace", env=env)
         try:
-            proc = subprocess.run(cmd, cwd=_PROC, capture_output=True, text=True,
-                                  encoding="utf-8", errors="replace",
-                                  timeout=_COM_TIMEOUT, env=env)
-        except subprocess.TimeoutExpired as e:
+            proc_out, proc_err = proc.communicate(timeout=_COM_TIMEOUT)
+        except subprocess.TimeoutExpired:
             # 杀进程树：Excel COM 可能已起 EXCEL.EXE 子进程，仅杀 python 会残留
             try:
-                subprocess.run(["taskkill", "/F", "/T", "/PID", str(e.pid)],
+                subprocess.run(["taskkill", "/F", "/T", "/PID", str(proc.pid)],
                                capture_output=True, timeout=15)
             except Exception:
                 pass
             raise RuntimeError(
-                "兼容通道读取超时（超过 300s），可能系统保护客户端弹窗未处理或 Excel 异常，"
-                "请检查本机 Excel 环境后重试。")
+                f"兼容通道读取超时（超过 {_COM_TIMEOUT}s），可能系统保护客户端弹窗未处理"
+                "或 Excel 异常，请检查本机 Excel 环境后重试。")
         if proc.returncode != 0:
             detail = ""
             try:
@@ -251,16 +370,23 @@ def read_encrypted_com(path, sheet_name, strict=False):
                    f"请检查本机 Excel 环境后重试。")
             if detail:
                 msg += f"\n（兼容读取错误: {detail}）"
-            if proc.stderr.strip():
-                msg += f"\n{proc.stderr.strip()[-2000:]}"
+            # r21：重试痕迹在 stderr，失败时尾部并入报错（此前被吞，排障零可观测）；stdout 尾部补充上下文
+            if proc_out and proc_out.strip():
+                msg += f"\n{proc_out.strip()[-800:]}"
+            if proc_err and proc_err.strip():
+                msg += f"\n{proc_err.strip()[-2000:]}"
             raise RuntimeError(msg)
         with open(out_pkl, "rb") as f:
             result = pickle.load(f)
         if isinstance(result, (tuple, list)) and len(result) == 3 and result[0] == "error":
             raise RuntimeError(f"兼容通道读取失败: {result[1]}: {result[2]}")
-        if proc.stdout.strip():
-            # 透传 worker 的 [COM] 读取行（成功时展示；stdout 已捕获防管道死锁）
-            for line in proc.stdout.splitlines():
+        if proc_err and proc_err.strip():
+            # r21：成功但中途发生过"正忙重试"时透传痕迹（可观测）
+            for line in proc_err.splitlines():
+                print(line.rstrip())
+        if proc_out and proc_out.strip():
+            # 透传 worker 的 [兼容读取] 打开行（成功时展示；stdout 已捕获防管道死锁）
+            for line in proc_out.splitlines():
                 print(line.rstrip())
         return result
     finally:
@@ -384,7 +510,7 @@ SUM_COLS = {
 
 
 def column_sums(df):
-    """关键数值列合计（金额/利润/数量），取源列候选第一个存在的列。
+    r"""关键数值列合计（金额/利润/数量），取源列候选第一个存在的列。
 
     r17：从 scripts\ingest_snapshot.py 迁入共享层，供 ingest 与快照注入复用。
     """
@@ -401,7 +527,7 @@ def column_sums(df):
 
 
 def write_erp_snapshot(df, source_path, warehouse_root, sheet_name, read_seconds=None):
-    """COM 解密成功后按 ingest 同款落仓：写 data_warehouse\<YYYYMM>\erp_snapshot.parquet + manifest（r17 升级）。
+    r"""COM 解密成功后按 ingest 同款落仓：写 data_warehouse\<YYYYMM>\erp_snapshot.parquet + manifest（r17 升级）。
 
     manifest source 写 name+size+sha256_full（身份键，弃 mtime；mtime 仅保留展示/审计），
     并补全 ingest 同款审计字段（columns / columns_hash / sums / read_seconds）。
@@ -429,6 +555,13 @@ def write_erp_snapshot(df, source_path, warehouse_root, sheet_name, read_seconds
     df = coerce_object_columns(df)
     df = coerce_datetime_columns(df)
     df.to_parquet(pq_path, index=False)
+    # r21 第三步：同步落加密容器（分发形态；发布侧只上 .kbdat，明文 parquet 不出本机）。
+    # best-effort：容器写失败不阻断读取（本地 parquet 快路径仍可用）。
+    try:
+        from shared.snapshot_container import write_container
+        write_container(df, os.path.join(out_dir, "erp_snapshot.kbdat"))
+    except Exception as e:
+        print(f"  [注入警告] 快照容器写入失败（不影响本地读取）: {type(e).__name__}: {e}")
     st = os.stat(source_path)
     cols_hash = hashlib.sha256("\n".join(str(c) for c in df.columns).encode("utf-8")).hexdigest()
     manifest = {

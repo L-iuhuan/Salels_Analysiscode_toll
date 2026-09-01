@@ -118,12 +118,22 @@ def find_matching_snapshot(xlsx_path, warehouse_root):
             continue
         src = man.get("source", {}) if isinstance(man, dict) else {}
         if src.get("name") != name:
-            continue
+            # r21 改名容错：名字不同但 size+sha256_full 全同 → 内容即同一文件
+            # （财务侧常见"财务分析-7月.xlsx" vs "财务分析-7月（8.27) .xlsx"式重命名；
+            #   开发机与客户端文件名漂移会让快照分发必 miss）。内容不同仍正确 miss 走 COM。
+            if not (cur and src.get("size") == cur.get("size")
+                    and src.get("sha256_full") == cur.get("sha256_full")):
+                continue
         if cur is not None and not _snapshot_source_matches(src, cur):
             continue  # 源已变化，快照过期
+        # r21：优先本地明文 parquet（快路径），缺失回退加密容器 .kbdat（发布分发形态，
+        # 客户端经壳端 /MIR 同步拿到 kbdat+manifest；本地 parquet 不随发布分发）
         pq = os.path.join(warehouse_root, ym, "erp_snapshot.parquet")
         if os.path.isfile(pq):
             return pq, man
+        kb = os.path.join(warehouse_root, ym, "erp_snapshot.kbdat")
+        if os.path.isfile(kb):
+            return kb, man
     return None
 
 

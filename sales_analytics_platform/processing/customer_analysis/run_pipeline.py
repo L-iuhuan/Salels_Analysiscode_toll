@@ -98,9 +98,10 @@ def run(
                 _snap = find_matching_snapshot(source_path, DATA_WAREHOUSE)
                 if _snap is not None:
                     _pq_path, _man = _snap
-                    raw_temp = pd.read_parquet(_pq_path)
+                    from shared.snapshot_container import load_snapshot_frame  # r21：kbdat 容器支持
+                    raw_temp = load_snapshot_frame(_pq_path)
                     print(f"  客户属性数据从 data_warehouse 快照加载 "
-                          f"({os.path.basename(os.path.dirname(_pq_path))}/erp_snapshot.parquet)")
+                          f"({os.path.basename(os.path.dirname(_pq_path))}/{os.path.basename(_pq_path)})")
                 else:
                     raw_temp = read_excel_auto(source_path, sheet_name=DATA_SHEET_NAME)
                 _keep_cols = ["销售模式", "终端客户名称_客户类别", "实际业务员"]

@@ -9,14 +9,14 @@
 | 步骤 | 动作 | 命令/位置 | 验证点 |
 |---|---|---|---|
 | 1 | 新月度 Excel 投放数据共享目录（或本地 data\） | 数据共享目录（配置见第五节）或 `data\财务分析-<月>.xlsx` | 文件名与月份一致；DSE 加密不影响（读取走 COM 兜底）；流水线自动合并扫描共享盘+本地取最新 |
-| 2 | 落快照仓 | `python scripts\ingest_snapshot.py` | 生成 `data_warehouse\<YYYYMM>\erp_snapshot.parquet`（明文，Python 写不加密）；控制台报行数 |
+| 2 | 落快照仓 | `python scripts\ingest_snapshot.py` | 生成 `data_warehouse\<YYYYMM>\erp_snapshot.parquet` + `erp_snapshot.kbdat` 加密容器（r21：明文本机留存，容器随发布分发）；控制台报行数 |
 | 3 | 全量跑批 | `python run_chain.py`（自动取共享盘+本地最新；显式 `--data <路径>` 永远优先） | [STAGE 1/6]~[STAGE 6/6] 全过；末尾"全部通过"；看板 dashboard_a.html 更新 |
 | 4 | 数据对拍 | `python scripts\golden_diff.py --baseline baseline\<当前基线>\summary.json --platform-dir sales_analytics_platform` | 漂移数=已登记数（基线 20260827 起重新计，当前 0），**0 待查明** |
 | 5 | 测试门禁 | `python scripts\run_all_tests.py` | 全量 93/93 passed（勿只跑子集） |
 | 6 | JS 门禁 | `python scripts\check_js_syntax.py` | `JS: ALL OK (N blocks)` |
 | 7 | 性能门禁 | `python scripts\perf_smoke.py` | 端到端 <600s、看板段 <180s（实测 ~255s/~76s） |
 | 8 | R 面审定 | 人工审定 `dashboard\risk_action_<YYYYMM>.md` 初稿 → 跑批重渲染 | 行动清单与风险摘要反映审定结果 |
-| 9 | 发布共享盘 | `powershell -File kanban\tools\publish_to_share.ps1 -Force` | version.txt = `v<本地HEAD短哈希> @ 时间`，非 vnogit |
+| 9 | 发布共享盘 | `powershell -File kanban\tools\publish_to_share.ps1 -Force` | version.txt = `v<本地HEAD短哈希> @ 时间`，非 vnogit；r21 起 data_warehouse 仅 `.kbdat`+manifest 上盘（明文 parquet 不出本机），客户端命中快照后不再依赖本机 COM |
 | 10 | 台账记录 | `project_analysis\施工进度台账.md` 追加一行 | 记录跑批结果/漂移数/异常 |
 
 ## 二、关键纪律（违反=返工）
@@ -25,6 +25,7 @@
 2. **门禁全跑**：步骤 4-7 是发版四门禁，缺一不可；"跑过子集"不算跑过（历史教训：7/7 子集掩盖了 3 个失败）。
 3. **漂移必归因**：golden_diff 出现未登记漂移 → 停下来查明，禁止"先发再查"。
 4. **指纹触发**：改 settings/代码/数据任一都会触发重算（R3），--dashboard-only 会拒绝过期缓存，这是特性不是故障。
+5. **容器先行于发布**（r21）：数据文件**内容**更新后必须重新 ingest 再 publish，否则客户端回落本机 COM 通道；文件**改名**不影响命中（按 size+sha256_full 内容身份兜底，容财务侧加日期后缀）。
 
 ## 三、异常处置
 
@@ -35,6 +36,7 @@
 | pytest 新失败 | 测试债或真回归 | 先分清（测试侧 monkeypatch vs 产品侧），修完再发 |
 | GitHub 推送阻断 | 公司网络间歇 | `git -c http.version=HTTP/1.1 push` 重试；本地提交安全 |
 | 共享盘 version.txt=vnogit | 子进程 PATH 无 git | 脚本已内置全路径回落；仍失败检查 Git 安装 |
+| 客户端报"对方 Excel 持续正忙" | 本机 WPS/Excel 窗口、未关弹窗或残留 EXCEL.EXE 占用 | 按报错指引关闭窗口/对话框、任务管理器结束残留 EXCEL.EXE 后重跑（r21 已带自动重开实例与重试痕迹）；仍不明用 `kanban\tools\diagnose_excel_com.ps1` 体检 |
 
 ## 四、基线管理
 

@@ -46,7 +46,7 @@
 |---|---|---|
 | 根目录 | `使用说明.md`、`PROJECT_CHARTER.md`、`.gitignore`、登记保留的 rar | 新增任何散件（脚本/文档/数据/截图） |
 | `sales_analytics_platform\` | 平台代码、`data\`（输入）、`output\`（产出，gitignore）、平台 README/说明、bat | 工程文档（应入 project_analysis） |
-| `sales_analytics_platform\data_warehouse\` | 月度 ERP 明文快照仓（`YYYYMM\erp_snapshot.parquet` + `manifest.json`，W1 快照仓，gitignore，不进共享盘） | 源文件/加密件、手工编辑快照 |
+| `sales_analytics_platform\data_warehouse\` | 月度 ERP 快照仓（`YYYYMM\erp_snapshot.parquet` 明文本机留存 + `erp_snapshot.kbdat` 加密容器，r21 起随发布分发：共享盘只有容器+manifest，客户端内存解密不落盘；gitignore） | 源文件/加密件、手工编辑快照 |
 | `forecasting\` | 预测系统代码与其归档 `_archive\` | 平台相关文件 |
 | `project_analysis\` | 全部工程文档：诊断/裁决/计划/台账/验证报告 | 数据文件、产出文件 |
 | `_archive_source\` | 只读源副本 | 任何修改（只读封存） |
