@@ -137,6 +137,53 @@ def find_matching_snapshot(xlsx_path, warehouse_root):
     return None
 
 
+# r22：数据共享盘上的快照仓根（<数据盘>\data_warehouse）。快照分发自 r22 起改走数据盘
+# （D1经营分析，财务受控 ACL）——密文与代码（含解密钥匙）分家，代码盘不再携带任何数据。
+_DATA_SHARE_DEFAULT = r"\\192.168.8.3\财务部\财务电子档案备份\D1经营分析"
+
+
+def share_warehouse_root():
+    """数据盘快照仓根（r22）。路径解析与 ingest/run_chain 数据目录三级同源：
+    环境变量 SALES_DATA_SHARE_DIR > chain_config.json 的 data_share_dir（显式空串=禁用）
+    > 内置默认。禁用返回 None；测试可 monkeypatch 本函数或 _DATA_SHARE_DEFAULT。
+    """
+    share = os.environ.get("SALES_DATA_SHARE_DIR", "").strip()
+    if not share:
+        try:
+            cfg_path = os.path.join(PKG_ROOT, "chain_config.json")
+            if os.path.isfile(cfg_path):
+                with open(cfg_path, "r", encoding="utf-8") as f:
+                    cfg = json.load(f)
+                if "data_share_dir" in cfg:
+                    v = str(cfg.get("data_share_dir") or "").strip()
+                    if not v:
+                        return None          # 显式空串 = 禁用数据盘快照回退
+                    share = v
+        except (json.JSONDecodeError, OSError):
+            pass
+    if not share:
+        share = _DATA_SHARE_DEFAULT
+    return os.path.join(share, "data_warehouse")
+
+
+def find_snapshot_local_or_share(xlsx_path):
+    """r22：快照查找二级回退——本地仓 miss 后查数据盘仓（UNC 直读，不落盘拷贝）。
+
+    返回 (snapshot_path, manifest) 或 None；数据盘不可达/未配置时静默跳过
+    （与 ingest 共享盘扫描同款回退语义，最终由 COM 兼容通道兜底）。
+    """
+    hit = find_matching_snapshot(xlsx_path, _WAREHOUSE_ROOT)
+    if hit is not None:
+        return hit
+    root2 = share_warehouse_root()
+    if root2:
+        try:
+            return find_matching_snapshot(xlsx_path, root2)
+        except OSError:
+            return None
+    return None
+
+
 def read_excel_auto(*args, **kwargs):
     """pd.read_excel wrapper — 自动选择最快可用引擎 (calamine > openpyxl)。
 

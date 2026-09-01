@@ -189,10 +189,10 @@ def stage_silver(source_path: str) -> tuple:
     # ── 数据源选择（W1 快照仓）：优先 data_warehouse 匹配快照，否则直读 Excel ──
     # r16：加密且无快照时不再在此报错退出——交 read_excel_auto 的 COM 解密兜底
     # （全员 DSE+Office 透明解密，成功还注入 parquet 快照），COM 也失败才抛错。
-    from shared.data_cleaning import find_matching_snapshot
+    from shared.data_cleaning import find_snapshot_local_or_share
     from shared.snapshot_container import load_snapshot_frame  # r21：kbdat 容器内存解密直读
-    warehouse_root = os.path.join(PROJECT_ROOT, "..", "data_warehouse")
-    _snap = find_matching_snapshot(source_path, warehouse_root)
+    # r22：快照查找二级回退——本地仓 miss 后查数据盘仓（D1\data_warehouse，快照分发新家）
+    _snap = find_snapshot_local_or_share(source_path)
     if _snap is not None:
         _pq_path, _man = _snap
         print(f"  数据源: data_warehouse 快照（{os.path.basename(os.path.dirname(_pq_path))}/{os.path.basename(_pq_path)}，"

@@ -16,7 +16,7 @@
 | 6 | JS 门禁 | `python scripts\check_js_syntax.py` | `JS: ALL OK (N blocks)` |
 | 7 | 性能门禁 | `python scripts\perf_smoke.py` | 端到端 <600s、看板段 <180s（实测 ~255s/~76s） |
 | 8 | R 面审定 | 人工审定 `dashboard\risk_action_<YYYYMM>.md` 初稿 → 跑批重渲染 | 行动清单与风险摘要反映审定结果 |
-| 9 | 发布共享盘 | `powershell -File kanban\tools\publish_to_share.ps1 -Force` | version.txt = `v<本地HEAD短哈希> @ 时间`，非 vnogit；r21 起 data_warehouse 仅 `.kbdat`+manifest 上盘（明文 parquet 不出本机），客户端命中快照后不再依赖本机 COM |
+| 9 | 发布共享盘 | `powershell -File kanban\tools\publish_to_share.ps1 -Force` | version.txt = `v<本地HEAD短哈希> @ 时间`，非 vnogit；r22 起快照仓（仅 `.kbdat`+manifest）投**数据共享盘** `D1经营分析\data_warehouse\`（财务受控、密文与代码分家；明文 parquet 不出本机），客户端本地仓 miss 后 UNC 直读命中 |
 | 10 | 台账记录 | `project_analysis\施工进度台账.md` 追加一行 | 记录跑批结果/漂移数/异常 |
 
 ## 二、关键纪律（违反=返工）
@@ -25,7 +25,7 @@
 2. **门禁全跑**：步骤 4-7 是发版四门禁，缺一不可；"跑过子集"不算跑过（历史教训：7/7 子集掩盖了 3 个失败）。
 3. **漂移必归因**：golden_diff 出现未登记漂移 → 停下来查明，禁止"先发再查"。
 4. **指纹触发**：改 settings/代码/数据任一都会触发重算（R3），--dashboard-only 会拒绝过期缓存，这是特性不是故障。
-5. **容器先行于发布**（r21）：数据文件**内容**更新后必须重新 ingest 再 publish，否则客户端回落本机 COM 通道；文件**改名**不影响命中（按 size+sha256_full 内容身份兜底，容财务侧加日期后缀）。
+5. **容器先行于发布**（r21）：数据文件**内容**更新后必须重新 ingest 再 publish，否则客户端回落本机 COM 通道；文件**改名**不影响命中（按 size+sha256_full 内容身份兜底，容财务侧加日期后缀）。快照分发目的地=数据盘 D1（r22），代码盘零数据。
 
 ## 三、异常处置
 
@@ -50,6 +50,7 @@
 - **开发机配置优先级**（高→低）：环境变量 `SALES_DATA_SHARE_DIR` > `chain_config.json` 的 `data_share_dir`（显式空串 `""` = 禁用共享盘扫描）> 内置默认。ingest_snapshot 用 `--share-dir`（空串禁用）。注意：`chain_config.json` 已去 git 跟踪（r14b），本机路径配置不会入库；**但仍会随 publish 同步到客户端（robocopy 不看 gitignore）——发布机不要在该文件写本机路径，机器级覆盖一律用环境变量**；当前发布内容为通用默认（stages 等，客户端在用，不可从 publish 排除）。
 - **客户端（看板壳）**：设置弹层配「数据文件共享目录」（留空 = 代码共享目录下的 data\）；主界面「从共享盘获取最新数据」按钮一键拉取最新 Excel 到本地缓存（`%LOCALAPPDATA%\KanbanRunner\data\`）再跑批，产物全在本地。
 - **安全事实**：DSE 密文 Excel 上共享盘后字节级一致（实测文件头 `00 00 5B 00`）；全员电脑有 DSE 客户端+Office，拉到本地后走现有 COM 透明解密读取，链路已验证。
+- **快照仓分发（r22）**：发布脚本把 `data_warehouse\`（仅 `.kbdat`+manifest，`/XF *.parquet`）投到数据共享盘 `D1经营分析\data_warehouse\`——密文与代码（含解密钥匙）分家，代码盘不携带任何数据；客户端流水线 `find_snapshot_local_or_share` 本地仓 miss 后 UNC 直读。
 
 ---
 *创建：2026-08-26（发版评审 r7 迭代，台账 #8 流程固化）；r14 数据源共享盘：2026-08-27*

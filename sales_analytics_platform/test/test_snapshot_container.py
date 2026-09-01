@@ -110,3 +110,53 @@ def test_find_matching_snapshot_rename_tolerant(tmp_path):
     # 内容不同 → 正确 miss（名字和哈希都对不上）
     src.write_bytes(b"changed-ciphertext")
     assert find_matching_snapshot(str(src), str(wh)) is None
+
+
+def test_snapshot_share_root_fallback(tmp_path, monkeypatch):
+    """r22：本地仓 miss 时回退数据盘仓根（模拟 D1\\data_warehouse）。"""
+    import shared.data_cleaning as dc
+
+    local_wh = tmp_path / "local_wh"
+    local_wh.mkdir()                      # 本地仓为空 → 必 miss
+    share_wh = tmp_path / "share_wh"
+    period_dir = share_wh / "202607"
+    period_dir.mkdir(parents=True)
+    src = tmp_path / "财务分析-7月.xlsx"
+    src.write_bytes(b"ciphertext")
+    df = _sample_df()
+    write_container(df, str(period_dir / f"erp_snapshot{CONTAINER_EXT}"))
+    st = os.stat(str(src))
+    man = {"source": {"name": src.name, "size": st.st_size,
+                      "sha256_full": sha256_full(str(src))}}
+    (period_dir / "manifest.json").write_text(json.dumps(man), encoding="utf-8")
+
+    monkeypatch.setattr(dc, "_WAREHOUSE_ROOT", str(local_wh))
+    monkeypatch.setattr(dc, "share_warehouse_root", lambda: str(share_wh))
+    hit = dc.find_snapshot_local_or_share(str(src))
+    assert hit is not None, "本地 miss 应回退数据盘仓命中"
+    assert hit[0].endswith(f"erp_snapshot{CONTAINER_EXT}")
+    pd.testing.assert_frame_equal(load_snapshot_frame(hit[0]), df, check_dtype=False)
+
+
+def test_snapshot_share_disabled_returns_none(tmp_path, monkeypatch):
+    """r22：数据盘回退禁用（share_warehouse_root→None）且本地 miss → 返回 None。"""
+    import shared.data_cleaning as dc
+
+    local_wh = tmp_path / "local_wh"
+    local_wh.mkdir()
+    src = tmp_path / "财务分析-7月.xlsx"
+    src.write_bytes(b"ciphertext")
+    monkeypatch.setattr(dc, "_WAREHOUSE_ROOT", str(local_wh))
+    monkeypatch.setattr(dc, "share_warehouse_root", lambda: None)
+    assert dc.find_snapshot_local_or_share(str(src)) is None
+
+
+def test_share_warehouse_root_resolution(monkeypatch, tmp_path):
+    """r22：数据盘仓根三级解析——环境变量优先，无环境变量回内置默认。"""
+    import shared.data_cleaning as dc
+
+    monkeypatch.setenv("SALES_DATA_SHARE_DIR", str(tmp_path / "D1"))
+    assert dc.share_warehouse_root() == str(tmp_path / "D1" / "data_warehouse")
+    monkeypatch.delenv("SALES_DATA_SHARE_DIR", raising=False)
+    root = dc.share_warehouse_root()
+    assert root.endswith("data_warehouse") and root.startswith("\\\\")

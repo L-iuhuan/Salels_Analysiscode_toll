@@ -23,7 +23,7 @@ if PROJECT_ROOT not in sys.path:
 
 from shared.data_cleaning import (
     read_excel_auto, rename_erp_columns, build_cust_info, load_silver_table,
-    find_matching_snapshot,
+    find_snapshot_local_or_share,
     SILVER_DTYPE_CUSTOMER_MONTHLY, SILVER_DTYPE_PRODUCT_MONTHLY, SILVER_DTYPE_CUSTOMER_X_PRODUCT,
 )
 from customer_analysis.silver import build_silver_layer
@@ -95,7 +95,7 @@ def run(
                 # [r15 修复/未决#16] silver 缓存有效被跳过时 raw_data 为空，回退源改"快照优先"：
                 # 按 name+mtime 在 data_warehouse 找匹配快照（与 silver 阶段同款 find_matching_snapshot），
                 # 命中读 parquet（明文秒级，避免 DSE 密文直读崩溃）；无匹配快照才回退现有 Excel 读取路径。
-                _snap = find_matching_snapshot(source_path, DATA_WAREHOUSE)
+                _snap = find_snapshot_local_or_share(source_path)  # r22：本地仓 miss 回退数据盘仓
                 if _snap is not None:
                     _pq_path, _man = _snap
                     from shared.snapshot_container import load_snapshot_frame  # r21：kbdat 容器支持
