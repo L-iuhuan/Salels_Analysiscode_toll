@@ -17,7 +17,20 @@ import sys
 import tempfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DEFAULT_HTML = os.path.join(ROOT, "sales_analytics_platform", "dashboard", "dashboard_a.html")
+
+
+def _find_dash_html():
+    """r23：最新生成的看板 html——新家 output\dashboard\ 优先，兼容旧 dashboard_a.html。"""
+    import glob
+    pats = [
+        os.path.join(ROOT, "sales_analytics_platform", "output", "dashboard", "销售数据分析看板_*.html"),
+        os.path.join(ROOT, "sales_analytics_platform", "dashboard", "dashboard_a.html"),
+    ]
+    cands = [p for pat in pats for p in glob.glob(pat)]
+    return max(cands, key=os.path.getmtime) if cands else pats[-1]
+
+
+DEFAULT_HTML = _find_dash_html()
 
 RUNNER = r"""
 // ===== Node 侧：构建白名单沙箱并逐块执行 =====

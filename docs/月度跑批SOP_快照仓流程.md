@@ -10,7 +10,7 @@
 |---|---|---|---|
 | 1 | 新月度 Excel 投放数据共享目录（或本地 data\） | 数据共享目录（配置见第五节）或 `data\财务分析-<月>.xlsx` | 文件名与月份一致；DSE 加密不影响（读取走 COM 兜底）；流水线自动合并扫描共享盘+本地取最新 |
 | 2 | 落快照仓 | `python scripts\ingest_snapshot.py` | 生成 `data_warehouse\<YYYYMM>\erp_snapshot.parquet` + `erp_snapshot.kbdat` 加密容器（r21：明文本机留存，容器随发布分发）；控制台报行数 |
-| 3 | 全量跑批 | `python run_chain.py`（自动取共享盘+本地最新；显式 `--data <路径>` 永远优先） | [STAGE 1/6]~[STAGE 6/6] 全过；末尾"全部通过"；看板 dashboard_a.html 更新 |
+| 3 | 全量跑批 | `python run_chain.py`（自动取共享盘+本地最新；显式 `--data <路径>` 永远优先） | [STAGE 1/6]~[STAGE 6/6] 全过；末尾"全部通过"；看板 `output\dashboard\销售数据分析看板_<yyyy年mm月>.html` 更新（r23 迁出同步树+按月命名） |
 | 4 | 数据对拍 | `python scripts\golden_diff.py --baseline baseline\<当前基线>\summary.json --platform-dir sales_analytics_platform` | 漂移数=已登记数（基线 20260827 起重新计，当前 0），**0 待查明** |
 | 5 | 测试门禁 | `python scripts\run_all_tests.py` | 全量 93/93 passed（勿只跑子集） |
 | 6 | JS 门禁 | `python scripts\check_js_syntax.py` | `JS: ALL OK (N blocks)` |

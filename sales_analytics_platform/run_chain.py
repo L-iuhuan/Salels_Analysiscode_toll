@@ -6,7 +6,7 @@ r"""
 一条命令完成「数据处理 → 生成看板」：
 
   前段  processing/run_all.py            读 data/ 里的原始Excel → 产出到 output/{silver,gold,report}
-  后段  dashboard/generate_dashboard.py  读 output/ 和 data/     → 生成 dashboard/dashboard_a.html
+  后段  dashboard/generate_dashboard.py  读 output/ 和 data/     → 生成 output/dashboard/销售数据分析看板_<yyyy年mm月>.html
 
 前段产出直接写进 output/，后段从同一个 output/ 取数 —— 单一输入、单一输出，无需任何同步/拷贝。
 output/ 里的中间结果（gold/silver CSV、产品报告Excel）也可直接拿去做其它分析。
@@ -51,8 +51,19 @@ DIR_DATA = os.path.join(PKG, "data")        # 唯一输入目录：原始Excel +
 DIR_DATA_SHARE = r"\\192.168.8.3\财务部\财务电子档案备份\D1经营分析"
 DIR_PROC = os.path.join(PKG, "processing")  # 前段代码
 DIR_OUT = os.path.join(PKG, "output")       # 唯一输出目录：silver/gold/report（前段写、后段读、也可做其它分析）
-DIR_DASH = os.path.join(PKG, "dashboard")   # 后段代码 + 生成的看板
-DASH_HTML = os.path.join(DIR_DASH, "dashboard_a.html")
+DIR_DASH = os.path.join(PKG, "dashboard")   # 后段代码 + 模板（r23 起生成物不再落此目录）
+DASH_OUT_DIR = os.path.join(DIR_OUT, "dashboard")  # r23：看板产物新家（output 同步树外，壳端 /XD output 保留）
+
+
+def find_dash_html():
+    """r23：定位最新生成的看板 html——output\\dashboard\\销售数据分析看板_*.html 优先，
+    兼容旧位置 dashboard\\dashboard_a.html（存量产物）。找不到返回空串。"""
+    import glob as _glob
+    cands = _glob.glob(os.path.join(DASH_OUT_DIR, "销售数据分析看板_*.html"))
+    _legacy = os.path.join(DIR_DASH, "dashboard_a.html")
+    if os.path.isfile(_legacy):
+        cands.append(_legacy)
+    return max(cands, key=os.path.getmtime) if cands else ""
 CONFIG_PATH = os.path.join(PKG, "chain_config.json")
 
 PERSONNEL_CANONICAL = "部门-人员-职务对应.md"   # 后段写死读取的人员文件名
@@ -332,8 +343,9 @@ def main():
     # ── 汇总 ──
     banner("完成")
     print(f"  总耗时: {time.perf_counter() - t_all:.1f}s")
-    if not args.skip_dashboard and os.path.exists(DASH_HTML):
-        print(f"  看板:   {DASH_HTML}  ({os.path.getsize(DASH_HTML)/1e6:.1f} MB)")
+    _dash_html = find_dash_html()
+    if not args.skip_dashboard and _dash_html:
+        print(f"  看板:   {_dash_html}  ({os.path.getsize(_dash_html)/1e6:.1f} MB)")
         print(f"  中间结果(可做其它分析): {DIR_OUT}")
         print(f"  用浏览器打开上面的看板文件即可查看。")
     else:

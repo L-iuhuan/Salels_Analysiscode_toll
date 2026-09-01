@@ -231,9 +231,21 @@ def parse_dashboard(html_path):
     return {"vars": vars_, "kpis": kpis, "errors": errors}
 
 
+def _resolve_dash_html(dashboard_dir):
+    """r23：最新生成的看板 html——新家 output\\dashboard\\（dashboard_dir 按旧约定指向
+    dashboard\\，由此推同包 output\\dashboard\\）优先，兼容旧 dashboard_a.html。"""
+    import glob as _glob
+    out_dir = os.path.abspath(os.path.join(dashboard_dir, "..", "output", "dashboard"))
+    cands = _glob.glob(os.path.join(out_dir, "销售数据分析看板_*.html"))
+    legacy = os.path.join(dashboard_dir, "dashboard_a.html")
+    if os.path.isfile(legacy):
+        cands.append(legacy)
+    return max(cands, key=os.path.getmtime) if cands else legacy
+
+
 def collect_dashboard(dashboard_dir):
-    """采集 dashboard_a.html 的内嵌 JSON 结构画像。"""
-    html_path = os.path.join(dashboard_dir, "dashboard_a.html")
+    """采集生成看板 html 的内嵌 JSON 结构画像（r23：新家优先，兼容旧名）。"""
+    html_path = _resolve_dash_html(dashboard_dir)
     if not os.path.isfile(html_path):
         return {"status": "missing", "html_path": html_path}
     st = os.stat(html_path)

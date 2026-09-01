@@ -3,7 +3,8 @@ r"""
 JS 语法门禁 · 校验看板 HTML 中所有 <script> 块的语法
 =====================================================================
 
-从 sales_analytics_platform/dashboard/dashboard_a.html 提取全部 <script> 块，
+从看板生成 html（r23 起 output\dashboard\销售数据分析看板_<yyyy年mm月>.html，兼容旧
+dashboard\dashboard_a.html，取最新）提取全部 <script> 块，
 逐块调用 node --check 做语法校验（临时文件写入 %TEMP%）：
 
   python scripts/check_js_syntax.py
@@ -32,7 +33,20 @@ except (AttributeError, OSError, ValueError):
 
 # 仓库根目录 = 本脚本所在目录的上一级
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-HTML_PATH = os.path.join(REPO_ROOT, "sales_analytics_platform", "dashboard", "dashboard_a.html")
+
+
+def _find_dash_html():
+    """r23：最新生成的看板 html——新家 output\dashboard\ 优先，兼容旧 dashboard_a.html。"""
+    import glob
+    pats = [
+        os.path.join(REPO_ROOT, "sales_analytics_platform", "output", "dashboard", "销售数据分析看板_*.html"),
+        os.path.join(REPO_ROOT, "sales_analytics_platform", "dashboard", "dashboard_a.html"),
+    ]
+    cands = [p for pat in pats for p in glob.glob(pat)]
+    return max(cands, key=os.path.getmtime) if cands else pats[-1]
+
+
+HTML_PATH = _find_dash_html()
 
 # 提取 <script> 块（含 type=module / src 等属性的块；空块跳过）
 SCRIPT_RE = re.compile(r"<script[^>]*>(.*?)</script>", re.S)

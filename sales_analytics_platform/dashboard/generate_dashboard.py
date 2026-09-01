@@ -13,7 +13,27 @@ from collections import Counter, defaultdict
 PROJECT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 GOLD = os.path.join(PROJECT, "output", "gold")
 SILVER = os.path.join(PROJECT, "output", "silver")
-OUT = os.path.join(os.path.dirname(__file__), "dashboard_a.html")
+# r23：看板产物迁出同步树——生成到 output\dashboard\（壳端同步 /XD output 天然保留、
+# 发布白名单不含 output、preagg 缓存本就同目录），文件名带数据月份（用户拍板 yyyy年mm月）。
+# 旧位置 dashboard\dashboard_a.html 曾被壳端启动同步 /MIR 当"多余项"删除——重启后
+# 「打开看板」空。旧名兼容定位见 run_chain.find_dash_html 与各门禁脚本。
+OUT_DIR = os.path.join(PROJECT, "output", "dashboard")
+OUT = os.path.join(OUT_DIR, "dashboard_a.html")   # 占位：两条写盘路径都会按数据月份重定名
+
+
+def _month_cn(month):
+    """'2026-07'/'202607' → '2026年07月'（推不出时回退当天，保证必有文件名）。"""
+    m = str(month or "").replace("-", "").replace("/", "").strip()
+    if len(m) == 6 and m.isdigit():
+        return f"{m[:4]}年{m[4:6]}月"
+    import datetime as _dt
+    return _dt.date.today().strftime("%Y年%m月")
+
+
+def _out_path(month):
+    os.makedirs(OUT_DIR, exist_ok=True)
+    return os.path.join(OUT_DIR, f"销售数据分析看板_{_month_cn(month)}.html")
+
 DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
 os.makedirs(DATA_DIR, exist_ok=True)
 
@@ -647,6 +667,7 @@ if _cache_hit and _cached_obj:
     for _k_c, _v_c in _replacements.items():
         _html_c = _html_c.replace(_k_c, _v_c)
     _html_c = _hide_invisible_faces(_html_c)
+    OUT = _out_path(_cached_replacements.get("%%LATEST%%"))   # r23：缓存路径按缓存的数据月份命名
     with open(OUT, "w", encoding="utf-8") as _f_c:
         _f_c.write(_html_c)
     _sz_c = os.path.getsize(OUT) / (1024 * 1024)
@@ -2671,6 +2692,7 @@ for k,v in replacements.items():
     html = html.replace(k,v)
 html = _hide_invisible_faces(html)
 
+OUT = _out_path(_data_month)   # r23：全算路径按 load_product_report 的数据月份命名
 with open(OUT,"w",encoding="utf-8") as f: f.write(html)
 sz=os.path.getsize(OUT)/(1024*1024)
 print(f"\n[OK] {OUT} {sz:.1f}MB | YTD:{kpi_r/10000:.1f}亿 毛利率:{kpi_mg}%")

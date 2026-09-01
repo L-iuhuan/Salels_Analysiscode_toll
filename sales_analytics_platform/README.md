@@ -21,7 +21,7 @@
    [流水线自动加工]
         │
         ▼
-  出来一个网页看板(dashboard_a.html)
+  出来一个网页看板(output/dashboard/销售数据分析看板_<yyyy年mm月>.html)
   用浏览器打开，就能看各种销售分析图表
 ```
 
