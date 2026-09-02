@@ -232,8 +232,11 @@ def _run_ets_parallel(task_args, worker):
         import os as _os
         from concurrent.futures import ProcessPoolExecutor as _PPE
         from shared.pool_utils import safe_worker_count
-        # r26：worker 数叠加可用内存约束（低内存办公机防 MemoryError）
+        # r26：worker 数叠加可用内存约束（低内存办公机防 MemoryError）；
+        # r27：只够 1 个 worker 时直接串行——免 spawn 装载与父进程 pickle 峰值
         n_workers = safe_worker_count(min(8, (_os.cpu_count() or 4)), len(task_args))
+        if n_workers <= 1:
+            return [worker(a) for a in task_args]
         with _PPE(max_workers=n_workers) as ex:
             return list(ex.map(worker, task_args, chunksize=16))
     except Exception as _e:  # noqa: BLE001 —— 并行不可用必须可回退，结果不变

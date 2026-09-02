@@ -231,13 +231,11 @@ def _read_com_once(path, sheet_name, strict):
         cols_n = _com_call(lambda: used.Columns.Count)
         print(f"  [兼容读取] 打开 {time.time() - t0:.1f}s | sheet='{target}' | "
               f"UsedRange {rows_n}x{cols_n} | 通道={channel}")
-        # 归一为二维
+        # 归一为二维（外层浅拷——行元组对象复用。r27 前此处对全部单元格逐个重包装两层
+        # list，小内存机上峰值多占约 2 份整表数据，是兜底路径的最大内存放大器）
         if not isinstance(data, (tuple, list)):
             data = ((data,),)
         rows = list(data)
-        # COM 日期单元可能带非标准时区（win32timezone），先逐单元去时区，避免 pandas 推断出
-        # 无法迭代/序列化的 datetime64[tz] 列
-        rows = [[naive_cell(c) for c in r] for r in rows]
         # 列名去重：COM 表头可能有重复列（如"细分市场（新）"出现两次），重名会使 df[col] 返回 DataFrame
         cols = [str(c) for c in rows[0]]
         seen = {}
@@ -249,7 +247,24 @@ def _read_com_once(path, sheet_name, strict):
             else:
                 seen[c] = 0
                 out_cols.append(c)
-        df = pd.DataFrame([list(r) for r in rows[1:]], columns=out_cols)
+        # COM 日期单元可能带非标准时区（win32timezone）。r27：必须在构造 DataFrame **前**
+        # 对"含 datetime 的列"定向去时区（行元组按指针重建，峰值仅一层指针层）——不能等
+        # 构造后处理：pandas 见到带 win32timezone 的日期会把整列推断成 DatetimeTZDtype，
+        # 其 tz 对象让 pandas 的 C 时区代码直接崩（真机实测 2026-09-02：tz_localize 抛
+        # NoneType.total_seconds，异常被吞后列停留带时区状态；str(dtype) 也不含"tz"字样
+        # 难以事后甄别）。扫描全列、列齐即早退。
+        dt_cols = set()
+        _n_cols = len(cols)
+        for _r in rows[1:]:
+            for _i, _v in enumerate(_r):
+                if _i not in dt_cols and isinstance(_v, datetime.datetime):
+                    dt_cols.add(_i)
+            if len(dt_cols) >= _n_cols:
+                break
+        if dt_cols:
+            rows = [tuple(naive_cell(_v) if _i in dt_cols else _v
+                          for _i, _v in enumerate(_r)) for _r in rows]
+        df = pd.DataFrame(rows[1:], columns=out_cols)
         # 清理 COM 幽灵空列/空行
         df = df.dropna(axis=1, how="all").dropna(axis=0, how="all")
         return df, target

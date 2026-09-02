@@ -413,24 +413,8 @@ def run_analysis(source_path, df=None):
         from concurrent.futures import ProcessPoolExecutor, as_completed
         from shared.pool_utils import safe_worker_count
         n_workers = safe_worker_count(int(thr.get("hist_portrait_n_workers", 4)), len(hist_tasks))
-        try:
-            with ProcessPoolExecutor(max_workers=n_workers) as executor:
-                fut_map = {}
-                for offset_months, tp, df_hist in hist_tasks:
-                    future = executor.submit(
-                        run_profiling, df_hist, tp, thr, name_col, date_col,
-                        qty_col, rev_col, profit_col, cust_col, order_col,
-                        cat_col, ref_priority, wgt,
-                        mode='portrait_only', prod_month=prod_month_all)
-                    fut_map[future] = offset_months
-                for future in as_completed(fut_map):
-                    om = fut_map[future]
-                    hist_result, _, _, _, _, _ = future.result()
-                    hist_results[om] = hist_result
-                    print(f"  [历史画像] t-{om}月: {len(hist_result)}个产品")
-        except Exception as _e:  # noqa: BLE001 —— 池爆必须可降级，禁止整链失败
-            print(f"  [警告] 历史画像并行失败（{type(_e).__name__}: {_e}），"
-                  f"降级为进程内串行（较慢，结果不变；可关闭 WPS 等大内存程序后重跑提速）")
+
+        def _hist_serial(tag=""):
             for offset_months, tp, df_hist in hist_tasks:
                 hist_result, _, _, _, _, _ = run_profiling(
                     df_hist, tp, thr, name_col, date_col,
@@ -438,7 +422,32 @@ def run_analysis(source_path, df=None):
                     cat_col, ref_priority, wgt,
                     mode='portrait_only', prod_month=prod_month_all)
                 hist_results[offset_months] = hist_result
-                print(f"  [历史画像] t-{offset_months}月: {len(hist_result)}个产品（串行）")
+                print(f"  [历史画像] t-{offset_months}月: {len(hist_result)}个产品{tag}")
+
+        if n_workers <= 1:
+            # r27：内存只够 1 个 worker 时直接进程内串行——免掉 spawn 进程的
+            # python+pandas 装载（~300MB）与父进程侧任务 pickle 峰值
+            _hist_serial("（内存紧张，串行）")
+        else:
+            try:
+                with ProcessPoolExecutor(max_workers=n_workers) as executor:
+                    fut_map = {}
+                    for offset_months, tp, df_hist in hist_tasks:
+                        future = executor.submit(
+                            run_profiling, df_hist, tp, thr, name_col, date_col,
+                            qty_col, rev_col, profit_col, cust_col, order_col,
+                            cat_col, ref_priority, wgt,
+                            mode='portrait_only', prod_month=prod_month_all)
+                        fut_map[future] = offset_months
+                    for future in as_completed(fut_map):
+                        om = fut_map[future]
+                        hist_result, _, _, _, _, _ = future.result()
+                        hist_results[om] = hist_result
+                        print(f"  [历史画像] t-{om}月: {len(hist_result)}个产品")
+            except Exception as _e:  # noqa: BLE001 —— 池爆必须可降级，禁止整链失败
+                print(f"  [警告] 历史画像并行失败（{type(_e).__name__}: {_e}），"
+                      f"降级为进程内串行（较慢，结果不变；可关闭 WPS 等大内存程序后重跑提速）")
+                _hist_serial("（串行）")
 
     # 按顺序合并 (必须按 offset 递增以保证结果列顺序一致)
     # 结果列以 _t-{offset} 后缀区分（如 "当前画像_t-3"），
