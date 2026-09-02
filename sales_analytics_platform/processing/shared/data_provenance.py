@@ -23,12 +23,14 @@ import datetime
 import json
 import os
 
-# 读取通道 → 用户可读名
+# 读取通道 → 用户可读名。r25：措辞守 r19 中性红线——"明文/解密"字样不得出现在
+# 用户可见文案（r24 引入的"(明文直读)/(本机解密)"后缀属违规，已去）；看板徽标
+# 已完全不展示通道（见 generate_dashboard._identity_replacements），详情留悬停提示。
 CHANNEL_LABELS = {
     "snapshot_local": "快照(本地仓)",
     "snapshot_share": "快照(数据盘仓)",
-    "direct": "标准读取(明文直读)",
-    "com": "兼容读取(本机解密)",
+    "direct": "标准读取",
+    "com": "兼容读取",
 }
 
 

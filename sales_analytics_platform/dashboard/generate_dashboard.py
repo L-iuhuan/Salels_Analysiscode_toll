@@ -62,9 +62,21 @@ PREAGG_DIR = os.path.join(PROJECT, "output", "dashboard")
 PREAGG_PATH = os.path.join(PREAGG_DIR, "preagg.json")
 
 
+def _fmt_iso(ts):
+    """r25：ISO 时间戳(2026-09-01T16:29:47+08:00) → '2026-09-01 16:29'（易读）。异常原样截断。"""
+    s = str(ts or "")
+    try:
+        import datetime as _dt
+        return _dt.datetime.fromisoformat(s).strftime("%Y-%m-%d %H:%M")
+    except ValueError:
+        return s[:16].replace("T", " ") or s
+
+
 def _identity_replacements():
     """r24：数据身份徽标占位符——读 output/dashboard/data_identity.json（run_all r24 落盘）。
-    缺失/损坏时给空内容（不渲染徽标），绝不阻断生成。"""
+    缺失/损坏时给空内容（不渲染徽标），绝不阻断生成。
+    r25：徽标不再展示读取通道（"兼容读取"等技术字样移出看板，通道详情留悬停提示）；
+    时间戳统一 _fmt_iso 易读格式。"""
     try:
         _p = os.path.join(PREAGG_DIR, "data_identity.json")
         if not os.path.isfile(_p):
@@ -75,9 +87,7 @@ def _identity_replacements():
         if d.get("source_name"):
             parts.append(f"源: {d['source_name']}")
         if d.get("snapshot_ingest_time"):
-            parts.append("快照采集 " + str(d["snapshot_ingest_time"])[:16].replace("T", " "))
-        elif d.get("channel_str"):
-            parts.append(d["channel_str"])
+            parts.append("快照采集 " + _fmt_iso(d["snapshot_ingest_time"]))
         if d.get("row_count") is not None:
             parts.append(f"{d['row_count']:,} 行")
         fr = d.get("freshness") or {}
@@ -87,8 +97,8 @@ def _identity_replacements():
                     f'{fr.get("newest_share_file", "")}（{fr.get("newest_share_mtime_str", "")}）</span>')
         bar = " · ".join(parts) + warn
         tip = (f"{d.get('source_name', '')} | {d.get('channel_str', '')} | 修改于 {d.get('source_mtime_str', '')}"
-               + (f" | 快照采集 {d.get('snapshot_ingest_time')}" if d.get("snapshot_ingest_time") else "")
-               + (f" | 看板生成 {d.get('generated_at', '')}" if d.get("generated_at") else ""))
+               + (f" | 快照采集 {_fmt_iso(d.get('snapshot_ingest_time'))}" if d.get("snapshot_ingest_time") else "")
+               + (f" | 看板生成 {_fmt_iso(d.get('generated_at'))}" if d.get("generated_at") else ""))
         return {"%%DATA_IDENTITY%%": bar, "%%DATA_IDENTITY_TIP%%": tip}
     except Exception:
         return {"%%DATA_IDENTITY%%": "", "%%DATA_IDENTITY_TIP%%": "数据身份未知"}
