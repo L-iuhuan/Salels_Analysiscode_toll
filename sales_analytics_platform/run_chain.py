@@ -271,6 +271,34 @@ def main():
         sys.exit(1)
     print(f"  数据源: {raw_path}")
 
+    # ── r24：数据身份 + 新鲜度（可见性第1+2层）── 放编排层：全模式必经（--skip-processing /
+    # --dashboard-only 不跑 run_all，身份不能只在全量路径有）。best-effort 绝不阻断跑批。
+    # 注意用 raw_path 原始 mtime——data/ 接入副本会被 utime 抬升，拿副本判新鲜度会漏报。
+    try:
+        if DIR_PROC not in sys.path:
+            sys.path.insert(0, DIR_PROC)
+        from shared.data_provenance import build_data_identity, check_freshness, report_data_identity
+        from shared.data_cleaning import (find_snapshot_local_or_share, data_share_dir,
+                                          is_encrypted_excel)
+        _snap_id = find_snapshot_local_or_share(raw_path)
+        if _snap_id is not None:
+            _p_id, _m_id = _snap_id
+            _wh_prefix = os.path.join(os.path.abspath(os.path.join(PKG, "data_warehouse")), "")
+            _chan_id = ("snapshot_local" if os.path.abspath(_p_id).startswith(_wh_prefix)
+                        else "snapshot_share")
+            _rows_id = (_m_id.get("data", {}) or {}).get("row_count")
+            _mani_id = _m_id
+        else:
+            _chan_id = "com" if is_encrypted_excel(raw_path) else "direct"
+            _rows_id, _mani_id = None, None
+        _ident = build_data_identity(raw_path, _chan_id, row_count=_rows_id, manifest=_mani_id)
+        check_freshness(_ident, raw_path, data_share_dir())
+        report_data_identity(
+            _ident,
+            out_json_path=os.path.join(DIR_OUT, "dashboard", "data_identity.json"))
+    except Exception as _e:
+        print(f"  [数据身份] 生成失败（不阻断跑批）: {type(_e).__name__}: {_e}")
+
     # ── 统一输入:把 --data 指定的原始Excel接入 data/ ──
     # 后段 generate_dashboard.py 不接收 --data,只扫描 data/ 目录按 mtime 取最新;
     # 运行器同步代码时排除 data/(保护本地数据),所以必须把用户指定的文件接进来,

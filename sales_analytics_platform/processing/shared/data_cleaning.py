@@ -142,8 +142,8 @@ def find_matching_snapshot(xlsx_path, warehouse_root):
 _DATA_SHARE_DEFAULT = r"\\192.168.8.3\财务部\财务电子档案备份\D1经营分析"
 
 
-def share_warehouse_root():
-    """数据盘快照仓根（r22）。路径解析与 ingest/run_chain 数据目录三级同源：
+def data_share_dir():
+    """r24：数据共享盘目录本体（不含 data_warehouse 子目录）。三级同源解析：
     环境变量 SALES_DATA_SHARE_DIR > chain_config.json 的 data_share_dir（显式空串=禁用）
     > 内置默认。禁用返回 None；测试可 monkeypatch 本函数或 _DATA_SHARE_DEFAULT。
     """
@@ -157,12 +157,20 @@ def share_warehouse_root():
                 if "data_share_dir" in cfg:
                     v = str(cfg.get("data_share_dir") or "").strip()
                     if not v:
-                        return None          # 显式空串 = 禁用数据盘快照回退
+                        return None          # 显式空串 = 禁用数据盘回退
                     share = v
         except (json.JSONDecodeError, OSError):
             pass
     if not share:
         share = _DATA_SHARE_DEFAULT
+    return share
+
+
+def share_warehouse_root():
+    """数据盘快照仓根（r22）。r24 起目录解析复用 data_share_dir()。"""
+    share = data_share_dir()
+    if not share:
+        return None
     return os.path.join(share, "data_warehouse")
 
 

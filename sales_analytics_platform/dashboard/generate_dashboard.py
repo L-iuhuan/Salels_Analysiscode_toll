@@ -60,6 +60,40 @@ except Exception as _e:  # 兼容非标准目录下运行
 
 PREAGG_DIR = os.path.join(PROJECT, "output", "dashboard")
 PREAGG_PATH = os.path.join(PREAGG_DIR, "preagg.json")
+
+
+def _identity_replacements():
+    """r24：数据身份徽标占位符——读 output/dashboard/data_identity.json（run_all r24 落盘）。
+    缺失/损坏时给空内容（不渲染徽标），绝不阻断生成。"""
+    try:
+        _p = os.path.join(PREAGG_DIR, "data_identity.json")
+        if not os.path.isfile(_p):
+            return {"%%DATA_IDENTITY%%": "", "%%DATA_IDENTITY_TIP%%": "数据身份文件缺失（仅重生成看板时正常）"}
+        with open(_p, "r", encoding="utf-8") as _f:
+            d = json.load(_f)
+        parts = []
+        if d.get("source_name"):
+            parts.append(f"源: {d['source_name']}")
+        if d.get("snapshot_ingest_time"):
+            parts.append("快照采集 " + str(d["snapshot_ingest_time"])[:16].replace("T", " "))
+        elif d.get("channel_str"):
+            parts.append(d["channel_str"])
+        if d.get("row_count") is not None:
+            parts.append(f"{d['row_count']:,} 行")
+        fr = d.get("freshness") or {}
+        warn = ""
+        if fr.get("is_stale"):
+            warn = (f' <span style="color:#e6a700">⚠ 共享盘有更新: '
+                    f'{fr.get("newest_share_file", "")}（{fr.get("newest_share_mtime_str", "")}）</span>')
+        bar = " · ".join(parts) + warn
+        tip = (f"{d.get('source_name', '')} | {d.get('channel_str', '')} | 修改于 {d.get('source_mtime_str', '')}"
+               + (f" | 快照采集 {d.get('snapshot_ingest_time')}" if d.get("snapshot_ingest_time") else "")
+               + (f" | 看板生成 {d.get('generated_at', '')}" if d.get("generated_at") else ""))
+        return {"%%DATA_IDENTITY%%": bar, "%%DATA_IDENTITY_TIP%%": tip}
+    except Exception:
+        return {"%%DATA_IDENTITY%%": "", "%%DATA_IDENTITY_TIP%%": "数据身份未知"}
+
+
 _NO_CACHE = ("--no-cache" in sys.argv)
 _DASH_TIMING = os.environ.get("DASH_TIMING", "0") == "1"
 _PROG_START = _time_mod.time()
@@ -660,6 +694,8 @@ if _cache_hit and _cached_obj:
     except Exception as _e:
         _replacements["%%R_FACE_HTML%%"] = ('<div class="cb"><h3>风险与行动</h3><div class="note">'
                                             f'总体文档读取失败（{type(_e).__name__}: {_e}）</div></div>')
+
+    _replacements.update(_identity_replacements())   # r24：数据身份徽标（缓存路径同款）
 
     # 渲染
     _template_c = _pl_mod.Path(__file__).parent / "template.html"
@@ -2686,6 +2722,8 @@ replacements = {
 # 图表级导读占位符
 for _fid in ("A", "B", "C", "D", "E", "F"):
     replacements.update(_build_guide_replacements(_fid, _FACE_META_CACHE.get(_fid, {})))
+
+replacements.update(_identity_replacements())   # r24：数据身份徽标
 
 html = template
 for k,v in replacements.items():
