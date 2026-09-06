@@ -2280,20 +2280,40 @@ if(key===_AG_DET_KEY)return;_AG_DET_KEY=key;
 if(B_PAIR_SEL){if(BSEL)renderBDetail(BSEL);return}
 renderAgentOverview(AG)}
 function _agKpi(label,val,sub){return '<div class="rg rgx"><div class="rgl">'+label+'</div><div class="rgv">'+val+'</div>'+(sub?'<div style="font-size:10px;color:var(--text-tertiary)">'+sub+'</div>':'')+'</div>'}
-// 复合饼图（pie-of-pie）：母环在左=主项（≥threshold）+「其他」整片；子环在右=「其他」的构成明细
-// 子环限量：只展开其他内前 6 名，第 7 名起合并为「其余」（两环切片均 ≤8，永远可读）
-function _bNestedPieOption(entries,threshold,unit){
+// 复合饼图（pie-of-pie 完整形态）：母环在左=主项（≥threshold）+「其他」整片（向外炸开）；
+// 子环在右=「其他」构成明细（前 6 名，第 7 起合「其余」）；graphic 手绘两条引导线（其他扇区两
+// 边界角含炸开位移 → 子环左缘，扇形展开）；统一图例；子环用主色 #2563EB 的深浅渐变。
+function _bNestedPieOption(el,entries,threshold,unit){
 var tot=0;entries.forEach(function(e){tot+=e.value});
 var main=[],small=[],smallSum=0;
 entries.forEach(function(e){if(tot>0&&e.value/tot>=threshold)main.push(e);else{small.push(e);smallSum+=e.value}});
 var hasSmall=small.length>0;
 if(hasSmall&&small.length>6){var rest=0;small.slice(6).forEach(function(e){rest+=e.value});small=small.slice(0,6);small.push({name:'其余',value:Math.round(rest*100)/100})}
-if(hasSmall)main.push({name:'其他',value:Math.round(smallSum*100)/100});
+var OTHER_COL='#2563EB';
+var TINTS=['#2563EB','#3B74EC','#5B8AF0','#7FA1F3','#A4BDF7','#C9D8FB','#E8EFFE'];
+if(hasSmall)main.push({name:'其他',value:Math.round(smallSum*100)/100,itemStyle:{color:OTHER_COL},selected:true});
 if(!main.length)main=[{name:'无数据',value:1}];
-var series=[{type:'pie',center:hasSmall?['32%','52%']:['50%','52%'],radius:['30%','52%'],data:main,avoidLabelOverlap:true,label:{fontSize:TYPO.base,formatter:'{b} {d}%'},labelLine:{length:10,length2:8}}];
-if(hasSmall)series.push({type:'pie',center:['77%','52%'],radius:['20%','40%'],data:small,avoidLabelOverlap:true,label:{fontSize:TYPO.sm,formatter:'{b} {d}%'},labelLine:{length:8,length2:6}});
-var opt={tooltip:{trigger:'item',confine:true,formatter:'{b}: {c}'+unit+' ({d}%)'},series:series};
-if(hasSmall)opt.title=[{text:'总体构成',left:'24%',bottom:0,textStyle:{fontSize:TYPO.xs,color:'#6B7280',fontWeight:'normal'}},{text:'「其他」明细',left:'68%',bottom:0,textStyle:{fontSize:TYPO.xs,color:'#6B7280',fontWeight:'normal'}}];
+var mData=main.map(function(d){var o={name:d.name,value:d.value};if(d.itemStyle)o.itemStyle=d.itemStyle;if(d.selected)o.selected=d.selected;return o});
+var cData=small.map(function(d,i){return{name:d.name,value:d.value,itemStyle:{color:TINTS[Math.min(i,TINTS.length-1)]}}});
+var series=[{type:'pie',center:hasSmall?['32%','52%']:['50%','52%'],radius:['30%','52%'],data:mData,avoidLabelOverlap:true,selectedMode:'single',selectedOffset:16,label:{fontSize:TYPO.base,formatter:'{b} {d}%'},labelLine:{length:10,length2:8}}];
+if(hasSmall)series.push({type:'pie',center:['77%','52%'],radius:['20%','40%'],data:cData,avoidLabelOverlap:true,label:{fontSize:TYPO.sm,formatter:'{b} {d}%'},labelLine:{length:8,length2:6}});
+var opt={tooltip:{trigger:'item',confine:true,formatter:'{b}: {c}'+unit+' ({d}%)'},legend:{top:0,textStyle:{fontSize:TYPO.base},itemWidth:12,itemHeight:8},series:series};
+if(hasSmall){
+opt.title=[{text:'总体构成',left:'24%',bottom:0,textStyle:{fontSize:TYPO.xs,color:'#6B7280',fontWeight:'normal'}},{text:'「其他」明细',left:'68%',bottom:0,textStyle:{fontSize:TYPO.xs,color:'#6B7280',fontWeight:'normal'}}];
+var w=el.clientWidth,h=el.clientHeight,m=Math.min(w,h)/2;
+var cx=0.32*w,cy=0.52*h,rO=0.52*m;
+var otherStart=90-((tot-smallSum)/tot)*360,otherEnd=-270;
+var rad=Math.PI/180,mid=(otherStart+otherEnd)/2,off=16;
+var ox=Math.cos(mid*rad)*off,oy=-Math.sin(mid*rad)*off;
+var ccx=0.77*w,ccy=0.52*h,rC=0.40*m;
+function pt(x0,y0,r,a){return[x0+r*Math.cos(a*rad),y0-r*Math.sin(a*rad)]}
+var p1=pt(cx,cy,rO,otherStart),p2=pt(cx,cy,rO,otherEnd);
+p1[0]+=ox;p1[1]+=oy;p2[0]+=ox;p2[1]+=oy;
+var q1=pt(ccx,ccy,rC,155),q2=pt(ccx,ccy,rC,205);
+opt.graphic={elements:[
+{type:'polyline',shape:{points:[p1,q1]},style:{stroke:'#9CA3AF',lineWidth:1}},
+{type:'polyline',shape:{points:[p2,q2]},style:{stroke:'#9CA3AF',lineWidth:1}}]};
+}
 return opt}
 // ── Top 产品卡（v3，三层级共享 cust/agent/bucket；默认渲染+选中联动，零插入位移）──
 var _BPD_ST={};
@@ -2402,8 +2422,8 @@ if(!B_AGSEL){
 var elS=document.getElementById('bAgStack');if(elS){var oS=echarts.getInstanceByDom(elS);if(oS)oS.dispose();var cS=TABS.chart.create(elS);if(cS){var jxT=(AG.btrend||{}).jx||[],zxT=(AG.btrend||{}).zx||[];var mset={};jxT.forEach(function(d){mset[d.m]=1});zxT.forEach(function(d){mset[d.m]=1});var mss=Object.keys(mset).sort();var jxMap={},zxMap={};jxT.forEach(function(d){jxMap[d.m]=d.r});zxT.forEach(function(d){zxMap[d.m]=d.r});cS.setOption({tooltip:{trigger:'axis',confine:true,axisPointer:{type:'shadow'},formatter:function(ps){var hh='<b>'+ps[0].axisValue+'</b><br/>';var s=0;ps.forEach(function(p){s+=p.value;hh+=p.marker+p.seriesName+': <b>'+p.value.toFixed(1)+'万</b><br/>'});hh+='合计: <b>'+s.toFixed(1)+'万</b>';return hh}},legend:{top:0,textStyle:{fontSize:TYPO.lg}},grid:{left:4,right:16,top:30,bottom:4,containLabel:true},xAxis:{type:'category',data:mss,axisLabel:{fontSize:TYPO.base}},yAxis:{type:'value',axisLabel:{fontSize:TYPO.base}},series:[{name:'经销',type:'bar',stack:'ch',barCategoryGap:'35%',barMaxWidth:56,label:{show:true,fontSize:TYPO.base,formatter:function(p){return p.value>0?Math.round(p.value):''}},data:mss.map(function(m){return jxMap[m]||0})},{name:'直销',type:'bar',stack:'ch',barMaxWidth:56,itemStyle:{color:'#F59E0B'},label:{show:true,position:'top',fontSize:TYPO.base,formatter:function(p){var t=(jxMap[mss[p.dataIndex]]||0)+(zxMap[mss[p.dataIndex]]||0);return t>0?Math.round(t):''}},data:mss.map(function(m){return zxMap[m]||0})}]})}}
 var elAv=document.getElementById('bAgActive');if(elAv){var oAv=echarts.getInstanceByDom(elAv);if(oAv)oAv.dispose();var cAv=TABS.chart.create(elAv);if(cAv){var act=(AG.active||{})[B_SUBMODE]||[];cAv.setOption({tooltip:{trigger:'axis',confine:true},grid:{left:4,right:16,top:14,bottom:4,containLabel:true},xAxis:{type:'category',data:act.map(function(d){return d.m}),axisLabel:{fontSize:TYPO.base}},yAxis:{type:'value',minInterval:1,axisLabel:{fontSize:TYPO.base}},series:[{name:'月活数',type:'line',smooth:true,areaStyle:{opacity:.12},data:act.map(function(d){return d.n})}]})}}
 }else{
-var elT=document.getElementById('bAgTier');if(elT){var oT=echarts.getInstanceByDom(elT);if(oT)oT.dispose();var cT=TABS.chart.create(elT);if(cT){var tc={};prs.forEach(function(p2){var k=p2.t||'未知';tc[k]=(tc[k]||0)+1});var tdata=Object.keys(tc).map(function(k){return{name:k,value:tc[k]}}).sort(function(a,b){return b.value-a.value});cT.setOption(_bNestedPieOption(tdata,0.05,' 家'))}}
-var elCt=document.getElementById('bAgCat');if(elCt){var oCt=echarts.getInstanceByDom(elCt);if(oCt)oCt.dispose();var cCt=TABS.chart.create(elCt);if(cCt){var cd=(AG.cat||{})[B_AGSEL]||{};var ents=Object.keys(cd).map(function(k){return{name:k,value:cd[k]}}).sort(function(a,b){return b.value-a.value});cCt.setOption(_bNestedPieOption(ents,0.02,'万'))}}
+var elT=document.getElementById('bAgTier');if(elT){var oT=echarts.getInstanceByDom(elT);if(oT)oT.dispose();var cT=TABS.chart.create(elT);if(cT){var tc={};prs.forEach(function(p2){var k=p2.t||'未知';tc[k]=(tc[k]||0)+1});var tdata=Object.keys(tc).map(function(k){return{name:k,value:tc[k]}}).sort(function(a,b){return b.value-a.value});cT.setOption(_bNestedPieOption(elT,tdata,0.05,' 家'))}}
+var elCt=document.getElementById('bAgCat');if(elCt){var oCt=echarts.getInstanceByDom(elCt);if(oCt)oCt.dispose();var cCt=TABS.chart.create(elCt);if(cCt){var cd=(AG.cat||{})[B_AGSEL]||{};var ents=Object.keys(cd).map(function(k){return{name:k,value:cd[k]}}).sort(function(a,b){return b.value-a.value});cCt.setOption(_bNestedPieOption(elCt,ents,0.02,'万'))}}
 var elQ=document.getElementById('bAgQty');if(elQ){var oQ=echarts.getInstanceByDom(elQ);if(oQ)oQ.dispose();var cQ=TABS.chart.create(elQ);if(cQ){cQ.setOption({tooltip:{trigger:'axis',confine:true},grid:{left:4,right:16,top:14,bottom:4,containLabel:true},xAxis:{type:'category',data:trend.map(function(d){return d.m}),axisLabel:{fontSize:TYPO.base}},yAxis:{type:'value',name:'万单位',axisLabel:{fontSize:TYPO.base}},series:[{name:'销量',type:'line',smooth:true,data:trend.map(function(d){return d.q||0}),lineStyle:{color:'#F59E0B',width:2},areaStyle:{color:'rgba(245,158,11,0.1)'},symbol:'circle',symbolSize:4}]})}}
 }},200)}
 var B_QTY_MODE='month';
