@@ -2280,16 +2280,21 @@ if(key===_AG_DET_KEY)return;_AG_DET_KEY=key;
 if(B_PAIR_SEL){if(BSEL)renderBDetail(BSEL);return}
 renderAgentOverview(AG)}
 function _agKpi(label,val,sub){return '<div class="rg rgx"><div class="rgl">'+label+'</div><div class="rgv">'+val+'</div>'+(sub?'<div style="font-size:10px;color:var(--text-tertiary)">'+sub+'</div>':'')+'</div>'}
-// 子母环：母环=主项（≥threshold）+其他；子环（外圈）=其他的构成明细，从母环"其他"引出
+// 复合饼图（pie-of-pie）：母环在左=主项（≥threshold）+「其他」整片；子环在右=「其他」的构成明细
+// 子环限量：只展开其他内前 6 名，第 7 名起合并为「其余」（两环切片均 ≤8，永远可读）
 function _bNestedPieOption(entries,threshold,unit){
 var tot=0;entries.forEach(function(e){tot+=e.value});
 var main=[],small=[],smallSum=0;
 entries.forEach(function(e){if(tot>0&&e.value/tot>=threshold)main.push(e);else{small.push(e);smallSum+=e.value}});
-if(smallSum>0)main.push({name:'其他',value:Math.round(smallSum*100)/100});
+var hasSmall=small.length>0;
+if(hasSmall&&small.length>6){var rest=0;small.slice(6).forEach(function(e){rest+=e.value});small=small.slice(0,6);small.push({name:'其余',value:Math.round(rest*100)/100})}
+if(hasSmall)main.push({name:'其他',value:Math.round(smallSum*100)/100});
 if(!main.length)main=[{name:'无数据',value:1}];
-var series=[{type:'pie',radius:['28%','48%'],center:['50%','52%'],data:main,avoidLabelOverlap:true,label:{fontSize:TYPO.base,formatter:'{b} {d}%'},labelLine:{length:10,length2:8}}];
-if(small.length)series.push({type:'pie',radius:['58%','78%'],center:['50%','52%'],data:small,avoidLabelOverlap:true,label:{fontSize:TYPO.sm,formatter:'{b} {d}%'},labelLine:{length:8,length2:6},itemStyle:{opacity:.82}});
-return{tooltip:{trigger:'item',confine:true,formatter:'{b}: {c}'+unit+' ({d}%)'},series:series}}
+var series=[{type:'pie',center:hasSmall?['32%','52%']:['50%','52%'],radius:['30%','52%'],data:main,avoidLabelOverlap:true,label:{fontSize:TYPO.base,formatter:'{b} {d}%'},labelLine:{length:10,length2:8}}];
+if(hasSmall)series.push({type:'pie',center:['77%','52%'],radius:['20%','40%'],data:small,avoidLabelOverlap:true,label:{fontSize:TYPO.sm,formatter:'{b} {d}%'},labelLine:{length:8,length2:6}});
+var opt={tooltip:{trigger:'item',confine:true,formatter:'{b}: {c}'+unit+' ({d}%)'},series:series};
+if(hasSmall)opt.title=[{text:'总体构成',left:'24%',bottom:0,textStyle:{fontSize:TYPO.xs,color:'#6B7280',fontWeight:'normal'}},{text:'「其他」明细',left:'68%',bottom:0,textStyle:{fontSize:TYPO.xs,color:'#6B7280',fontWeight:'normal'}}];
+return opt}
 // ── Top 产品卡（v3，三层级共享 cust/agent/bucket；默认渲染+选中联动，零插入位移）──
 var _BPD_ST={};
 function _bpdShiftM(ym,k){var y=+ym.slice(0,4),m=+ym.slice(5,7)+k;while(m<1){m+=12;y--}while(m>12){m-=12;y++}return y+'-'+(m<10?'0':'')+m}
@@ -2386,8 +2391,8 @@ if(!B_AGSEL){
 h+='<div class="bs"><h4><i class="fa-solid fa-chart-column" style="color:var(--primary)"></i> 渠道结构（月度收入，万元）</h4><div id="bAgStack" style="width:100%;height:240px"></div></div>';
 h+='<div class="bs"><h4><i class="fa-solid fa-users" style="color:var(--primary)"></i> 月活'+(isZx?'终端客户':'代理商')+'数</h4><div id="bAgActive" style="width:100%;height:200px"></div></div>';
 }else{
-h+='<div class="bs"><h4><i class="fa-solid fa-chart-pie" style="color:var(--primary)"></i> 终端客户层级构成<span class="chart-guide">对级口径，跨代理不求和；外环=其他明细</span></h4><div id="bAgTier" style="width:100%;height:230px"></div></div>';
-h+='<div class="bs"><h4><i class="fa-solid fa-chart-pie" style="color:var(--primary)"></i> 品类构成（近12月收入）<span class="chart-guide">外环=其他明细</span></h4><div id="bAgCat" style="width:100%;height:230px"></div></div>';
+h+='<div class="bs"><h4><i class="fa-solid fa-chart-pie" style="color:var(--primary)"></i> 终端客户层级构成<span class="chart-guide">对级口径，跨代理不求和；右环=其他明细</span></h4><div id="bAgTier" style="width:100%;height:230px"></div></div>';
+h+='<div class="bs"><h4><i class="fa-solid fa-chart-pie" style="color:var(--primary)"></i> 品类构成（近12月收入）<span class="chart-guide">右环=其他明细</span></h4><div id="bAgCat" style="width:100%;height:230px"></div></div>';
 h+='<div class="bs"><h4><i class="fa-solid fa-chart-line" style="color:var(--primary)"></i> 月度销量（万单位）</h4><div id="bAgQty" style="width:100%;height:210px"></div></div>';
 }
 det.innerHTML=h;
