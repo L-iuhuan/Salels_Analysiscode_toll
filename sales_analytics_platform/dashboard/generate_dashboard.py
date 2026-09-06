@@ -1124,15 +1124,12 @@ for cid, grp in cxp_12m_r.groupby("_cust"):
 
 # ── 代理商视图（按经销模式）数据段（iter/agent-face-explore；决策轮3口径）──
 # 行级字面值分类：销售模式=="经销"→jx / =="直销"→zx / 其余一切（公司名填写、空值）→other。
-# 零清洗、零归类、零剔除：非标准值如实进"其他"桶并列 DQ 提示清单，供源数据治理。
+# 零清洗、零归类、零剔除：非标准值如实进"其他"桶；DQ 提示不看板内展示，落盘独立文件（决策轮4）。
 # 金额单位=万（与 cid_fin 的 sc() 一致）；列表窗口=YTD（与B面列表 r/p 同口径）。
-_agent_view = {"jx": [], "zx": [], "other": [], "pairs": {}, "dq": None, "guide": ""}
+_agent_view = {"jx": [], "zx": [], "other": [], "pairs": {},
+               "kpi": {}, "trend": {"jx": {}, "other": {}}, "btrend": {}}
 _ag_ent_col = "代理商/直供名称" if "代理商/直供名称" in rex.columns else ("客户" if "客户" in rex.columns else None)
 if "销售模式" in rex.columns and _ag_ent_col:
-    if _FACES_CFG is None:
-        _face_visible("B")  # 触发 faces.yaml 惰性装载（_FACES_CFG 全局缓存，598-610 机制）
-    _av_cfg = ((_FACES_CFG or {}).get("B", {}) or {}).get("agent_view", {}) or {}
-    _agent_view["guide"] = str(_av_cfg.get("guide", ""))
     _ag_mode = rex["销售模式"]
     _ag_bucket = pd.Series(np.where(_ag_mode.eq("经销"), "jx",
                            np.where(_ag_mode.eq("直销"), "zx", "other")), index=rex.index)
@@ -1140,7 +1137,8 @@ if "销售模式" in rex.columns and _ag_ent_col:
     _ag_ytdm = (rex["_ym_full"] >= f"{_latest_y}-01") & (rex["_ym_full"] <= latest)
     _ry = pd.DataFrame({"b": _ag_bucket[_ag_ytdm], "e": _ag_ent[_ag_ytdm],
                         "c": rex["_cust"][_ag_ytdm], "r": rex["_rev"][_ag_ytdm],
-                        "p": rex["_profit"][_ag_ytdm], "prod": rex["_prod"][_ag_ytdm]})
+                        "p": rex["_profit"][_ag_ytdm], "prod": rex["_prod"][_ag_ytdm],
+                        "ym": rex["_ym_full"][_ag_ytdm]})
     _ag_tier = dict(zip(df["客户编号"].astype(str), df["客户层级"].astype(str)))
     _ag_pairs = {"jx": {}, "zx": {}, "other": {}}
     for (_b, _e), _g in _ry.groupby(["b", "e"]):
@@ -1170,8 +1168,25 @@ if "销售模式" in rex.columns and _ag_ent_col:
     for _b in ("jx", "zx", "other"):
         _agent_view[_b].sort(key=lambda x: -x["r"])
     _agent_view["pairs"] = _ag_pairs
-    # DQ 提示清单（全历史口径，供源数据治理）：非标准取值 / 空值 / 混合实体（经销+直销并存）
-    _dq = pd.DataFrame({"m": _ag_mode, "e": _ag_ent, "r": rex["_rev"]})
+    # 桶级 KPI + 月度趋势（YTD，供右栏概况图表）
+    for _b in ("jx", "zx", "other"):
+        _sub = _ry[_ry["b"] == _b]
+        _kr = float(_sub["r"].sum()); _kp = float(_sub["p"].sum())
+        _agent_view["kpi"][_b] = {
+            "n": int(_sub["c"].nunique()) if _b == "zx" else int(_sub["e"].nunique()),
+            "rev": round(_kr / 1e4, 1), "profit": round(_kp / 1e4, 1),
+            "mg": round(_kp / _kr * 100, 1) if _kr > 0 else 0,
+            "custs": int(_sub["c"].nunique()), "prods": int(_sub["prod"].nunique())}
+        _bmo = _sub.groupby("ym").agg(r=("r", "sum"), p=("p", "sum")).reset_index().sort_values("ym")
+        _agent_view["btrend"][_b] = [{"m": str(_x["ym"]), "r": round(float(_x["r"]) / 1e4, 2),
+                                      "p": round(float(_x["p"]) / 1e4, 2)} for _, _x in _bmo.iterrows()]
+    # 代理商级月度趋势（jx/other 两桶；zx 桶已拍平到客户，无需实体趋势）
+    for (_b, _e), _g in _ry[_ry["b"].isin(["jx", "other"])].groupby(["b", "e"]):
+        _am = _g.groupby("ym").agg(r=("r", "sum"), p=("p", "sum")).reset_index().sort_values("ym")
+        _agent_view["trend"][_b][str(_e)] = [{"m": str(_x["ym"]), "r": round(float(_x["r"]) / 1e4, 2),
+                                              "p": round(float(_x["p"]) / 1e4, 2)} for _, _x in _am.iterrows()]
+    # DQ 数据质量提示（决策轮4拍板：不进看板，落盘独立文件供源数据治理）
+    _dq = pd.DataFrame({"m": _ag_mode, "e": _ag_ent, "r": rex["_rev"], "ym": rex["_ym_full"]})
     _ns = _dq[_dq["m"].notna() & ~_dq["m"].isin(["经销", "直销"])]
     _nonstd = [{"v": str(_k), "rows": int(len(_g2)), "rev": round(float(_g2["r"].sum()) / 1e4, 1)}
                for _k, _g2 in _ns.groupby("m")]
@@ -1183,24 +1198,35 @@ if "销售模式" in rex.columns and _ag_ent_col:
         _bs = _bs[(_bs["经销"] != 0) & (_bs["直销"] != 0)]
         _mixed = [{"a": str(_i), "jx": round(float(_v["经销"]) / 1e4, 1),
                    "zx": round(float(_v["直销"]) / 1e4, 1)} for _i, _v in _bs.iterrows()]
-    _agent_view["dq"] = {
-        "nonstd": _nonstd[:20], "nonstd_total": len(_nonstd),
-        "nonstd_rows": int(len(_ns)), "nonstd_rev": round(float(_ns["r"].sum()) / 1e4, 1),
-        "null_rows": int(len(_null)), "null_rev": round(float(_null["r"].sum()) / 1e4, 1),
-        "mixed": _mixed}
     # 问题月份定位：按 月×桶 透视，标出"其他"占比 >5% 的月份（治理可直接定位到月份）
-    _dqm = pd.DataFrame({"ym": rex["_ym_full"], "b": _ag_bucket, "r": rex["_rev"]})
-    _mm = _dqm.groupby(["ym", "b"])["r"].sum().unstack(fill_value=0)
+    _mm = _dq.assign(b=np.where(_dq["m"].eq("经销"), "jx",
+                   np.where(_dq["m"].eq("直销"), "zx", "other"))).groupby(["ym", "b"])["r"].sum().unstack(fill_value=0)
     if "other" not in _mm.columns:
         _mm["other"] = 0.0
     _mm["_tot"] = _mm.sum(axis=1)  # 此刻 _mm 仅含桶列（jx/zx/other），直接行求和
     _hot = _mm[_mm["_tot"] > 0]
     _hot = _hot[_hot["other"] / _hot["_tot"] > 0.05]
-    _agent_view["dq"]["hot_months"] = [
-        {"ym": str(_i), "pct": round(float(_v["other"] / _v["_tot"] * 100), 1),
-         "rev": round(float(_v["other"]) / 1e4, 1)}
-        for _i, _v in _hot.iterrows()]
-    print(f"    代理商视图: 经销{len(_agent_view['jx'])} 直销{len(_agent_view['zx'])} 其他{len(_agent_view['other'])} | DQ提示: 非标准{len(_nonstd)}值 空值{len(_null)}行 混合{len(_mixed)}家")
+    _hot_months = [{"ym": str(_i), "pct": round(float(_v["other"] / _v["_tot"] * 100), 1),
+                    "rev": round(float(_v["other"]) / 1e4, 1)} for _i, _v in _hot.iterrows()]
+    _dq_path = os.path.join(OUT_DIR, f"代理商数据质量提示_{latest}.md")
+    _md = [f"# 代理商视图 · 数据质量提示（数据月份 {latest}）", "",
+           "> 跑批自动生成。汇总「销售模式」列未规范填写情况；看板内不展示本提示。",
+           "> 所有交易在看板中完整保留于「其他」分组，未做剔除或归并；修正源数据后本文件内容自动收敛。", "",
+           "## 概览", "",
+           f"- 非标准取值（填了公司名等）：{len(_nonstd)} 个，共 {len(_ns)} 行 / {round(float(_ns['r'].sum()) / 1e4, 1)} 万",
+           f"- 空值：{len(_null)} 行 / {round(float(_null['r'].sum()) / 1e4, 1)} 万",
+           f"- 混合实体（同一实体经销与直销并存）：{len(_mixed)} 家",
+           f"- 问题集中月份（「其他」占比>5%）：" + ("；".join(f"{h['ym']}（{h['pct']}%，{h['rev']}万）" for h in _hot_months) if _hot_months else "无"), "",
+           "## 非标准取值 Top20（按金额）", "",
+           "| 取值 | 行数 | 金额(万) |", "|---|---|---|"]
+    _md += [f"| {d['v']} | {d['rows']} | {d['rev']} |" for d in _nonstd[:20]]
+    if len(_nonstd) > 20:
+        _md.append(f"| …其余 {len(_nonstd) - 20} 个取值 | 从略 | 从略 |")
+    _md += ["", "## 混合实体明细", "", "| 实体 | 经销(万) | 直销(万) |", "|---|---|---|"]
+    _md += [f"| {m['a']} | {m['jx']} | {m['zx']} |" for m in _mixed] or []
+    with open(_dq_path, "w", encoding="utf-8") as _f:
+        _f.write("\n".join(_md) + "\n")
+    print(f"    代理商视图: 经销{len(_agent_view['jx'])} 直销{len(_agent_view['zx'])} 其他{len(_agent_view['other'])} | DQ提示已落盘: {os.path.basename(_dq_path)}（非标准{len(_nonstd)}值 空值{len(_null)}行 混合{len(_mixed)}家）")
 else:
     print("    代理商视图: 源数据缺少 销售模式/代理商 列，视图置空（不影响其他面）")
 

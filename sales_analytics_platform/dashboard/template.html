@@ -165,6 +165,9 @@ body{font-family:-apple-system,'Microsoft YaHei','Segoe UI',sans-serif;backgroun
 .blf .fr select:focus,.blf .fr input:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 2px var(--primary-100)}
 .blf .cs{flex:1;overflow-y:auto}
 .blf .brow{grid-template-columns:1.5fr 1fr 1fr 0.8fr 0.8fr 0.5fr}
+.blf .brow>span{min-width:0}
+.bl.agent{grid-template-columns:440px 1fr}
+.blf .brow .an{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block}
 .blf .brow.sel{background:var(--primary-100)}
 .br{overflow-y:auto;padding-right:4px}
 .rg,.ig{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);padding:var(--space-inner);box-shadow:var(--shadow-sm);display:flex;flex-direction:column;align-items:center;text-align:center;transition:var(--transition)}
@@ -381,7 +384,7 @@ body{font-family:-apple-system,'Microsoft YaHei','Segoe UI',sans-serif;backgroun
 
 <div class="tab-content" id="tabB">
 %%FACE_META_B%%
- <div class="bl"><div class="blf">
+ <div class="bl" id="bLayout"><div class="blf">
  <div style="padding:10px 12px 0;font-size:var(--font-sm);font-weight:600;color:var(--text-primary)">客户列表 <span class="chart-guide">%%GUIDE_B_list%%</span></div>
  <div class="fr" style="align-items:center;border-bottom:none;padding-bottom:0"><div class="yrf" style="margin-bottom:0"><label class="on" id="bModeCust" onclick="bSetMode('cust')">按客户</label><label id="bModeAgent" onclick="bSetMode('agent')">按经销模式</label></div><div class="yrf" id="bSubWrap" style="display:none;margin-bottom:0"><label class="on" id="bSubJx" onclick="bSetSub('jx')">经销</label><label id="bSubZx" onclick="bSetSub('zx')">直销</label><label id="bSubOther" onclick="bSetSub('other')">其他</label></div></div>
  <div class="fr" id="bFilterRow"><input placeholder="搜索" id="bSrch" oninput="renderBList()" class="form-input" style="font-size:var(--font-xs)"><select id="bTier" class="form-select" onchange="renderBList()"><option value="">层级</option><option>KA</option><option>AA</option><option>KM</option><option>MM</option></select><select id="bAct" class="form-select" onchange="renderBList()"><option value="">状态</option><option>活跃</option><option>微量活跃</option><option>非活跃</option></select><select id="bRisk" class="form-select" onchange="renderBList()"><option value="">风险</option><option>极高</option><option>高</option><option>中</option><option>低</option></select></div>
@@ -2199,57 +2202,93 @@ function bLoadMore(){B_LIST_LIMIT+=B_LIST_LIMIT_STEP;renderBList();var el=docume
 function toggleBSort(key){if(BSORT.key===key)BSORT.asc=!BSORT.asc;else{BSORT.key=key;BSORT.asc=false}renderBList()}
 function selB(i){BSEL=BF[i];renderBList()}
 function openB(name){if(!ALL){ALL=B_CUSTS;CTR=B_TREND}var f=ALL.find(function(c){return c.n===name});if(f){BSEL=f}if(typeof B_MODE!=='undefined'&&B_MODE!=='cust')bSetMode('cust');switchTab('B')}
-// ── 代理商视图（按经销模式）：三桶字面值分类，零清洗零归类，坏数据仅提示 ──
-var B_MODE='cust',B_SUBMODE='jx',B_AGENT_EXPANDED=null,B_PAIR_SEL=null;
-function bSetMode(m){B_MODE=m;B_AGENT_EXPANDED=null;B_PAIR_SEL=null;var wc=document.getElementById('bModeCust'),wa=document.getElementById('bModeAgent');if(wc&&wa){wc.className=m==='cust'?'on':'';wa.className=m==='agent'?'on':''}var sw=document.getElementById('bSubWrap');if(sw)sw.style.display=m==='agent'?'flex':'none';var fr=document.getElementById('bFilterRow');if(fr){fr.style.display=m==='agent'?'none':'flex'}renderBList()}
-function bSetSub(s){B_SUBMODE=s;B_AGENT_EXPANDED=null;B_PAIR_SEL=null;var map={jx:'bSubJx',zx:'bSubZx',other:'bSubOther'};for(var k in map){var el=document.getElementById(map[k]);if(el)el.className=(k===s?'on':'')}renderBList()}
-function bToggleAgent(a){B_AGENT_EXPANDED=(B_AGENT_EXPANDED===a)?null:a;renderBList()}
-function bSelPair(id){var f=ALL?ALL.find(function(c){return c.id===id}):null;if(f){BSEL=f}B_PAIR_SEL=id;renderBList()}
+// ── 代理商视图（按经销模式）：三桶字面值分类，零清洗零归类；DQ 提示落盘独立文件不进看板 ──
+var B_MODE='cust',B_SUBMODE='jx',B_AGENT_EXPANDED=null,B_PAIR_SEL=null,B_AGSEL=null,_AG_DET_KEY='';
+function bSetMode(m){B_MODE=m;B_AGENT_EXPANDED=null;B_PAIR_SEL=null;B_AGSEL=null;_AG_DET_KEY='';var wc=document.getElementById('bModeCust'),wa=document.getElementById('bModeAgent');if(wc&&wa){wc.className=m==='cust'?'on':'';wa.className=m==='agent'?'on':''}var sw=document.getElementById('bSubWrap');if(sw)sw.style.display=m==='agent'?'flex':'none';var fr=document.getElementById('bFilterRow');if(fr){fr.style.display=m==='agent'?'none':'flex'}var ly=document.getElementById('bLayout');if(ly)ly.className=m==='agent'?'bl agent':'bl';renderBList()}
+function bSetSub(s){B_SUBMODE=s;B_AGENT_EXPANDED=null;B_PAIR_SEL=null;B_AGSEL=null;_AG_DET_KEY='';var map={jx:'bSubJx',zx:'bSubZx',other:'bSubOther'};for(var k in map){var el=document.getElementById(map[k]);if(el)el.className=(k===s?'on':'')}renderBList()}
+function bSelAgent(a){B_AGENT_EXPANDED=(B_AGENT_EXPANDED===a)?null:a;B_AGSEL=(B_AGENT_EXPANDED===a)?a:null;B_PAIR_SEL=null;renderBList()}
+function bSelPair(id){var f=ALL?ALL.find(function(c){return c.id===id}):null;if(!f)return;BSEL=f;B_PAIR_SEL=id;renderBList()}
+function _agEsc(s){return String(s).replace(/'/g,'\\x27')}
 function renderAgentList(){
 var el=document.getElementById('bList');if(!el)return;
 var AG=(typeof B_AGENTS!=='undefined')?B_AGENTS:null;
-if(!AG||((AG.jx||[]).length+(AG.zx||[]).length+(AG.other||[]).length)===0){el.innerHTML='<div style="color:var(--text-tertiary);text-align:center;padding:40px 0">代理商视图不可用：源数据缺少「销售模式」或「代理商/直供名称」列</div>';if(BSEL)renderBDetail(BSEL);return}
+if(!AG||((AG.jx||[]).length+(AG.zx||[]).length+(AG.other||[]).length)===0){el.innerHTML='<div style="color:var(--text-tertiary);text-align:center;padding:40px 0">代理商视图不可用：源数据缺少「销售模式」或「代理商/直供名称」列</div>';_agRoute(AG);return}
 var q=(document.getElementById('bSrch').value||'').toLowerCase();
-var h='';
-var dq=AG.dq;
-if(dq&&(dq.nonstd_total||dq.null_rows||(dq.mixed&&dq.mixed.length))){
-h+='<div style="margin:6px 8px;padding:8px 10px;border:1px solid var(--border);border-left:3px solid #F59E0B;border-radius:var(--radius-sm);background:var(--surface-subtle);font-size:11px;color:var(--text-secondary);line-height:1.6">';
-h+='<b style="color:var(--text-primary)">数据质量提示</b>：「销售模式」列存在未规范填写——非标准取值 '+dq.nonstd_total+' 个（'+dq.nonstd_rows+' 行 / '+dq.nonstd_rev+' 万）、空值 '+dq.null_rows+' 行（'+dq.null_rev+' 万）'+(dq.mixed&&dq.mixed.length?'、混合实体 '+dq.mixed.length+' 家':'')+'。以上交易完整保留在「其他」分组，未做剔除或归并；请评估后修正源数据，修正后本提示自动消失。';
-if(dq.hot_months&&dq.hot_months.length)h+='<div style="margin-top:3px;color:var(--text-primary)">问题集中月份：'+dq.hot_months.map(function(m){return m.ym+'（其他占 '+m.pct+'%，'+m.rev+' 万）'}).join('；')+'</div>';
-h+='<details style="margin-top:4px"><summary style="cursor:pointer;color:var(--primary)">查看明细</summary><div style="max-height:180px;overflow-y:auto;margin-top:4px">';
-(dq.nonstd||[]).forEach(function(d){h+='<div style="display:flex;justify-content:space-between;padding:2px 0;border-bottom:1px dashed var(--border)"><span>'+d.v+'</span><span class="num">'+d.rows+' 行 / '+d.rev+' 万</span></div>'});
-if(dq.nonstd_total>(dq.nonstd||[]).length)h+='<div style="padding:2px 0;color:var(--text-tertiary)">…其余 '+(dq.nonstd_total-dq.nonstd.length)+' 个取值从略</div>';
-(dq.mixed||[]).forEach(function(m){h+='<div style="padding:2px 0">混合实体：'+m.a+'（经销 '+m.jx+' 万 / 直销 '+m.zx+' 万）</div>'});
-h+='</div></details></div>'}
-if(AG.guide)h+='<div style="padding:2px 12px 6px;font-size:10px;color:var(--text-tertiary);line-height:1.5">'+AG.guide+'</div>';
 var isZx=B_SUBMODE==='zx';
 var sub=AG[B_SUBMODE]||[];
 if(q)sub=sub.filter(function(d){var nm=(isZx?d.n:d.a)||'';return nm.toLowerCase().indexOf(q)!==-1});
 var modeName={jx:'经销',zx:'直销',other:'其他'}[B_SUBMODE];
-h+='<div class="brow hd"><span>'+(isZx?'终端客户':'代理商')+'</span><span>YTD收入</span><span>YTD毛利</span><span>毛利率</span><span>'+(isZx?'层级':'客户数')+'</span><span>产品数</span></div>';
+var h='<div class="brow hd"><span>'+(isZx?'终端客户':'代理商')+'</span><span>YTD收入</span><span>YTD毛利</span><span>毛利率</span><span>'+(isZx?'层级':'客户数')+'</span><span>产品数</span></div>';
 if(!sub.length)h+='<div style="color:var(--text-tertiary);text-align:center;padding:30px 0">「'+modeName+'」分组无数据</div>';
 sub.forEach(function(d){
 if(isZx){
 var selz=B_PAIR_SEL===d.id?' sel':'';
-h+='<div class="brow'+selz+'" style="cursor:pointer" onclick="bSelPair(\''+String(d.id).replace(/'/g,'\\x27')+'\')">';
-h+='<span style="font-weight:500">'+d.n+'</span><span>'+Math.round(d.r).toLocaleString()+'</span><span>'+Math.round(d.p).toLocaleString()+'</span><span>'+d.mg+'%</span><span>'+(d.t||'-')+'</span><span>'+d.np+'</span></div>';
+h+='<div class="brow'+selz+'" style="cursor:pointer" onclick="bSelPair(\''+_agEsc(d.id)+'\')">';
+h+='<span class="an" title="'+d.n+'" style="font-weight:500">'+d.n+'</span><span>'+Math.round(d.r).toLocaleString()+'</span><span>'+Math.round(d.p).toLocaleString()+'</span><span>'+d.mg+'%</span><span>'+(d.t||'-')+'</span><span>'+d.np+'</span></div>';
 return}
 var exp=B_AGENT_EXPANDED===d.a;
-h+='<div class="brow" style="cursor:pointer" onclick="bToggleAgent(\''+String(d.a).replace(/'/g,'\\x27')+'\')">';
-h+='<span style="font-weight:'+(exp?'700':'500')+';color:'+(exp?'var(--primary)':'var(--text-primary)')+'"><i class="fa-solid '+(exp?'fa-chevron-down':'fa-chevron-right')+'" style="font-size:10px"></i> '+d.a+'</span><span>'+Math.round(d.r).toLocaleString()+'</span><span>'+Math.round(d.p).toLocaleString()+'</span><span>'+d.mg+'%</span><span>'+d.nc+'</span><span>'+d.np+'</span></div>';
+var sela=B_AGSEL===d.a?' sel':'';
+h+='<div class="brow'+sela+'" style="cursor:pointer" onclick="bSelAgent(\''+_agEsc(d.a)+'\')">';
+h+='<span class="an" title="'+d.a+'" style="font-weight:'+(exp?'700':'500')+';color:'+(exp?'var(--primary)':'var(--text-primary)')+'"><i class="fa-solid '+(exp?'fa-chevron-down':'fa-chevron-right')+'" style="font-size:10px"></i> '+d.a+'</span><span>'+Math.round(d.r).toLocaleString()+'</span><span>'+Math.round(d.p).toLocaleString()+'</span><span>'+d.mg+'%</span><span>'+d.nc+'</span><span>'+d.np+'</span></div>';
 if(exp){
 var prs=((AG.pairs||{})[B_SUBMODE]||{})[d.a]||[];
 h+='<div style="padding:4px 8px 4px 24px;font-size:10px;color:var(--text-tertiary);background:var(--surface-subtle);border-bottom:1px solid var(--border)">终端客户（'+d.a+' 口径）· 点击行右侧看客户360详情</div>';
 prs.forEach(function(pc){
 var selp=B_PAIR_SEL===pc.id?' sel':'';
-h+='<div class="brow'+selp+'" style="cursor:pointer" onclick="bSelPair(\''+String(pc.id).replace(/'/g,'\\x27')+'\')">';
-h+='<span style="padding-left:24px;color:var(--text-secondary)">'+pc.n+'</span><span>'+Math.round(pc.r).toLocaleString()+'</span><span>'+Math.round(pc.p).toLocaleString()+'</span><span>'+pc.mg+'%</span><span>'+(pc.t||'-')+'</span><span>'+pc.np+'</span></div>'});
+h+='<div class="brow'+selp+'" style="cursor:pointer" onclick="bSelPair(\''+_agEsc(pc.id)+'\')">';
+h+='<span class="an" title="'+pc.n+'" style="padding-left:24px;color:var(--text-secondary)">'+pc.n+'</span><span>'+Math.round(pc.r).toLocaleString()+'</span><span>'+Math.round(pc.p).toLocaleString()+'</span><span>'+pc.mg+'%</span><span>'+(pc.t||'-')+'</span><span>'+pc.np+'</span></div>'});
 if(!prs.length)h+='<div style="padding:6px 24px;font-size:11px;color:var(--text-tertiary)">（YTD 窗口内无终端客户交易）</div>'}
 });
-el.innerHTML=h;
+var sc=el.scrollTop;el.innerHTML=h;el.scrollTop=sc;
 var cb=document.getElementById('bCrumb');
-if(cb)cb.innerHTML=B_AGENT_EXPANDED?'<div style="padding:5px 12px;font-size:11px;color:var(--text-secondary);border-bottom:1px solid var(--border)"><a style="color:var(--primary);cursor:pointer" onclick="bToggleAgent(null)">‹ 收起</a> · '+modeName+' / '+B_AGENT_EXPANDED+'</div>':'';
-if(BSEL)renderBDetail(BSEL)}
+if(cb)cb.innerHTML=B_AGENT_EXPANDED?'<div style="padding:5px 12px;font-size:11px;color:var(--text-secondary);border-bottom:1px solid var(--border)"><a style="color:var(--primary);cursor:pointer" onclick="bSelAgent(\''+_agEsc(B_AGENT_EXPANDED)+'\')">‹ 收起</a> · '+modeName+' / '+B_AGENT_EXPANDED+'</div>':'';
+_agRoute(AG)}
+function _agRoute(AG){
+var key=B_PAIR_SEL?('pair:'+B_PAIR_SEL):(B_AGSEL?('agent:'+B_SUBMODE+':'+B_AGSEL):('bucket:'+B_SUBMODE));
+if(key===_AG_DET_KEY)return;_AG_DET_KEY=key;
+if(B_PAIR_SEL){if(BSEL)renderBDetail(BSEL);return}
+renderAgentOverview(AG)}
+function _agKpi(label,val,sub){return '<div class="rg rgx"><div class="rgl">'+label+'</div><div class="rgv">'+val+'</div>'+(sub?'<div style="font-size:10px;color:var(--text-tertiary)">'+sub+'</div>':'')+'</div>'}
+function renderAgentOverview(AG){
+var det=document.getElementById('bDet');if(!det)return;
+if(!AG){det.innerHTML='<div style="color:var(--text-tertiary);text-align:center;padding:60px 0">代理商视图数据不可用</div>';return}
+var isZx=B_SUBMODE==='zx';
+var modeName={jx:'经销',zx:'直销',other:'其他'}[B_SUBMODE];
+var kpi=(AG.kpi||{})[B_SUBMODE]||{};
+var h='',topRows=[],trend=[];
+if(!B_AGSEL){
+topRows=(AG[B_SUBMODE]||[]).slice(0,10);
+trend=(AG.btrend||{})[B_SUBMODE]||[];
+h='<h3 style="margin:0">'+modeName+'模式 · 总览</h3>';
+h+='<div style="font-size:11px;color:var(--text-tertiary)">YTD（年初至今）口径 · 点击左侧'+(isZx?'终端客户':'代理商')+'行查看明细</div>';
+h+='<div class="bs"><div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px">';
+h+=_agKpi((isZx?'终端客户数':'代理商数'),kpi.n||0,'');
+h+=_agKpi('YTD收入',(kpi.rev||0).toLocaleString()+'万','');
+h+=_agKpi('YTD毛利',(kpi.profit||0).toLocaleString()+'万','');
+h+=_agKpi('毛利率',(kpi.mg||0)+'%','');
+h+='</div></div>';
+}else{
+var a=B_AGSEL;
+var list=AG[B_SUBMODE]||[];var k2=null;for(var i=0;i<list.length;i++){if(list[i].a===a){k2=list[i];break}}
+if(!k2){det.innerHTML='';return}
+var prs=((AG.pairs||{})[B_SUBMODE]||{})[a]||[];
+topRows=prs.slice(0,5).map(function(p){return{a:p.n,r:p.r}});
+trend=((AG.trend||{})[B_SUBMODE]||{})[a]||[];
+h='<h3 style="margin:0">'+a+'</h3>';
+h+='<div style="font-size:11px;color:var(--text-tertiary)">'+modeName+' · YTD（年初至今）口径 · 终端客户明细见左侧展开列表</div>';
+h+='<div class="bs"><div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px">';
+h+=_agKpi('YTD收入',k2.r.toLocaleString()+'万','');
+h+=_agKpi('YTD毛利',k2.p.toLocaleString()+'万','');
+h+=_agKpi('毛利率',k2.mg+'%','');
+h+=_agKpi('终端客户',k2.nc+'家','');
+h+=_agKpi('产品数',k2.np+'个','');
+h+='</div></div>';
+}
+h+='<div class="bs"><h4><i class="fa-solid fa-chart-column" style="color:var(--primary)"></i> '+(B_AGSEL?'Top5 终端客户':'Top10 '+(isZx?'终端客户':'代理商'))+'（YTD收入，万元）</h4><div id="bAgBar" style="width:100%;height:'+(B_AGSEL?'200':'260')+'px"></div></div>';
+h+='<div class="bs"><h4><i class="fa-solid fa-chart-line" style="color:var(--primary)"></i> 月度收入/毛利（万元）</h4><div id="bAgLine" style="width:100%;height:220px"></div></div>';
+det.innerHTML=h;
+setTimeout(function(){var el1=document.getElementById('bAgBar');if(!el1)return;var old=echarts.getInstanceByDom(el1);if(old)old.dispose();var ch=TABS.chart.create(el1);ch.setOption({tooltip:{trigger:'axis',confine:true},grid:{left:4,right:30,top:8,bottom:4,containLabel:true},xAxis:{type:'value',axisLabel:{fontSize:TYPO.sm}},yAxis:{type:'category',inverse:true,data:topRows.map(function(d){return d.a}),axisLabel:{fontSize:TYPO.sm,width:150,overflow:'truncate'}},series:[{type:'bar',barMaxWidth:16,data:topRows.map(function(d){return d.r}),label:{show:true,position:'right',fontSize:TYPO.sm}}]})},100);
+setTimeout(function(){var el2=document.getElementById('bAgLine');if(!el2)return;var old2=echarts.getInstanceByDom(el2);if(old2)old2.dispose();var ch2=TABS.chart.create(el2);ch2.setOption({tooltip:{trigger:'axis',confine:true},legend:{top:0,textStyle:{fontSize:TYPO.sm}},grid:{left:4,right:16,top:26,bottom:4,containLabel:true},xAxis:{type:'category',data:trend.map(function(d){return d.m}),axisLabel:{fontSize:TYPO.sm}},yAxis:{type:'value',axisLabel:{fontSize:TYPO.sm}},series:[{name:'收入',type:'line',smooth:true,data:trend.map(function(d){return d.r})},{name:'毛利',type:'line',smooth:true,data:trend.map(function(d){return d.p})}]})},150)}
 var B_QTY_MODE='month';
 function bSetQtyMode(mode){B_QTY_MODE=mode;var mBt=document.getElementById('bQtyModeM'),qBt=document.getElementById('bQtyModeQ');if(mBt){mBt.classList.toggle('active',mode==='month')}if(qBt){qBt.classList.toggle('active',mode==='quarter')}if(BSEL){var tr2=CTR[BSEL.id]||[];renderBQtyChart(tr2)}}
 function renderBQtyChart(tr){var dom=document.getElementById('bQty');if(!dom)return;var oldQty=echarts.getInstanceByDom(dom);if(oldQty)oldQty.dispose();var cq=TABS.chart.create(dom);if(!tr||!tr.length){cq.setOption({title:{text:'暂无数据',left:'center',top:'center',textStyle:{fontSize:TYPO.title,color:'#6B7280'}}});return}var qms,qtyData;if(B_QTY_MODE==='quarter'){var qAgg={};tr.forEach(function(t){var parts=t.m.split('-');var y=parts[0],m=parseInt(parts[1]);var q='Q'+Math.ceil(m/3);var key=y+q;if(!qAgg[key])qAgg[key]=0;qAgg[key]+=t.q});var qKeys=Object.keys(qAgg).sort();qms=qKeys;qtyData=qKeys.map(function(k){return Math.round(qAgg[k]*100)/100})}else{qms=tr.map(function(t){return t.m});qtyData=tr.map(function(t){return t.q})}cq.setOption({tooltip:{trigger:'axis',confine:true},grid:{left:55,right:30,top:35,bottom:35,containLabel:true},xAxis:{type:'category',data:qms,axisLabel:{fontSize:TYPO.base,rotate:45}},yAxis:{type:'value',name:'万单位',axisLabel:{fontSize:TYPO.base}},dataZoom:[{type:'slider',start:0,end:100,bottom:8}],series:[{name:'销量',type:'line',data:qtyData,lineStyle:{color:'#F59E0B',width:2},areaStyle:{color:'rgba(245,158,11,0.1)'},symbol:'circle',symbolSize:4,label:{show:true,fontSize:TYPO.sm,formatter:function(p){return p.value>0?p.value.toFixed(1):''}}}]})}
@@ -2843,7 +2882,7 @@ window.bSetQtyMode = bSetQtyMode;
 window.bLoadMore = bLoadMore;
 window.bSetMode = bSetMode;
 window.bSetSub = bSetSub;
-window.bToggleAgent = bToggleAgent;
+window.bSelAgent = bSelAgent;
 window.bSelPair = bSelPair;
 window.renderAgentList = renderAgentList;
 window.renderDRanking = renderDRanking;
