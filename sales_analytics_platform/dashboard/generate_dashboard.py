@@ -1149,6 +1149,8 @@ if "销售模式" in rex.columns and _ag_ent_col:
     for (_b, _e), _g in _ry.groupby(["b", "e"]):
         if _b != "jx":
             continue  # zx 桶拍平到终端客户（决策轮3#3）；other 桶不进视图（决策轮5）
+        if str(_e) in ("nan", "None", "", "未知客户"):
+            continue  # 哨兵实体过滤（Oracle P2-2：经销行代理商缺失不得产生 "nan" 代理商）
         _r = float(_g["r"].sum()); _p = float(_g["p"].sum())
         _agent_view[_b].append({
             "a": str(_e), "r": round(_r / 1e4, 1), "p": round(_p / 1e4, 1),
@@ -1165,7 +1167,7 @@ if "销售模式" in rex.columns and _ag_ent_col:
         _ag_pairs[_b][str(_e)] = _prs
     _zx = _ry[_ry["b"] == "zx"]
     _agent_view["zx"] = [
-        {"id": str(_c), "n": cid_to_name.get(str(_c), str(_c)),
+        {"id": str(_c), "n": cid_to_name.get(str(_c), str(_c)), "a": cid_to_name.get(str(_c), str(_c)),
          "r": round(float(_gc["r"].sum()) / 1e4, 1), "p": round(float(_gc["p"].sum()) / 1e4, 1),
          "mg": round(float(_gc["p"].sum()) / float(_gc["r"].sum()) * 100, 1) if float(_gc["r"].sum()) > 0 else 0,
          "t": _ag_tier.get(str(_c), ""), "np": int(_gc["prod"].nunique())}
@@ -1230,7 +1232,7 @@ if "销售模式" in rex.columns and _ag_ent_col:
     _dq_path = os.path.join(OUT_DIR, f"代理商数据质量提示_{latest}.md")
     _md = [f"# 代理商视图 · 数据质量提示（数据月份 {latest}）", "",
            "> 跑批自动生成。汇总「销售模式」列未规范填写情况；看板内不展示本提示。",
-           "> 所有交易在看板中完整保留于「其他」分组，未做剔除或归并；修正源数据后本文件内容自动收敛。", "",
+           "> 所有交易未做剔除或归并；未规范填写的交易暂不进入「按销售模式」视图（在「按客户」视图中完整保留），修正源数据后归入对应分组、本文件内容自动收敛。", "",
            "## 概览", "",
            f"- 非标准取值（填了公司名等）：{len(_nonstd)} 个，共 {len(_ns)} 行 / {round(float(_ns['r'].sum()) / 1e4, 1)} 万",
            f"- 空值：{len(_null)} 行 / {round(float(_null['r'].sum()) / 1e4, 1)} 万",
@@ -1251,8 +1253,6 @@ if "销售模式" in rex.columns and _ag_ent_col:
     # mom/yoy=最近月标量（全 31 月历史；无基期→None，JS 渲染 '—'，禁填 0 伪造 -100%）；
     # 新品=C面同款口径：品种级曾有 ERP 新品标记 ∩ 首销月 ≥ cutoff_new（=最新月-12，13个月含界）。
     _cutoff_new = str(_latest_period - 12)
-    _yoy_base = str(_latest_period - 12)
-    _prev_m = str(_prev_period)
     _pfirst = rex.groupby("_item")["_ym_full"].min()
     _pnewtag = rex.groupby("_item")["_is_new"].any()
     _b_prod_meta = {"prods": {}}
@@ -1270,7 +1270,7 @@ if "销售模式" in rex.columns and _ag_ent_col:
         """按成员键聚合产品月度单元与最近月 mom/yoy。_member: 与 rex 对齐的成员键 Series（NaN/空=剔除行）。"""
         _wk = pd.DataFrame({"mkey": _member, "it": rex["_item"], "ym": rex["_ym_full"],
                             "r": rex["_rev"], "p": rex["_profit"], "q": rex["_qty"]})
-        _wk = _wk[_wk["mkey"].notna() & (_wk["mkey"].astype(str) != "")]
+        _wk = _wk[_wk["mkey"].notna() & (_wk["mkey"].astype(str) != "") & (~_wk["mkey"].astype(str).isin(["nan", "None", "未知客户"]))]
         _c = _wk[(_wk["ym"] >= start_12m) & (_wk["ym"] <= latest)]
         _cells = _c.groupby(["mkey", "it", "ym"], as_index=False).agg(
             r=("r", "sum"), p=("p", "sum"), q=("q", "sum"))
