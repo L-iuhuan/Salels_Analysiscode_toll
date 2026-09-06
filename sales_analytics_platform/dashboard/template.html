@@ -2296,14 +2296,14 @@ if(!main.length)main=[{name:'无数据',value:1}];
 var mData=main.map(function(d){var o={name:d.name,value:d.value};if(d.itemStyle)o.itemStyle=d.itemStyle;if(d.selected)o.selected=d.selected;return o});
 var cData=small.map(function(d,i){return{name:d.name,value:d.value,itemStyle:{color:TINTS[Math.min(i,TINTS.length-1)]}}});
 var series=[{type:'pie',startAngle:hasSmall?(360-(smallSum/tot)*180):90,center:hasSmall?['32%','52%']:['50%','52%'],radius:['30%','52%'],data:mData,avoidLabelOverlap:true,selectedMode:'single',selectedOffset:16,label:{fontSize:TYPO.base,formatter:'{b} {d}%'},labelLine:{length:10,length2:8}}];
-if(hasSmall)series.push({type:'pie',center:['77%','52%'],radius:['20%','40%'],data:cData,avoidLabelOverlap:true,label:{fontSize:TYPO.sm,formatter:'{b} {d}%'},labelLine:{length:8,length2:6}});
-var opt={tooltip:{trigger:'item',confine:true,formatter:'{b}: {c}'+unit+' ({d}%)'},legend:{top:0,textStyle:{fontSize:TYPO.base},itemWidth:12,itemHeight:8},series:series};
+if(hasSmall)series.push({type:'pie',center:['70%','52%'],radius:['20%','40%'],data:cData,avoidLabelOverlap:true,label:{fontSize:TYPO.sm,formatter:'{b} {d}%'},labelLine:{length:8,length2:6}});
+var opt={tooltip:{trigger:'item',confine:true,formatter:'{b}: {c}'+unit+' ({d}%)'},series:series};
 if(hasSmall){
-opt.title=[{text:'总体构成',left:'24%',bottom:0,textStyle:{fontSize:TYPO.xs,color:'#6B7280',fontWeight:'normal'}},{text:'「其他」明细',left:'68%',bottom:0,textStyle:{fontSize:TYPO.xs,color:'#6B7280',fontWeight:'normal'}}];
+opt.title=[{text:'总体构成',left:'24%',bottom:0,textStyle:{fontSize:TYPO.xs,color:'#6B7280',fontWeight:'normal'}},{text:'「其他」明细',left:'62%',bottom:0,textStyle:{fontSize:TYPO.xs,color:'#6B7280',fontWeight:'normal'}}];
 var w=el.clientWidth,h=el.clientHeight,m=Math.min(w,h)/2;
 var cx=0.32*w,cy=0.52*h,rO=0.52*m;
 var opct=smallSum/tot,off=16,rad=Math.PI/180;
-var ccx=0.77*w,ccy=0.52*h,rC=0.40*m;
+var ccx=0.70*w,ccy=0.52*h,rC=0.40*m;
 function pt(x0,y0,r,a){return[x0+r*Math.cos(a*rad),y0-r*Math.sin(a*rad)]}
 var p1=pt(cx,cy,rO,opct*180),p2=pt(cx,cy,rO,-opct*180);
 p1[0]+=off;p2[0]+=off;
