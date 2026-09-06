@@ -1287,13 +1287,22 @@ if "销售模式" in rex.columns and _ag_ent_col:
             _mk = str(_mk); _it = str(_it)
             if _mk not in _out or _it not in _out[_mk]:
                 continue  # 近12月无交易的成员×品种不出现在模块中
-            _cur = float(_row[latest]) if latest in _row.index and pd.notna(_row[latest]) else None
-            _prv = float(_row[_prev_m]) if _prev_m in _row.index and pd.notna(_row[_prev_m]) else None
-            _yag = float(_row[_yoy_base]) if _yoy_base in _row.index and pd.notna(_row[_yoy_base]) else None
-            _mom = round((_cur - _prv) / _prv * 100, 1) if (_cur is not None and _prv) else None
-            _yoy = round((_cur - _yag) / _yag * 100, 1) if (_cur is not None and _yag) else None
-            _out[_mk][_it]["mom"] = _mom
-            _out[_mk][_it]["yoy"] = _yoy
+            # 环比/同比锚定"该成员×品种最近有交易的自然月"（v4 修订：数据最新月该范围可能无
+            # 合规交易（如 2026-07 销售模式未填），日历锚会大面积空值）；无基期→None（JS 渲染 '—'）
+            _act = _row.dropna()
+            _act = _act[_act != 0]
+            if _act.empty:
+                _out[_mk][_it].update({"mom": None, "yoy": None, "ref": None})
+                continue
+            _ref = str(_act.index[-1])
+            _prev_ref = str(pd.Period(_ref, freq="M") - 1)
+            _yoy_ref = str(pd.Period(_ref, freq="M") - 12)
+            _cur = float(_act.iloc[-1])
+            _prv = float(_row[_prev_ref]) if _prev_ref in _row.index and pd.notna(_row[_prev_ref]) else None
+            _yag = float(_row[_yoy_ref]) if _yoy_ref in _row.index and pd.notna(_row[_yoy_ref]) else None
+            _mom = round((_cur - _prv) / _prv * 100, 1) if _prv else None
+            _yoy = round((_cur - _yag) / _yag * 100, 1) if _yag else None
+            _out[_mk][_it].update({"mom": _mom, "yoy": _yoy, "ref": _ref})
         return _out
 
     # 三层级成员键：桶（jx/zx 两桶，other 不进视图）/ 代理商（jx 桶实体）/ 终端客户（哨兵过滤）
