@@ -1079,7 +1079,7 @@ cust_mo = rex.groupby(["_cust","_ym_full"]).agg(r=("_rev","sum"),p=("_profit","s
 all_custs = sorted(cust_mo["_cust"].unique())
 ctr = {}
 for cid in all_custs:
-    cm = cust_mo[cust_mo["_cust"]==cid].sort_values("_ym_full").tail(25)
+    cm = cust_mo[cust_mo["_cust"]==cid].sort_values("_ym_full").tail(12)  # 与卡题"近12月"对齐（v4 修订：原 tail(25) 跨三个自然年）
     pts = [{"m":str(r["_ym_full"]),"r":round(float(r["r"])/1e4,2),"p":round(float(r["p"])/1e4,2),"q":round(float(r["q"])/1e4,2)} for _,r in cm.iterrows()]
     if pts: ctr[cid]=pts
 print(f"    趋势:{len(ctr)}客户")
