@@ -2727,7 +2727,7 @@ function buildF(){
   document.getElementById('fOvMgDiff').innerText='vs '+o.win_prev_half+' '+fFmt(o.mg_hoh,'pp')+' ｜ vs '+o.win_prev_year+' '+fFmt(o.mg_yoy,'pp');
   document.getElementById('fOvCusts').innerText=o.custs;
   document.getElementById('fOvCustsDiff').innerText='vs '+o.win_prev_half+' '+fFmt(o.custs_hoh_pct,'%')+' ｜ vs '+o.win_prev_year+' '+fFmt(o.custs_yoy_pct,'%');
-  document.getElementById('fOvAnchor').innerText='月度环比锚：'+o.mom_anchor+'（窗口内末月 vs 前一月；窗口外无数据显示 —）';
+  document.getElementById('fOvAnchor').innerText='月度环比锚：'+o.mom_anchor+'（窗口内末月 vs 前一月；对应下方部门表「ASP月环比」列与 KA客户表「月环比」列；窗口外无数据显示 —）';
  }
  document.getElementById('fH1Rev').innerHTML=k.rev.toLocaleString()+'<span style="font-size:14px;font-weight:400"> 万</span>';
  document.getElementById('fH1RevYoy').innerText='vs '+fWinLabel('prev_half','上一半年窗')+' '+fFmt(k.rev_hoh,'%')+' ｜ 同比 '+fFmt(k.rev_yoy,'%');
@@ -2768,7 +2768,7 @@ function fBuildMarginTable(){
 var F_DEPT_EXPANDED=null;
 var F_DEPT_COLS='1.5fr 0.7fr 0.5fr 0.5fr 0.5fr 0.6fr 0.5fr 0.5fr 0.4fr';
 function fDeptHead(){
- return '<div style="display:grid;grid-template-columns:'+F_DEPT_COLS+';gap:4px;font-size:11px;font-weight:600;padding:5px 8px;border-bottom:2px solid var(--border)"><span>部门</span><span class="num">收入</span><span class="ctr">利率</span><span class="ctr">同比pp</span><span class="ctr">半年pp</span><span class="num">ASP</span><span class="ctr">ASP同比</span><span class="ctr">ASP环比</span><span class="ctr">人</span></div>';
+ return '<div style="display:grid;grid-template-columns:'+F_DEPT_COLS+';gap:4px;font-size:11px;font-weight:600;padding:5px 8px;border-bottom:2px solid var(--border)"><span>部门</span><span class="num">收入</span><span class="ctr">利率</span><span class="ctr">同比pp</span><span class="ctr">半年pp</span><span class="num">ASP</span><span class="ctr">ASP同比</span><span class="ctr">ASP月环比</span><span class="ctr">人</span></div>';
 }
 function fDeptRow(d,i,sel){
  var mgClr=d.mg_yoy<-2?'#EF4444':(d.mg_yoy>2?'#10B981':'var(--text-tertiary)');
@@ -2795,26 +2795,29 @@ function fBuildDeptTable(){
  document.getElementById('fDeptTable').innerHTML=h;
 }
 function fExpandDept(name){
- if(F_DEPT_EXPANDED===name){F_DEPT_EXPANDED=null;fBuildDeptTable();return}
+  if(F_DEPT_EXPANDED===name){F_DEPT_EXPANDED=null;fBuildDeptTable();try{fBuildDeptRadar()}catch(e){}return}
  F_DEPT_EXPANDED=name;
  var dept=F_DEPT_MARGINS.find(function(d){return d.name===name});if(!dept)return;
  var h=fDeptHead();
  F_DEPT_MARGINS.forEach(function(d,i){
   h+=fDeptRow(d,i,d.name===name);
   if(d.name===name){
-  h+='<div style="padding:6px 8px;background:var(--surface-subtle);border-top:2px solid var(--primary);border-bottom:1px solid var(--border)"><b style="font-size:11px;color:var(--primary)">'+name+' 成员明细</b> <span style="font-size:10px;color:var(--text-tertiary)">[点击行跳转E面]</span></div>';
-  dept.individuals.forEach(function(ind,j){
-  var zebra=j%2===1?'background:var(--table-stripe);':'';
-  h+='<div style="display:grid;grid-template-columns:1.5fr 0.8fr 0.6fr 0.7fr;gap:4px;font-size:11px;padding:4px 8px 4px 24px;border-bottom:1px solid var(--border);cursor:pointer;'+zebra+'" onclick="fGotoE(\''+ind.name.replace(/'/g,'\\x27')+'\')">';
-  h+='<span>'+ind.name+'</span><span class="num">'+ind.rev+'</span><span class="ctr">'+ind.mg+'%</span><span class="num">'+(ind.asp||0)+'</span></div>';
-  });
-  }
+   h+='<div style="padding:6px 8px;background:var(--surface-subtle);border-top:2px solid var(--primary);border-bottom:1px solid var(--border)"><b style="font-size:11px;color:var(--primary)">'+name+' 成员明细</b> <span style="font-size:10px;color:var(--text-tertiary)">[点击行跳转E面]</span></div>';
+   h+='<div style="max-height:220px;overflow-y:auto">';
+   dept.individuals.forEach(function(ind,j){
+   var zebra=j%2===1?'background:var(--table-stripe);':'';
+   h+='<div style="display:grid;grid-template-columns:1.5fr 0.8fr 0.6fr 0.7fr;gap:4px;font-size:11px;padding:4px 8px 4px 24px;border-bottom:1px solid var(--border);cursor:pointer;'+zebra+'" onclick="fGotoE(\''+ind.name.replace(/'/g,'\\x27')+'\')">';
+   h+='<span>'+ind.name+'</span><span class="num">'+ind.rev+'</span><span class="ctr">'+ind.mg+'%</span><span class="num">'+(ind.asp||0)+'</span></div>';
+   });
+   h+='</div>';
+   }
  });
- document.getElementById('fDeptTable').innerHTML=h;
+  document.getElementById('fDeptTable').innerHTML=h;
+  try{fBuildDeptRadar()}catch(e){}
 }
 function fBuildKaaaTable(){
  var cols='2fr 0.5fr 1fr 0.7fr 0.7fr 0.7fr 0.8fr 0.8fr 0.7fr 0.8fr';
- var h='<div style="display:grid;grid-template-columns:'+cols+';gap:4px;font-size:11px;font-weight:600;padding:5px 8px;border-bottom:2px solid var(--border);position:sticky;top:0;background:var(--surface)"><span>客户</span><span class="ctr">级</span><span class="num">收入</span><span class="ctr">利率</span><span class="ctr">同比pp</span><span class="ctr">半年pp</span><span class="num">ASP</span><span class="ctr">环比</span><span class="ctr">新品%</span><span class="ctr">收入同比%</span></div>';
+ var h='<div style="display:grid;grid-template-columns:'+cols+';gap:4px;font-size:11px;font-weight:600;padding:5px 8px;border-bottom:2px solid var(--border);position:sticky;top:0;background:var(--surface)"><span>客户</span><span class="ctr">级</span><span class="num">收入</span><span class="ctr">利率</span><span class="ctr">同比pp</span><span class="ctr">半年pp</span><span class="num">ASP</span><span class="ctr">月环比</span><span class="ctr">新品%</span><span class="ctr">收入同比%</span></div>';
  F_KAAA_MARGINS.forEach(function(d,i){
  var mgClr=d.mg_yoy<-3?'#EF4444':(d.mg_yoy>3?'#10B981':'var(--text-tertiary)');
  var mgHohClr=d.mg_hoh<-3?'#EF4444':(d.mg_hoh>3?'#10B981':'var(--text-tertiary)');
@@ -2902,27 +2905,46 @@ var F_PROD_FILTER_CAT='';
 var F_CAT_SORT={key:'rev_cur',asc:false};
 var F_PROD_SORT={key:'cur',field:'rev',asc:false};
 function fBuildDeptRadar(){
- var dom=document.getElementById('fDeptRadar');if(!dom)return;
- var old=echarts.getInstanceByDom(dom);if(old)old.dispose();var chart=TABS.chart.create(dom);
- var indicators=[{name:'贡献',max:100},{name:'维系',max:100},{name:'拓展',max:100},{name:'定价',max:100},{name:'新客',max:100},{name:'激活',max:100},{name:'升级',max:100},{name:'优化',max:100},{name:'抗风险',max:100}];
- var fk=['contribution','retention','category_expand','pricing','new_dev','activation','upgrade','product_optimize','risk_resist'];
+  var dom=document.getElementById('fDeptRadar');if(!dom)return;
+  var old=echarts.getInstanceByDom(dom);if(old)old.dispose();var chart=TABS.chart.create(dom);
+  var indicators=[{name:'贡献',max:100},{name:'维系',max:100},{name:'拓展',max:100},{name:'定价',max:100},{name:'新客',max:100},{name:'激活',max:100},{name:'升级',max:100},{name:'优化',max:100},{name:'抗风险',max:100}];
+  var fk=['contribution','retention','category_expand','pricing','new_dev','activation','upgrade','product_optimize','risk_resist'];
   var colors=['#6B7280','#2563EB','#EF4444','#10B981','#F59E0B','#8B5CF6','#0EA5E9','#EC4899','#3B82F6'];
- var series=[];
- var activeDepts=[];
- if(typeof D_DEPT_LIST!=='undefined'){D_DEPT_LIST.forEach(function(d){
- if(d.name!=='已离职')activeDepts.push(d);
- })}
- activeDepts=activeDepts.filter(function(d){
- return d.forces && Object.keys(d.forces).some(function(k){return (d.forces[k]||0)!==50});
- });
- if(activeDepts.length>0){
- var overall=fk.map(function(f){var vals=activeDepts.map(function(d){return d.forces[f]||50});return Math.round(vals.reduce(function(a,b){return a+b},0)/vals.length*10)/10});
-  series.push({name:'整体均值',value:overall,lineStyle:{color:'#6B7280',width:2.5,type:'dashed'},itemStyle:{color:'#6B7280'},areaStyle:{opacity:0.08}});
- }
- activeDepts.forEach(function(d,idx){
- series.push({name:d.name,value:fk.map(function(f){return d.forces[f]||50}),lineStyle:{color:colors[(idx+1)%colors.length],width:1.5},itemStyle:{color:colors[(idx+1)%colors.length]},areaStyle:{opacity:0.05}});
- });
- chart.setOption({tooltip:{trigger:'item',confine:true},legend:{bottom:0,textStyle:{fontSize:TYPO.lg},type:'scroll'},radar:{indicator:indicators,radius:'52%',center:['50%','42%'],axisName:{fontSize:TYPO.base,color:'#475569'},splitArea:{areaStyle:{color:['#fff','var(--table-stripe)']}}},series:[{type:'radar',data:series}]});
+  var series=[];
+  var activeDepts=[];
+  if(typeof D_DEPT_LIST!=='undefined'){D_DEPT_LIST.forEach(function(d){
+  if(d.name!=='已离职')activeDepts.push(d);
+  })}
+  activeDepts=activeDepts.filter(function(d){
+  return d.forces && Object.keys(d.forces).some(function(k){return (d.forces[k]||0)!==50});
+  });
+  if(activeDepts.length>0){
+  var overall=fk.map(function(f){var vals=activeDepts.map(function(d){return d.forces[f]||50});return Math.round(vals.reduce(function(a,b){return a+b},0)/vals.length*10)/10});
+   series.push({name:'整体均值',value:overall,lineStyle:{color:'#6B7280',width:2.5,type:'dashed',opacity:0.9},itemStyle:{color:'#6B7280'},areaStyle:{opacity:0.08},z:2});
+  }
+  activeDepts.forEach(function(d,idx){
+   var clr=colors[(idx+1)%colors.length];
+   // 联动高亮（方案b）：展开部门→粗线满色，其余淡化，治多系列叠绘发灰
+   var hl=(F_DEPT_EXPANDED===d.name);
+   series.push({name:d.name,value:fk.map(function(f){return d.forces[f]||50}),
+    lineStyle:{color:clr,width:hl?3.5:1.5,opacity:hl?1:0.35},
+    itemStyle:{color:clr,opacity:hl?1:0.35},
+    areaStyle:hl?{color:clr,opacity:0.12}:{opacity:0},
+    symbol:hl?'circle':'none',symbolSize:hl?4:0,z:hl?3:1});
+  });
+  if(series.length===0){
+   // 空数据兜底：明示占位而非空白灰图
+   chart.setOption({title:{text:'暂无部门战力数据',left:'center',top:'center',textStyle:{fontSize:TYPO.title,color:'#6B7280'}},series:[]});
+   return;
+  }
+  chart.setOption({tooltip:{trigger:'item',confine:true},legend:{bottom:0,textStyle:{fontSize:TYPO.lg},type:'scroll'},radar:{indicator:indicators,radius:'52%',center:['50%','42%'],axisName:{fontSize:TYPO.base,color:'#475569'},splitArea:{areaStyle:{color:['#fff','var(--table-stripe)']}}},series:[{type:'radar',data:series}]});
+  // 反向联动：点击雷达系列展开/收起对应部门
+  chart.on('click',function(p){
+   if(!p||!p.seriesName||p.seriesName==='整体均值')return;
+   if(typeof F_DEPT_MARGINS!=='undefined'&&F_DEPT_MARGINS.some(function(d){return d.name===p.seriesName}))fExpandDept(p.seriesName);
+  });
+  // 容器时机兜底：隐藏态初始化后补一次 resize
+  setTimeout(function(){try{chart.resize()}catch(e){}},80);
 }
 function fBuildCatH1Table(){
  if(typeof F_CAT_H1==='undefined'||!F_CAT_H1.length){document.getElementById('fCatH1Table').innerHTML='<div style="padding:20px;color:var(--text-tertiary)">无品类数据</div>';return}
