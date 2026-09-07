@@ -4,7 +4,8 @@
 
 两个职责：
 1. 初稿生成：读 gold 异常/风险表 + action_items.json 结转 + 可选 meeting_track.md
-   → 生成 dashboard\\risk_action_YYYYMM.md（已存在人工审定版则不覆盖，除非 --force-draft）
+   → 生成 output\\dashboard\\risk_action_YYYYMM.md（已存在人工审定版则不覆盖，除非 --force-draft；
+   旧 dashboard\\ 位置保留兼容回退读取，见 risk_md_path()）
 2. 渲染：解析总体文档 → 按固定模板（template_risk_test.html，与正式看板同风格）
    → 输出 dashboard\\dashboard_risk_test.html，并把行动清单状态回写 action_items.json
 
@@ -30,13 +31,33 @@ SILVER = os.path.join(PLATFORM, "output", "silver")
 FACES_YAML = os.path.join(DASH_DIR, "faces.yaml")
 TEMPLATE = os.path.join(DASH_DIR, "template_risk_test.html")
 ACTIONS_JSON = os.path.join(DASH_DIR, "action_items.json")
-MEETING_MD = os.path.join(DASH_DIR, "meeting_track.md")
+# 迁移拍板：risk_action_*.md 与 meeting_track.md 移至 output\dashboard\（壳端编辑产物与源码目录分离，
+# 防 robocopy /MIR 覆盖）。读取时新位置优先、旧 dashboard\ 位置回退（平滑过渡）。
+RISK_MD_DIR = os.path.join(PLATFORM, "output", "dashboard")
+MEETING_MD = os.path.join(RISK_MD_DIR, "meeting_track.md")
 
 RISK_LEVEL_ORDER = {"高": 0, "中": 1, "低": 2}
 NEG_LVL_MAP = {"严重": "高", "关注": "中", "轻微": "低"}  # 负毛利严重等级 → 展示等级
 STATUS_ORDER = {"待处理": 0, "跟进中": 1, "已关闭": 2}
 NEG_MARGIN_MIN_LOSS = 10000  # 负毛利损失阈值（元；源表为负值存储），设计 §3.2.4
 TOP_N_PER_SOURCE = 10  # 初稿每类最多展示条数，设计 §3.2.4（人工审定可推翻）
+
+
+def risk_md_path(month):
+    """总体文档 risk_action_<month>.md 路径：新位置 output/dashboard 优先，旧 dashboard/ 回退读取。"""
+    new = os.path.join(RISK_MD_DIR, f"risk_action_{month}.md")
+    if os.path.exists(new):
+        return new
+    old = os.path.join(DASH_DIR, f"risk_action_{month}.md")
+    return old if os.path.exists(old) else new
+
+
+def _meeting_md_path():
+    """会议速记 meeting_track.md 路径：新位置优先，旧 dashboard/ 回退读取。"""
+    if os.path.exists(MEETING_MD):
+        return MEETING_MD
+    old = os.path.join(DASH_DIR, "meeting_track.md")
+    return old if os.path.exists(old) else MEETING_MD
 
 
 # ---------- 基础工具 ----------
@@ -163,8 +184,9 @@ def build_draft(month):
             stats["carryover"] += 1
 
     # --- 行动清单：可选速记 meeting_track.md 并入 ---
-    if os.path.exists(MEETING_MD):
-        with open(MEETING_MD, encoding="utf-8") as f:
+    _mt_path = _meeting_md_path()
+    if os.path.exists(_mt_path):
+        with open(_mt_path, encoding="utf-8") as f:
             mt = _parse_md_tables(f.read())
         for _sec, (headers, rows) in mt.items():
             for r in rows:
@@ -246,7 +268,7 @@ def _build_r_parts(month):
     """解析总体文档并构建 R 面各区块（测试页与正式看板并入共用）。
     返回 dict: ok / err / risk_kpi / risk_table / action_table / caliber / stats。
     副作用：行动清单状态回写 action_items.json（跨月结转的持久化层）。"""
-    md_path = os.path.join(DASH_DIR, f"risk_action_{month}.md")
+    md_path = risk_md_path(month)
     if not os.path.exists(md_path):
         return {"ok": False, "err": md_path}
     with open(md_path, encoding="utf-8") as f:
@@ -361,12 +383,15 @@ def main():
     args = ap.parse_args()
 
     month = args.month or _data_month()
-    md_path = os.path.join(DASH_DIR, f"risk_action_{month}.md")
+    md_path = risk_md_path(month)  # 读取语义：新位置优先、旧位置回退
 
     if os.path.exists(md_path) and not args.force_draft:
         print(f"[跳过] 总体文档已存在（人工审定版不覆盖）: {md_path}")
     else:
+        # 写盘一律落新位置 output/dashboard\（旧 dashboard\ 位置不再写入）
+        md_path = os.path.join(RISK_MD_DIR, f"risk_action_{month}.md")
         md, stats = build_draft(month)
+        os.makedirs(RISK_MD_DIR, exist_ok=True)
         with open(md_path, "w", encoding="utf-8") as f:
             f.write(md)
         print(f"[初稿] 已生成: {md_path}")

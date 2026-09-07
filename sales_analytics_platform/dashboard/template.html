@@ -192,7 +192,10 @@ body{font-family:-apple-system,'Microsoft YaHei','Segoe UI',sans-serif;backgroun
 .rg{background:var(--surface);border-color:var(--border)}.rg.rgx{background:#fff;border:1px solid var(--border);box-shadow:none;border-radius:var(--radius-md)}
 .igl,.rgl{font-size:var(--font-xs);color:var(--text-tertiary);font-weight:var(--weight-muted);margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
 .igv,.rgv{font-size:var(--font-lg);font-weight:var(--weight-heading);color:var(--text-primary);font-variant-numeric:tabular-nums}
-.err-box{background:var(--danger-bg);color:var(--danger);padding:var(--gap-md);text-align:center;border-radius:var(--radius-md);margin:var(--space-page);display:none}
+ .err-box{background:var(--danger-bg);color:var(--danger);padding:var(--gap-md);text-align:center;border-radius:var(--radius-md);margin:var(--space-page);display:none}
+ /* R1 失效策略：R面降级红色警示横幅 + R tab 红色感叹 badge（复用 --danger token 体系） */
+ .rbanner{background:var(--danger-bg);border:1px solid #FECACA;border-left:4px solid var(--danger);color:var(--danger-text);padding:10px 14px;font-size:var(--font-sm);border-radius:var(--radius-md);margin:0 0 12px;font-weight:500}
+ .r-badge{display:inline-block;min-width:15px;height:15px;line-height:15px;padding:0 3px;border-radius:8px;background:var(--danger);color:#fff;font-size:10px;text-align:center;margin-left:5px;vertical-align:middle}
 .d-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:100;opacity:0;pointer-events:none;transition:opacity .3s}
 .d-overlay.open{opacity:1;pointer-events:auto}
 .d-drawer{position:fixed;top:0;right:calc(-1 * var(--drawer-w,560px));width:var(--drawer-w,560px);height:100vh;background:var(--surface);z-index:101;transition:right .3s ease;box-shadow:var(--shadow-lg);overflow:hidden;display:flex;flex-direction:column}
@@ -336,7 +339,7 @@ body{font-family:-apple-system,'Microsoft YaHei','Segoe UI',sans-serif;backgroun
 
 <div class="tab-bar">
  <button class="tab-btn active" data-tab="A" id="btnA">总览决策</button>
- <button class="tab-btn" data-tab="R" id="btnR">风险与行动</button>
+ <button class="tab-btn" data-tab="R" id="btnR">风险与行动<span id="rErrBadge" class="r-badge" style="display:none">!</span></button>
  <button class="tab-btn" data-tab="B" id="btnB">客户360</button>
  <button class="tab-btn" data-tab="C" id="btnC">产品生命周期</button>
  <button class="tab-btn" data-tab="D" id="btnD">销售能力</button>
@@ -347,6 +350,7 @@ body{font-family:-apple-system,'Microsoft YaHei','Segoe UI',sans-serif;backgroun
   <span id="dataIdentity" style="font-size:10px;color:var(--text-tertiary);padding:2px 8px;white-space:nowrap;cursor:help;overflow:hidden;text-overflow:ellipsis;max-width:46vw" title="%%DATA_IDENTITY_TIP%%">%%DATA_IDENTITY%%</span>
   </div>
 </div>
+<script>if(%%R_FACE_ERR%%===1){var _rb=document.getElementById('rErrBadge');if(_rb)_rb.style.display='inline-block'}</script>
 
 
 <div class="tab-content active" id="tabA">
@@ -2215,19 +2219,19 @@ var style=document.createElement('style');style.textContent='.hidden{display:non
 var B_LIST_LIMIT=200,B_LIST_LIMIT_STEP=200;var _bLastFilter={};
 function bFiltersChanged(){var q=(document.getElementById('bSrch').value||'').toLowerCase();var tier=document.getElementById('bTier').value,act=document.getElementById('bAct').value,risk=document.getElementById('bRisk').value;var curr={q:q,tier:tier,act:act,risk:risk};var s=JSON.stringify(curr);var changed=s!==JSON.stringify(_bLastFilter);_bLastFilter=curr;return changed}
 function renderBList(){if(B_MODE==='agent'){renderAgentList();return}var cb0=document.getElementById('bCrumb');if(cb0){cb0.innerHTML='';cb0.className=''}if(!ALL)return;var q=(document.getElementById('bSrch').value||'').toLowerCase();var tier=document.getElementById('bTier').value,act=document.getElementById('bAct').value,risk=document.getElementById('bRisk').value;if(bFiltersChanged())B_LIST_LIMIT=200;BF=ALL.filter(function(c){if(q&&c.n.toLowerCase().indexOf(q)===-1&&c.id.toLowerCase().indexOf(q)===-1)return false;if(tier&&c.t!==tier)return false;if(act&&c.ac!==act)return false;if(risk&&c.rk!==risk)return false;return true});BF.sort(function(a,b){var va=a[BSORT.key],vb=b[BSORT.key];return BSORT.asc?(va>vb?1:-1):(va<vb?1:-1)});if(BSEL){var selIdx=-1;for(var i=0;i<BF.length;i++){if(BF[i].id===BSEL.id){selIdx=i;break}}if(selIdx>=B_LIST_LIMIT){B_LIST_LIMIT=Math.ceil((selIdx+1)/B_LIST_LIMIT_STEP)*B_LIST_LIMIT_STEP}}
-var h='<div class="brow hd"><span onclick="toggleBSort(\'n\')">客户名</span><span onclick="toggleBSort(\'r\')">YTD收入</span><span onclick="toggleBSort(\'p\')">YTD毛利</span><span onclick="toggleBSort(\'ytd_mg\')">毛利率</span><span onclick="toggleBSort(\'npct\')">新品%</span><span>层级</span></div>';var show=Math.min(BF.length,B_LIST_LIMIT);for(var i=0;i<show;i++){var c=BF[i];var sel=(BSEL&&BSEL.id===c.id)?' sel':'';h+='<div class="brow'+sel+'" onclick="selB('+i+')">';h+='<span style="font-weight:500">'+c.n+'</span><span>'+Math.round(c.r).toLocaleString()+'</span><span>'+Math.round(c.p).toLocaleString()+'</span><span>'+(c.ytd_mg||0)+'%</span><span>'+(c.npct||0)+'%</span><span>'+c.t+'</span></div>'}if(BF.length>show){h+='<div class="brow" style="justify-content:center;cursor:pointer;background:var(--surface-subtle);color:var(--primary);font-weight:500" onclick="bLoadMore()">加载更多 ('+show+'/'+BF.length+')</div>'}document.getElementById('bList').innerHTML=h;if(BSEL){var _bk='cust:'+BSEL.id;if(_bk!==_B_DET_KEY){_B_DET_KEY=_bk;renderBDetail(BSEL)}}}
+var h='<div class="brow hd"><span onclick="toggleBSort(\'n\')">客户名</span><span onclick="toggleBSort(\'r\')">YTD收入</span><span onclick="toggleBSort(\'p\')">YTD毛利</span><span onclick="toggleBSort(\'ytd_mg\')">毛利率</span><span onclick="toggleBSort(\'npct\')">新品%</span><span>层级</span></div>';var show=Math.min(BF.length,B_LIST_LIMIT);for(var i=0;i<show;i++){var c=BF[i];var sel=(BSEL&&BSEL.id===c.id)?' sel':'';h+='<div class="brow'+sel+'" onclick="selB('+i+')">';h+='<span style="font-weight:500">'+c.n+'</span><span>'+Math.round(c.r).toLocaleString()+'</span><span>'+Math.round(c.p).toLocaleString()+'</span><span>'+(c.ytd_mg||0)+'%</span><span>'+(c.npct||0)+'%</span><span>'+c.t+'</span></div>'}if(BF.length>show){h+='<div class="brow" style="justify-content:center;cursor:pointer;background:var(--surface-subtle);color:var(--primary);font-weight:500" onclick="bLoadMore()">加载更多 ('+show+'/'+BF.length+')</div>'}document.getElementById('bList').innerHTML=h;if(BSEL){renderBDetail(BSEL)}}
 function bLoadMore(){B_LIST_LIMIT+=B_LIST_LIMIT_STEP;renderBList();var el=document.getElementById('bList');if(el){var rows=el.querySelectorAll('.brow');var last=rows[rows.length-2];if(last)last.scrollIntoView({block:'nearest'})}}
 function toggleBSort(key){if(BSORT.key===key)BSORT.asc=!BSORT.asc;else{BSORT.key=key;BSORT.asc=false}renderBList()}
 function selB(i){BSEL=BF[i];renderBList()}
 function openB(name){if(!ALL){ALL=B_CUSTS;CTR=B_TREND}var f=ALL.find(function(c){return c.n===name});if(f){BSEL=f}if(typeof B_MODE!=='undefined'&&B_MODE!=='cust')bSetMode('cust');switchTab('B')}
 // ── 代理商视图（按经销模式）：三桶字面值分类，零清洗零归类；DQ 提示落盘独立文件不进看板 ──
 var B_MODE='cust',B_SUBMODE='jx',B_AGENT_EXPANDED=null,B_PAIR_SEL=null,B_AGSEL=null,_AG_DET_KEY='';
-var _B_DET_GEN=0,_B_DET_KEY='';
-function bSetMode(m){B_MODE=m;B_AGENT_EXPANDED=null;B_PAIR_SEL=null;B_AGSEL=null;_AG_DET_KEY='';_B_DET_KEY='';var wc=document.getElementById('bModeCust'),wa=document.getElementById('bModeAgent');if(wc&&wa){wc.className=m==='cust'?'on':'';wa.className=m==='agent'?'on':''}var sw=document.getElementById('bSubWrap');if(sw)sw.style.display=m==='agent'?'flex':'none';var fr=document.getElementById('bFilterRow');if(fr){fr.style.display=m==='agent'?'none':'flex'}var ly=document.getElementById('bLayout');if(ly)ly.className=m==='agent'?'bl agent':'bl';renderBList()}
-function bSetSub(s){B_SUBMODE=s;B_AGENT_EXPANDED=null;B_PAIR_SEL=null;B_AGSEL=null;_AG_DET_KEY='';_B_DET_KEY='';var map={jx:'bSubJx',zx:'bSubZx',other:'bSubOther'};for(var k in map){var el=document.getElementById(map[k]);if(el)el.className=(k===s?'on':'')}renderBList()}
+var _B_DET_GEN=0;
+function bSetMode(m){B_MODE=m;B_AGENT_EXPANDED=null;B_PAIR_SEL=null;B_AGSEL=null;_AG_DET_KEY='';var wc=document.getElementById('bModeCust'),wa=document.getElementById('bModeAgent');if(wc&&wa){wc.className=m==='cust'?'on':'';wa.className=m==='agent'?'on':''}var sw=document.getElementById('bSubWrap');if(sw)sw.style.display=m==='agent'?'flex':'none';var fr=document.getElementById('bFilterRow');if(fr){fr.style.display=m==='agent'?'none':'flex'}var ly=document.getElementById('bLayout');if(ly)ly.className=m==='agent'?'bl agent':'bl';renderBList()}
+function bSetSub(s){B_SUBMODE=s;B_AGENT_EXPANDED=null;B_PAIR_SEL=null;B_AGSEL=null;_AG_DET_KEY='';var map={jx:'bSubJx',zx:'bSubZx',other:'bSubOther'};for(var k in map){var el=document.getElementById(map[k]);if(el)el.className=(k===s?'on':'')}renderBList()}
 function bSelAgent(a){B_AGENT_EXPANDED=(B_AGENT_EXPANDED===a)?null:a;B_AGSEL=(B_AGENT_EXPANDED===a)?a:null;B_PAIR_SEL=null;renderBList()}
 function bSelPair(id){var f=ALL?ALL.find(function(c){return c.id===id}):null;if(!f)return;BSEL=f;B_PAIR_SEL=id;renderBList()}
-function _agEsc(s){return String(s).replace(/'/g,'\\x27')}
+function _agEsc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'\\x27')}
 function renderAgentList(){
 var el=document.getElementById('bList');if(!el)return;
 if(!window._B_SCROLL_BOUND){window._B_SCROLL_BOUND=1;el.addEventListener('scroll',_bAgentScroll)}
@@ -2245,12 +2249,12 @@ var zb=idx%2===1?' zb':'';
 if(isZx){
 var selz=B_PAIR_SEL===d.id?' sel':'';
 h+='<div class="brow twol'+selz+zb+'" style="cursor:pointer" onclick="bSelPair(\''+_agEsc(d.id)+'\')">';
-h+='<div class="l1" title="'+d.n+'">'+d.n+'</div><div class="l2">收入 '+Math.round(d.r).toLocaleString()+' · 毛利 '+Math.round(d.p).toLocaleString()+' · '+d.mg+'% · '+(d.t||'-')+' · '+d.np+' 产品</div></div>';
+h+='<div class="l1" title="'+_agEsc(d.n)+'">'+d.n+'</div><div class="l2">收入 '+Math.round(d.r).toLocaleString()+' · 毛利 '+Math.round(d.p).toLocaleString()+' · '+d.mg+'% · '+(d.t||'-')+' · '+d.np+' 产品</div></div>';
 return}
 var exp=B_AGENT_EXPANDED===d.a;
 var sela=B_AGSEL===d.a?' sel':'';
 h+='<div class="brow twol'+sela+zb+'" data-agent="'+String(d.a).replace(/"/g,'&quot;')+'" style="cursor:pointer" onclick="bSelAgent(\''+_agEsc(d.a)+'\')">';
-h+='<div class="l1" style="color:'+(exp?'var(--primary)':'var(--text-primary)')+'" title="'+d.a+'"><i class="fa-solid '+(exp?'fa-chevron-down':'fa-chevron-right')+'" style="font-size:10px"></i> '+d.a+'</div><div class="l2">收入 '+Math.round(d.r).toLocaleString()+' · 毛利 '+Math.round(d.p).toLocaleString()+' · '+d.mg+'% · '+d.nc+' 客户 · '+d.np+' 产品</div></div>';
+h+='<div class="l1" style="color:'+(exp?'var(--primary)':'var(--text-primary)')+'" title="'+_agEsc(d.a)+'"><i class="fa-solid '+(exp?'fa-chevron-down':'fa-chevron-right')+'" style="font-size:10px"></i> '+d.a+'</div><div class="l2">收入 '+Math.round(d.r).toLocaleString()+' · 毛利 '+Math.round(d.p).toLocaleString()+' · '+d.mg+'% · '+d.nc+' 客户 · '+d.np+' 产品</div></div>';
 if(exp){
 var prs=((AG.pairs||{})[B_SUBMODE]||{})[d.a]||[];
 h+='<div class="agcap" style="position:static">终端客户 · 次行依次为 收入(万) / 毛利(万) / 毛利率(%) / 层级 / 产品数</div>';
@@ -2345,7 +2349,7 @@ var h='<div class="bpdGrid bpdHd"><span>品种</span><span>销量(万)</span><sp
 rows.forEach(function(r){
 var sel=r.prod===st.prod?' selp':'';
 var mt=meta[r.prod]||{};
-h+='<div class="bpdGrid bpdRow'+sel+'" onclick="bProdSel(\''+scope+'\',\''+_agEsc(key)+'\',\''+_agEsc(r.prod)+'\')" title="'+(mt.cat||'')+' / '+(mt.pl||'')+'">';
+h+='<div class="bpdGrid bpdRow'+sel+'" onclick="bProdSel(\''+scope+'\',\''+_agEsc(key)+'\',\''+_agEsc(r.prod)+'\')" title="'+_agEsc(mt.cat||'')+' / '+_agEsc(mt.pl||'')+'">';
 h+='<span class="an">'+r.prod+'</span><span>'+(Math.round(r.q*10)/10)+'</span><span>'+(Math.round(r.r*10)/10)+'</span><span>'+(Math.round(r.p*10)/10)+'</span><span>'+r.mg+'%</span><span>'+_bpdFmtV(r.mom)+'</span><span>'+_bpdFmtV(r.yoy)+'</span><span>'+(mt.isnew?'<b style="color:var(--primary)">新品</b>':'')+'</span></div>'});
 tab.innerHTML=h;
 var sel=null;for(var i2=0;i2<rows.length;i2++){if(rows[i2].prod===st.prod)sel=rows[i2]}

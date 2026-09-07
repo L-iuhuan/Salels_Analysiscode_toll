@@ -403,7 +403,25 @@ def write_silver_csv_parquet(df: pd.DataFrame, csv_path: str) -> None:
     df.to_csv(csv_path, index=False, encoding="utf-8-sig")
     pq_path = os.path.splitext(csv_path)[0] + ".parquet"
     try:
-        df.to_parquet(pq_path, index=False)
+        # 对象列混型（历史实锤：产品品类列 int 0 与 str 共存）会让 pyarrow 抛 ArrowTypeError，
+        # 导致静默回退 CSV。写 parquet 前对 object 列做 str 归一：None/NaN 保持 null 语义
+        # （绝不转成 "None"/"nan" 字符串污染数据），其余非 str 值 str()。CSV 写入路径零改动。
+        def _norm_obj(v):
+            if isinstance(v, str):
+                return v
+            if v is None:
+                return None
+            try:
+                if pd.isna(v):
+                    return None
+            except (TypeError, ValueError):
+                pass
+            return str(v)
+        df_parquet = df.copy()
+        for _c in df_parquet.columns:
+            if df_parquet[_c].dtype == object:
+                df_parquet[_c] = df_parquet[_c].map(_norm_obj)
+        df_parquet.to_parquet(pq_path, index=False)
     except Exception as e:  # noqa: BLE001 —— Parquet 是补充格式，写失败只警告不阻断
         print(f"  [警告] parquet 双写失败（不影响主流程）: {os.path.basename(pq_path)}: "
               f"{type(e).__name__}: {e}")

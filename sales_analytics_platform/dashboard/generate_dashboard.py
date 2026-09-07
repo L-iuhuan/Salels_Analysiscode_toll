@@ -620,7 +620,10 @@ def _hide_invisible_faces(page_html):
     for _fid, _fname in _tab_names.items():
         if not _face_visible(_fid):
             for _pat in (f'<button class="tab-btn" data-tab="{_fid}" id="btn{_fid}">{_fname}</button>',
-                         f'<button class="tab-btn active" data-tab="{_fid}" id="btn{_fid}">{_fname}</button>'):
+                         f'<button class="tab-btn active" data-tab="{_fid}" id="btn{_fid}">{_fname}</button>',
+                         # R 按钮内含 rErrBadge（R1 失效策略徽标）的同款变体
+                         f'<button class="tab-btn" data-tab="{_fid}" id="btn{_fid}">{_fname}<span id="rErrBadge" class="r-badge" style="display:none">!</span></button>',
+                         f'<button class="tab-btn active" data-tab="{_fid}" id="btn{_fid}">{_fname}<span id="rErrBadge" class="r-badge" style="display:none">!</span></button>'):
                 page_html = page_html.replace(_pat + "\n", "").replace(_pat, "")
             _lis = f"document.getElementById('btn{_fid}').addEventListener('click',function(){{switchTab('{_fid}')}});"
             page_html = page_html.replace(_lis + "\n", "").replace(_lis, "")
@@ -695,15 +698,36 @@ if _cache_hit and _cached_obj:
     _replacements["%%ASP_AXIS_MAX%%"] = _fmt_axis(_cached_asp_axis.get("max", 0))
     # R面与 C面/毛利率轴同理"永远现算"：审定 md 内容毫秒级解析，不入缓存，
     # 保证"改审定文档 → --dashboard-only 秒级重渲染"流程不被缓存挡住。
+    # 失效策略与全算路径同款（两级）：缺失/异常 → 自动重建初稿（不覆盖已审定）→ 重试；
+    # 仍失败 → 红色 .rbanner 占位 + R_FACE_ERR=1（R tab 按钮红色感叹 badge）。
     # 注意：缓存命中路径在脚本前段执行，全算路径的 latest 变量此时尚未定义，
     # 数据月份从缓存的 %%LATEST%% 占位符（如 2026-06）取。
+    r_face_err_c = 0
     try:
         import generate_risk_face as _rface_c
         _r_month_c = str(_cached_replacements.get("%%LATEST%%", "")).replace("-", "")
+        if not os.path.exists(_rface_c.risk_md_path(_r_month_c)):
+            raise FileNotFoundError(f"risk_action_{_r_month_c}.md")
         _replacements["%%R_FACE_HTML%%"] = _rface_c.build_r_face_inner_html(_r_month_c)
-    except Exception as _e:
-        _replacements["%%R_FACE_HTML%%"] = ('<div class="cb"><h3>风险与行动</h3><div class="note">'
-                                            f'总体文档读取失败（{type(_e).__name__}: {_e}）</div></div>')
+    except Exception:
+        try:
+            import generate_risk_face as _rface_c
+            _r_month_c = str(_cached_replacements.get("%%LATEST%%", "")).replace("-", "")
+            _md_new_c = os.path.join(_rface_c.RISK_MD_DIR, f"risk_action_{_r_month_c}.md")
+            _md_old_c = os.path.join(_rface_c.DASH_DIR, f"risk_action_{_r_month_c}.md")
+            if not os.path.exists(_md_new_c) and not os.path.exists(_md_old_c):
+                _md_text_c, _ = _rface_c.build_draft(_r_month_c)  # 初稿重建；已审定版绝不覆盖
+                os.makedirs(_rface_c.RISK_MD_DIR, exist_ok=True)
+                with open(_md_new_c, "w", encoding="utf-8") as _f_c2:
+                    _f_c2.write(_md_text_c)
+                print(f"  [R面] 总体文档缺失，已自动重建初稿: {_md_new_c}")
+            _replacements["%%R_FACE_HTML%%"] = _rface_c.build_r_face_inner_html(_r_month_c)
+        except Exception as _e2_c:
+            r_face_err_c = 1
+            _replacements["%%R_FACE_HTML%%"] = ('<div class="rbanner"><i class="fa-solid fa-triangle-exclamation"></i> '
+                                                 '风险与行动文档异常，当前为占位提示——请检查销售数据分析看板的文档后重新生成</div>')
+            print(f"  [R面] 降级为红色占位提示: {type(_e2_c).__name__}: {_e2_c}")
+    _replacements["%%R_FACE_ERR%%"] = str(r_face_err_c)
 
     _replacements.update(_identity_replacements())   # r24：数据身份徽标（缓存路径同款）
 
@@ -1132,7 +1156,11 @@ _b_prod_meta = {"prods": {}}
 _b_prod_bucket = {}
 _b_prod_agent = {}
 _b_prod_cust = {}
-_ag_ent_col = "代理商/直供名称" if "代理商/直供名称" in rex.columns else ("客户" if "客户" in rex.columns else None)
+# 代理商实体列走配置候选组（settings.DASHBOARD_COL_PRIORITY["agent_entity"]），按优先级取第一个
+# 命中的列（与 resolve_dashboard_col 同一语义模式）。此处用精确匹配而非子串——子串"客户"会先
+# 命中"客户类别"等列，行为必须零漂移；全部候选缺失时视图优雅置空（沿用原 None 语义）。
+_ag_ent_col = next((c for c in (DASHBOARD_COL_PRIORITY or {}).get(
+    "agent_entity", ["代理商/直供名称", "客户"]) if c in rex.columns), None)
 if "销售模式" in rex.columns and _ag_ent_col:
     _ag_mode = rex["销售模式"]
     _ag_bucket = pd.Series(np.where(_ag_mode.eq("经销"), "jx",
@@ -1214,6 +1242,10 @@ if "销售模式" in rex.columns and _ag_ent_col:
                for _k, _g2 in _ns.groupby("m")]
     _nonstd.sort(key=lambda x: -x["rev"])
     _null = _dq[_dq["m"].isna()]
+    # 经销但代理商名缺失统计：jx 桶行中实体名落在哨兵值集合内的行（与视图过滤同口径）
+    _ent_sent = ("nan", "None", "", "未知客户")
+    _jxm = _dq[_dq["m"].eq("经销") & _dq["e"].isin(_ent_sent)]
+    _jxm_months = sorted(str(_y) for _y in _jxm["ym"].unique())
     _mixed = []
     _bs = _dq[_dq["m"].isin(["经销", "直销"])].pivot_table(index="e", columns="m", values="r", aggfunc="sum").fillna(0)
     if "经销" in _bs.columns and "直销" in _bs.columns:
@@ -1230,16 +1262,21 @@ if "销售模式" in rex.columns and _ag_ent_col:
     _hot = _hot[_hot["other"] / _hot["_tot"] > 0.05]
     _hot_months = [{"ym": str(_i), "pct": round(float(_v["other"] / _v["_tot"] * 100), 1),
                     "rev": round(float(_v["other"]) / 1e4, 1)} for _i, _v in _hot.iterrows()]
-    _dq_path = os.path.join(OUT_DIR, f"代理商数据质量提示_{latest}.md")
-    _md = [f"# 代理商视图 · 数据质量提示（数据月份 {latest}）", "",
-           "> 跑批自动生成。汇总「销售模式」列未规范填写情况；看板内不展示本提示。",
+    _dq_path = os.path.join(OUT_DIR, f"销售模式数据问题_{latest}.md")
+    _md = [f"# 销售模式数据问题（数据月份 {latest}）", "",
+           "> 跑批自动生成。汇总「销售模式」列未规范填写与经销行代理商名缺失情况；看板内不展示本提示。",
            "> 所有交易未做剔除或归并；未规范填写的交易暂不进入「按销售模式」视图（在「按客户」视图中完整保留），修正源数据后归入对应分组、本文件内容自动收敛。", "",
            "## 概览", "",
            f"- 非标准取值（填了公司名等）：{len(_nonstd)} 个，共 {len(_ns)} 行 / {round(float(_ns['r'].sum()) / 1e4, 1)} 万",
            f"- 空值：{len(_null)} 行 / {round(float(_null['r'].sum()) / 1e4, 1)} 万",
+           f"- 经销但代理商名缺失：{len(_jxm)} 行 / {round(float(_jxm['r'].sum()) / 1e4, 1)} 万 / 涉及 {len(_jxm_months)} 个月份",
            f"- 混合实体（同一实体经销与直销并存）：{len(_mixed)} 家",
            f"- 问题集中月份（「其他」占比>5%）：" + ("；".join(f"{h['ym']}（{h['pct']}%，{h['rev']}万）" for h in _hot_months) if _hot_months else "无"), "",
-           "## 非标准取值 Top20（按金额）", "",
+           "## 经销但代理商名缺失", "",
+           f"- 行数：{len(_jxm)}",
+           f"- 金额合计：{round(float(_jxm['r'].sum()) / 1e4, 1)} 万",
+           f"- 涉及月份数：{len(_jxm_months)}" + (f"（{'、'.join(_jxm_months)}）" if _jxm_months else ""),
+           "", "## 非标准取值 Top20（按金额）", "",
            "| 取值 | 行数 | 金额(万) |", "|---|---|---|"]
     _md += [f"| {d['v']} | {d['rows']} | {d['rev']} |" for d in _nonstd[:20]]
     if len(_nonstd) > 20:
@@ -1267,10 +1304,16 @@ if "销售模式" in rex.columns and _ag_ent_col:
             "first": str(_pfirst.get(_it, "")),
             "isnew": bool(_pnewtag.get(_it, False)) and str(_pfirst.get(_it, "9999")) >= _cutoff_new}
 
+    # 预分组工作帧（参照 _REX_BY_YM 先例，批次⑤ P1 同款模式）：一次取材 rex 五列，
+    # 桶/代理商/客户三层级共用，消除 3 次全量重扫 rex；数值口径与旧实现逐字节一致（零漂移）。
+    _pwk = pd.DataFrame({"it": rex["_item"], "ym": rex["_ym_full"],
+                         "r": rex["_rev"], "p": rex["_profit"], "q": rex["_qty"]})
+
     def _build_prod_map(_member):
-        """按成员键聚合产品月度单元与最近月 mom/yoy。_member: 与 rex 对齐的成员键 Series（NaN/空=剔除行）。"""
-        _wk = pd.DataFrame({"mkey": _member, "it": rex["_item"], "ym": rex["_ym_full"],
-                            "r": rex["_rev"], "p": rex["_profit"], "q": rex["_qty"]})
+        """按成员键聚合产品月度单元与最近月 mom/yoy。_member: 与 rex 对齐的成员键 Series（NaN/空=剔除行）。
+        预分组模式：在共享工作帧上一次 (键→子表) groupby 建索引后各组查表组装，禁止逐组全表过滤。"""
+        _wk = _pwk.copy()
+        _wk.insert(0, "mkey", _member)
         _wk = _wk[_wk["mkey"].notna() & (_wk["mkey"].astype(str) != "") & (~_wk["mkey"].astype(str).isin(["nan", "None", "未知客户"]))]
         _c = _wk[(_wk["ym"] >= start_12m) & (_wk["ym"] <= latest)]
         _cells = _c.groupby(["mkey", "it", "ym"], as_index=False).agg(
@@ -1315,7 +1358,7 @@ if "销售模式" in rex.columns and _ag_ent_col:
     _b_prod_agent = _build_prod_map(_m_agent)
     _b_prod_cust = _build_prod_map(_m_cust)
     print(f"    Top产品模块: 桶{len(_b_prod_bucket)} 代理{len(_b_prod_agent)} 客户{len(_b_prod_cust)} 品种{len(_b_prod_meta['prods'])}")
-    print(f"    代理商视图: 经销{len(_agent_view['jx'])} 直销{len(_agent_view['zx'])}（其他桶不进视图，DQ追踪） | DQ提示已落盘: {os.path.basename(_dq_path)}（非标准{len(_nonstd)}值 空值{len(_null)}行 混合{len(_mixed)}家）")
+    print(f"    代理商视图: 经销{len(_agent_view['jx'])} 直销{len(_agent_view['zx'])}（其他桶不进视图，DQ追踪） | DQ提示已落盘: {os.path.basename(_dq_path)}（非标准{len(_nonstd)}值 空值{len(_null)}行 经销名缺失{len(_jxm)}行 混合{len(_mixed)}家）")
 else:
     print("    代理商视图: 源数据缺少 销售模式/代理商 列，视图置空（不影响其他面）")
 
@@ -2769,17 +2812,40 @@ print(f"  [截断] 毛利率轴: raw[{_margin_bounds['raw_abs_min']:.2f}, {_marg
       f"-> p{DASHBOARD_AXIS_CLIP.get('margin_pct', [1,99])[0]}~p{DASHBOARD_AXIS_CLIP.get('margin_pct', [1,99])[1]}[{_margin_bounds['min']}, {_margin_bounds['max']}]")
 
 # ========== R面（风险与行动 · W4 并入）：读取人工审定总体文档 ==========
-# 内容来自 dashboard\risk_action_YYYYMM.md（跑批生成初稿 → 人工审定 → 本处渲染）。
-# 该 md 已纳入指纹（fingerprint.py risk_doc 键），审定编辑后缓存自动失效。
+# 内容来自 output\dashboard\risk_action_YYYYMM.md（跑批生成初稿 → 人工审定 → 本处渲染；
+# 旧 dashboard\ 位置保留兼容回退读取，见 generate_risk_face.risk_md_path）。
+# 该 md 不入指纹（两路径均现算，同 C面毛利率轴"永远现算"模式，见 fingerprint.py 契约注释）。
+# 失效策略（两级，拍板）：①渲染异常/文档缺失 → 先调用 generate_risk_face.build_draft 自动重建初稿
+# （不覆盖已审定版）→ 重试 build_r_face_inner_html；②仍失败 → 降级红色警示横幅（.rbanner，
+# 复用 --danger/--danger-bg token）并置 R_FACE_ERR=1，模板侧 R tab 按钮显示红色感叹 badge。
+r_face_err = 0
 try:
     import generate_risk_face as _rface
-    r_face_html = _rface.build_r_face_inner_html(latest.replace("-", ""))
+    _r_month = latest.replace("-", "")
+    # build_r_face_inner_html 对缺失文档不抛异常（返回灰色 note），缺失须显式判障触发重建
+    if not os.path.exists(_rface.risk_md_path(_r_month)):
+        raise FileNotFoundError(f"risk_action_{_r_month}.md")
+    r_face_html = _rface.build_r_face_inner_html(_r_month)
     print(f"[R面] 风险与行动内容已并入（数据月份 {latest}）")
 except Exception as _e:
-    r_face_html = ('<div class="cb"><h3>风险与行动</h3><div class="note">'
-                   '总体文档读取失败，请先运行 python dashboard\\generate_risk_face.py'
-                   f'（{type(_e).__name__}: {_e}）</div></div>')
-    print(f"  [R面] 读取失败: {_e}")
+    try:
+        import generate_risk_face as _rface
+        _r_month = latest.replace("-", "")
+        _md_new = os.path.join(_rface.RISK_MD_DIR, f"risk_action_{_r_month}.md")
+        _md_old = os.path.join(_rface.DASH_DIR, f"risk_action_{_r_month}.md")
+        if not os.path.exists(_md_new) and not os.path.exists(_md_old):
+            _md_text, _ = _rface.build_draft(_r_month)  # 初稿重建；已审定版绝不覆盖
+            os.makedirs(_rface.RISK_MD_DIR, exist_ok=True)
+            with open(_md_new, "w", encoding="utf-8") as _f:
+                _f.write(_md_text)
+            print(f"  [R面] 总体文档缺失，已自动重建初稿: {_md_new}")
+        r_face_html = _rface.build_r_face_inner_html(_r_month)
+        print("[R面] 自动重建后重试成功，风险与行动内容已并入")
+    except Exception as _e2:
+        r_face_err = 1
+        r_face_html = ('<div class="rbanner"><i class="fa-solid fa-triangle-exclamation"></i> '
+                       '风险与行动文档异常，当前为占位提示——请检查销售数据分析看板的文档后重新生成</div>')
+        print(f"  [R面] 降级为红色占位提示: {type(_e2).__name__}: {_e2}")
 
 # ========== W4：三层口径说明体系（faces.yaml → HTML 占位符） ==========
 def _build_face_meta_html(face_id, cfg):
@@ -2916,8 +2982,9 @@ replacements = {
     "%%MARGIN_AXIS_MAX%%":_margin_bounds["max"],
     "%%ASP_AXIS_MIN%%":_asp_bounds["min"],
     "%%ASP_AXIS_MAX%%":_asp_bounds["max"],
-    # ---- W4：风险与行动面（人工审定总体文档渲染，服务端 HTML 注入）----
+    # ---- W4：风险与行动面（人工审定总体文档渲染，服务端 HTML 注入；R_FACE_ERR 与 R面HTML 同寿命现算）----
     "%%R_FACE_HTML%%": r_face_html,
+    "%%R_FACE_ERR%%": str(r_face_err),
     # ---- W4：面级口径条（A/B/C/D/E，R 面已有自己的口径节）----
     "%%FACE_META_A%%": _build_face_meta_html("A", _FACE_META_CACHE.get("A", {})),
     "%%FACE_META_B%%": _build_face_meta_html("B", _FACE_META_CACHE.get("B", {})),
@@ -2997,11 +3064,11 @@ if not _NO_CACHE and _fp is not None and _fp_cur is not None:
         os.makedirs(PREAGG_DIR, exist_ok=True)
         _cache_payload = {
             "data_block": data_block,
-            # 缓存除 DATA_BLOCK / C_DATA_JSON / 毛利率轴（现算）/ R面HTML（现算，审定 md 毫秒级解析）外的全部占位符值
+            # 缓存除 DATA_BLOCK / C_DATA_JSON / 毛利率轴（现算）/ R面HTML+R_FACE_ERR（现算，审定 md 毫秒级解析）外的全部占位符值
             "replacements": {k: v for k, v in replacements.items()
                              if k not in ("%%DATA_BLOCK%%", "%%C_DATA_JSON%%",
                                           "%%MARGIN_AXIS_MIN%%", "%%MARGIN_AXIS_MAX%%",
-                                          "%%R_FACE_HTML%%")},
+                                          "%%R_FACE_HTML%%", "%%R_FACE_ERR%%")},
             # ASP 轴边界源自 fingerprinted 的 rex 数据，缓存原始浮点值
             "asp_axis": _asp_axis_cache,
         }
