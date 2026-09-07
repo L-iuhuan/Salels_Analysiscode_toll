@@ -104,7 +104,7 @@ faces:
         usage: 左侧筛选并点选客户，右侧查看详情
         update_note: 每月刷新
       - title: 客户详情
-        definition: 单个客户近 25 个月的收入、毛利、品类、品种、新品与风险趋势
+        definition: 单个客户近 12 个月的收入、毛利、品类、品种、新品与风险趋势
         koujing: 趋势按自然月聚合；品类与品种按客户采购明细统计
         usage: 用于客户拜访前快速备课与异常诊断
         update_note: 每月刷新

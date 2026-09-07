@@ -1171,7 +1171,8 @@ if "销售模式" in rex.columns and _ag_ent_col:
          "r": round(float(_gc["r"].sum()) / 1e4, 1), "p": round(float(_gc["p"].sum()) / 1e4, 1),
          "mg": round(float(_gc["p"].sum()) / float(_gc["r"].sum()) * 100, 1) if float(_gc["r"].sum()) > 0 else 0,
          "t": _ag_tier.get(str(_c), ""), "np": int(_gc["prod"].nunique())}
-        for _c, _gc in _zx.groupby("c")]
+        for _c, _gc in _zx.groupby("c")
+        if str(_c) not in ("nan", "None", "", "未知客户")]  # 直销客户编号缺失不产 nan 行（M1，对齐 jx 侧哨兵）
     for _b in ("jx", "zx"):
         _agent_view[_b].sort(key=lambda x: -x["r"])
     _agent_view["pairs"] = _ag_pairs
