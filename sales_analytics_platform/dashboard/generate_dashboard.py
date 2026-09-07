@@ -805,7 +805,8 @@ if _FROM_EXCEL:
 else:
     # ── Silver 底座（默认）：读 silver_cleaned_rows，列名已是 ERP_COL_MAP 归一后的标准名 ──
     _keep = ["发货日期","金额","利润","数量","客户类别","客户编号","客户订单号",
-             "产品一级分类","产品品类","产品品种","型号_产品线（新）","新品标记","实际业务员"]
+             "产品一级分类","产品品类","产品品种","型号_产品线（新）","新品标记","实际业务员",
+             "销售模式","代理商/直供名称","客户"]  # 后三列：代理商视图（按经销模式）数据段用，缺失时该视图优雅置空
     _keep = [c for c in _keep if c in pd.read_csv(os.path.join(SILVER, "silver_cleaned_rows.csv"), nrows=0, encoding="utf-8-sig").columns]
     rex = _load_silver_rows(os.path.join(SILVER, "silver_cleaned_rows.csv"), _keep)
     # 语义列变量（与 --from-excel 路径同名，供下游 D面6a/E面7c 等使用）
@@ -1078,7 +1079,7 @@ cust_mo = rex.groupby(["_cust","_ym_full"]).agg(r=("_rev","sum"),p=("_profit","s
 all_custs = sorted(cust_mo["_cust"].unique())
 ctr = {}
 for cid in all_custs:
-    cm = cust_mo[cust_mo["_cust"]==cid].sort_values("_ym_full").tail(25)
+    cm = cust_mo[cust_mo["_cust"]==cid].sort_values("_ym_full").tail(12)  # 与卡题"近12月"对齐（v4 修订：原 tail(25) 跨三个自然年）
     pts = [{"m":str(r["_ym_full"]),"r":round(float(r["r"])/1e4,2),"p":round(float(r["p"])/1e4,2),"q":round(float(r["q"])/1e4,2)} for _,r in cm.iterrows()]
     if pts: ctr[cid]=pts
 print(f"    趋势:{len(ctr)}客户")
@@ -1120,6 +1121,203 @@ for cid, grp in cxp_12m_r.groupby("_cust"):
     prod_rev = grp.groupby("_prod")["_rev"].sum().reset_index()
     top = prod_rev.sort_values("_rev",ascending=False).head(5)
     prank[cid]=[str(p) for p in top["_prod"].tolist()]
+
+# ── 代理商视图（按经销模式）数据段（iter/agent-face-explore；决策轮5口径：视图仅经销/直销两桶）──
+# 行级字面值分类：销售模式=="经销"→jx / =="直销"→zx / 其余一切（公司名填写、空值）→other。
+# 零清洗、零归类、零剔除；other 不进看板视图（待源数据治理），DQ 文件照常追踪。
+# 金额单位=万（与 cid_fin 的 sc() 一致）；列表窗口=YTD（与B面列表 r/p 同口径）。
+_agent_view = {"jx": [], "zx": [], "pairs": {"jx": {}},
+               "kpi": {}, "trend": {"jx": {}}, "btrend": {}}
+_b_prod_meta = {"prods": {}}
+_b_prod_bucket = {}
+_b_prod_agent = {}
+_b_prod_cust = {}
+_ag_ent_col = "代理商/直供名称" if "代理商/直供名称" in rex.columns else ("客户" if "客户" in rex.columns else None)
+if "销售模式" in rex.columns and _ag_ent_col:
+    _ag_mode = rex["销售模式"]
+    _ag_bucket = pd.Series(np.where(_ag_mode.eq("经销"), "jx",
+                           np.where(_ag_mode.eq("直销"), "zx", "other")), index=rex.index)
+    _ag_ent = rex[_ag_ent_col].astype(str).str.strip()
+    _ag_ytdm = (rex["_ym_full"] >= f"{_latest_y}-01") & (rex["_ym_full"] <= latest)
+    _ry = pd.DataFrame({"b": _ag_bucket[_ag_ytdm], "e": _ag_ent[_ag_ytdm],
+                        "c": rex["_cust"][_ag_ytdm], "r": rex["_rev"][_ag_ytdm],
+                        "p": rex["_profit"][_ag_ytdm], "prod": rex["_prod"][_ag_ytdm],
+                        "q": rex["_qty"][_ag_ytdm],
+                        "ym": rex["_ym_full"][_ag_ytdm]})
+    _ag_tier = dict(zip(df["客户编号"].astype(str), df["客户层级"].astype(str)))
+    _ag_pairs = {"jx": {}, "zx": {}, "other": {}}
+    for (_b, _e), _g in _ry.groupby(["b", "e"]):
+        if _b != "jx":
+            continue  # zx 桶拍平到终端客户（决策轮3#3）；other 桶不进视图（决策轮5）
+        if str(_e) in ("nan", "None", "", "未知客户"):
+            continue  # 哨兵实体过滤（Oracle P2-2：经销行代理商缺失不得产生 "nan" 代理商）
+        _r = float(_g["r"].sum()); _p = float(_g["p"].sum())
+        _agent_view[_b].append({
+            "a": str(_e), "r": round(_r / 1e4, 1), "p": round(_p / 1e4, 1),
+            "mg": round(_p / _r * 100, 1) if _r > 0 else 0,
+            "nc": int(_g["c"].nunique()), "np": int(_g["prod"].nunique())})
+        _prs = []
+        for _c, _gc in _g.groupby("c"):
+            _cr = float(_gc["r"].sum()); _cp = float(_gc["p"].sum())
+            _prs.append({"id": str(_c), "n": cid_to_name.get(str(_c), str(_c)),
+                         "r": round(_cr / 1e4, 1), "p": round(_cp / 1e4, 1),
+                         "mg": round(_cp / _cr * 100, 1) if _cr > 0 else 0,
+                         "t": _ag_tier.get(str(_c), ""), "np": int(_gc["prod"].nunique())})
+        _prs.sort(key=lambda x: -x["r"])
+        _ag_pairs[_b][str(_e)] = _prs
+    _zx = _ry[_ry["b"] == "zx"]
+    _agent_view["zx"] = [
+        {"id": str(_c), "n": cid_to_name.get(str(_c), str(_c)), "a": cid_to_name.get(str(_c), str(_c)),
+         "r": round(float(_gc["r"].sum()) / 1e4, 1), "p": round(float(_gc["p"].sum()) / 1e4, 1),
+         "mg": round(float(_gc["p"].sum()) / float(_gc["r"].sum()) * 100, 1) if float(_gc["r"].sum()) > 0 else 0,
+         "t": _ag_tier.get(str(_c), ""), "np": int(_gc["prod"].nunique())}
+        for _c, _gc in _zx.groupby("c")
+        if str(_c) not in ("nan", "None", "", "未知客户")]  # 直销客户编号缺失不产 nan 行（M1，对齐 jx 侧哨兵）
+    for _b in ("jx", "zx"):
+        _agent_view[_b].sort(key=lambda x: -x["r"])
+    _agent_view["pairs"] = _ag_pairs
+    # 桶级 KPI + 月度趋势（YTD，供右栏概况图表；视图仅 jx/zx 两桶）
+    for _b in ("jx", "zx"):
+        _sub = _ry[_ry["b"] == _b]
+        _kr = float(_sub["r"].sum()); _kp = float(_sub["p"].sum())
+        _agent_view["kpi"][_b] = {
+            "n": int(_sub["c"].nunique()) if _b == "zx" else int(_sub["e"].nunique()),
+            "rev": round(_kr / 1e4, 1), "profit": round(_kp / 1e4, 1),
+            "mg": round(_kp / _kr * 100, 1) if _kr > 0 else 0,
+            "custs": int(_sub["c"].nunique()), "prods": int(_sub["prod"].nunique())}
+        _bmo = _sub.groupby("ym").agg(r=("r", "sum"), p=("p", "sum"), q=("q", "sum")).reset_index().sort_values("ym")
+        _agent_view["btrend"][_b] = [{"m": str(_x["ym"]), "r": round(float(_x["r"]) / 1e4, 2),
+                                      "p": round(float(_x["p"]) / 1e4, 2),
+                                      "q": round(float(_x["q"]) / 1e4, 2)} for _, _x in _bmo.iterrows()]
+    # 月活趋势：jx=代理商去重数/月，zx=终端客户去重数/月（YTD 窗口）
+    _agent_view["active"] = {}
+    for _b, _key in (("jx", "e"), ("zx", "c")):
+        _act = _ry[_ry["b"] == _b].groupby("ym")[_key].nunique().reset_index().sort_values("ym")
+        _agent_view["active"][_b] = [{"m": str(_x["ym"]), "n": int(_x[_key])} for _, _x in _act.iterrows()]
+    # 代理商×品类 R12 收入（品类构成 donut 用；全 rex 行级，窗口 R12）
+    _r12_ag = rex[(rex["_ym_full"] >= start_12m) & (rex["_ym_full"] <= latest)]
+    _ac = _r12_ag[_ag_bucket[_r12_ag.index] == "jx"].groupby(
+        [_ag_ent[_r12_ag.index][_ag_bucket[_r12_ag.index] == "jx"], "_cat"])["_rev"].sum()
+    _agent_view["cat"] = {}
+    for (_e, _cat_v), _rv in _ac.items():
+        _agent_view["cat"].setdefault(str(_e), {})[str(_cat_v)] = round(float(_rv) / 1e4, 2)
+    # 代理商级月度趋势（仅 jx 桶；zx 桶已拍平到客户，无需实体趋势）
+    for (_b, _e), _g in _ry[_ry["b"] == "jx"].groupby(["b", "e"]):
+        _am = _g.groupby("ym").agg(r=("r", "sum"), p=("p", "sum"), q=("q", "sum")).reset_index().sort_values("ym")
+        _agent_view["trend"][_b][str(_e)] = [{"m": str(_x["ym"]), "r": round(float(_x["r"]) / 1e4, 2),
+                                              "p": round(float(_x["p"]) / 1e4, 2),
+                                              "q": round(float(_x["q"]) / 1e4, 2)} for _, _x in _am.iterrows()]
+    # DQ 数据质量提示（决策轮4拍板：不进看板，落盘独立文件供源数据治理）
+    _dq = pd.DataFrame({"m": _ag_mode, "e": _ag_ent, "r": rex["_rev"], "ym": rex["_ym_full"]})
+    _ns = _dq[_dq["m"].notna() & ~_dq["m"].isin(["经销", "直销"])]
+    _nonstd = [{"v": str(_k), "rows": int(len(_g2)), "rev": round(float(_g2["r"].sum()) / 1e4, 1)}
+               for _k, _g2 in _ns.groupby("m")]
+    _nonstd.sort(key=lambda x: -x["rev"])
+    _null = _dq[_dq["m"].isna()]
+    _mixed = []
+    _bs = _dq[_dq["m"].isin(["经销", "直销"])].pivot_table(index="e", columns="m", values="r", aggfunc="sum").fillna(0)
+    if "经销" in _bs.columns and "直销" in _bs.columns:
+        _bs = _bs[(_bs["经销"] != 0) & (_bs["直销"] != 0)]
+        _mixed = [{"a": str(_i), "jx": round(float(_v["经销"]) / 1e4, 1),
+                   "zx": round(float(_v["直销"]) / 1e4, 1)} for _i, _v in _bs.iterrows()]
+    # 问题月份定位：按 月×桶 透视，标出"其他"占比 >5% 的月份（治理可直接定位到月份）
+    _mm = _dq.assign(b=np.where(_dq["m"].eq("经销"), "jx",
+                   np.where(_dq["m"].eq("直销"), "zx", "other"))).groupby(["ym", "b"])["r"].sum().unstack(fill_value=0)
+    if "other" not in _mm.columns:
+        _mm["other"] = 0.0
+    _mm["_tot"] = _mm.sum(axis=1)  # 此刻 _mm 仅含桶列（jx/zx/other），直接行求和
+    _hot = _mm[_mm["_tot"] > 0]
+    _hot = _hot[_hot["other"] / _hot["_tot"] > 0.05]
+    _hot_months = [{"ym": str(_i), "pct": round(float(_v["other"] / _v["_tot"] * 100), 1),
+                    "rev": round(float(_v["other"]) / 1e4, 1)} for _i, _v in _hot.iterrows()]
+    _dq_path = os.path.join(OUT_DIR, f"代理商数据质量提示_{latest}.md")
+    _md = [f"# 代理商视图 · 数据质量提示（数据月份 {latest}）", "",
+           "> 跑批自动生成。汇总「销售模式」列未规范填写情况；看板内不展示本提示。",
+           "> 所有交易未做剔除或归并；未规范填写的交易暂不进入「按销售模式」视图（在「按客户」视图中完整保留），修正源数据后归入对应分组、本文件内容自动收敛。", "",
+           "## 概览", "",
+           f"- 非标准取值（填了公司名等）：{len(_nonstd)} 个，共 {len(_ns)} 行 / {round(float(_ns['r'].sum()) / 1e4, 1)} 万",
+           f"- 空值：{len(_null)} 行 / {round(float(_null['r'].sum()) / 1e4, 1)} 万",
+           f"- 混合实体（同一实体经销与直销并存）：{len(_mixed)} 家",
+           f"- 问题集中月份（「其他」占比>5%）：" + ("；".join(f"{h['ym']}（{h['pct']}%，{h['rev']}万）" for h in _hot_months) if _hot_months else "无"), "",
+           "## 非标准取值 Top20（按金额）", "",
+           "| 取值 | 行数 | 金额(万) |", "|---|---|---|"]
+    _md += [f"| {d['v']} | {d['rows']} | {d['rev']} |" for d in _nonstd[:20]]
+    if len(_nonstd) > 20:
+        _md.append(f"| …其余 {len(_nonstd) - 20} 个取值 | 从略 | 从略 |")
+    _md += ["", "## 混合实体明细", "", "| 实体 | 经销(万) | 直销(万) |", "|---|---|---|"]
+    _md += [f"| {m['a']} | {m['jx']} | {m['zx']} |" for m in _mixed] or []
+    with open(_dq_path, "w", encoding="utf-8") as _f:
+        _f.write("\n".join(_md) + "\n")
+
+    # ── Top 产品模块数据段（v3，决策轮5定稿）：品种级 × 三层级，全内联新变量 ──
+    # 键=产品品种（C面/B面t5同款）；cells=R12 月度稀疏单元 [月, 收入万, 毛利万, 销量万]；
+    # mom/yoy=最近月标量（全 31 月历史；无基期→None，JS 渲染 '—'，禁填 0 伪造 -100%）；
+    # 新品=C面同款口径：品种级曾有 ERP 新品标记 ∩ 首销月 ≥ cutoff_new（=最新月-12，13个月含界）。
+    _cutoff_new = str(_latest_period - 12)
+    _pfirst = rex.groupby("_item")["_ym_full"].min()
+    _pnewtag = rex.groupby("_item")["_is_new"].any()
+    _b_prod_meta = {"prods": {}}
+    for _it, _g in rex.groupby("_item"):
+        _cats = [x for x in _g["_cat"] if str(x) not in ("未知", "nan", "None", "")]
+        _pls = [x for x in _g[pline_new_col].astype(str).str.strip()] if pline_new_col else []
+        _pls = [x for x in _pls if x not in ("", "nan", "None")]
+        _b_prod_meta["prods"][str(_it)] = {
+            "cat": str(_cats[-1]) if _cats else "未知",
+            "pl": str(_pls[-1]) if _pls else "未知",
+            "first": str(_pfirst.get(_it, "")),
+            "isnew": bool(_pnewtag.get(_it, False)) and str(_pfirst.get(_it, "9999")) >= _cutoff_new}
+
+    def _build_prod_map(_member):
+        """按成员键聚合产品月度单元与最近月 mom/yoy。_member: 与 rex 对齐的成员键 Series（NaN/空=剔除行）。"""
+        _wk = pd.DataFrame({"mkey": _member, "it": rex["_item"], "ym": rex["_ym_full"],
+                            "r": rex["_rev"], "p": rex["_profit"], "q": rex["_qty"]})
+        _wk = _wk[_wk["mkey"].notna() & (_wk["mkey"].astype(str) != "") & (~_wk["mkey"].astype(str).isin(["nan", "None", "未知客户"]))]
+        _c = _wk[(_wk["ym"] >= start_12m) & (_wk["ym"] <= latest)]
+        _cells = _c.groupby(["mkey", "it", "ym"], as_index=False).agg(
+            r=("r", "sum"), p=("p", "sum"), q=("q", "sum"))
+        _fm = _wk.groupby(["mkey", "it", "ym"], as_index=False).agg(r=("r", "sum"))
+        _fp = _fm.pivot_table(index=["mkey", "it"], columns="ym", values="r", aggfunc="sum")
+        _out = {}
+        for (_mk, _it), _g in _cells.groupby(["mkey", "it"]):
+            _g = _g.sort_values("ym")
+            out_cells = [[str(_x["ym"]), round(float(_x["r"]) / 1e4, 2),
+                          round(float(_x["p"]) / 1e4, 2), round(float(_x["q"]) / 1e4, 2)]
+                         for _, _x in _g.iterrows()]
+            _out.setdefault(str(_mk), {})[str(_it)] = {"cells": out_cells}
+        for (_mk, _it), _row in _fp.iterrows():
+            _mk = str(_mk); _it = str(_it)
+            if _mk not in _out or _it not in _out[_mk]:
+                continue  # 近12月无交易的成员×品种不出现在模块中
+            # 环比/同比锚定"该成员×品种最近有交易的自然月"（v4 修订：数据最新月该范围可能无
+            # 合规交易（如 2026-07 销售模式未填），日历锚会大面积空值）；无基期→None（JS 渲染 '—'）
+            _act = _row.dropna()
+            _act = _act[_act != 0]
+            if _act.empty:
+                _out[_mk][_it].update({"mom": None, "yoy": None, "ref": None})
+                continue
+            _ref = str(_act.index[-1])
+            _prev_ref = str(pd.Period(_ref, freq="M") - 1)
+            _yoy_ref = str(pd.Period(_ref, freq="M") - 12)
+            _cur = float(_act.iloc[-1])
+            _prv = float(_row[_prev_ref]) if _prev_ref in _row.index and pd.notna(_row[_prev_ref]) else None
+            _yag = float(_row[_yoy_ref]) if _yoy_ref in _row.index and pd.notna(_row[_yoy_ref]) else None
+            _mom = round((_cur - _prv) / _prv * 100, 1) if _prv else None
+            _yoy = round((_cur - _yag) / _yag * 100, 1) if _yag else None
+            _out[_mk][_it].update({"mom": _mom, "yoy": _yoy, "ref": _ref})
+        return _out
+
+    # 三层级成员键：桶（jx/zx 两桶，other 不进视图）/ 代理商（jx 桶实体）/ 终端客户（哨兵过滤）
+    _m_bucket = pd.Series(np.where(_ag_bucket == "jx", "jx", np.where(_ag_bucket == "zx", "zx", None)),
+                          index=rex.index, dtype=object)
+    _m_agent = _ag_ent.where(_ag_bucket == "jx")
+    _m_cust = rex["_cust"].where(~rex["_cust"].isin(["nan", "None", "", "未知客户"]))
+    _b_prod_bucket = _build_prod_map(_m_bucket)
+    _b_prod_agent = _build_prod_map(_m_agent)
+    _b_prod_cust = _build_prod_map(_m_cust)
+    print(f"    Top产品模块: 桶{len(_b_prod_bucket)} 代理{len(_b_prod_agent)} 客户{len(_b_prod_cust)} 品种{len(_b_prod_meta['prods'])}")
+    print(f"    代理商视图: 经销{len(_agent_view['jx'])} 直销{len(_agent_view['zx'])}（其他桶不进视图，DQ追踪） | DQ提示已落盘: {os.path.basename(_dq_path)}（非标准{len(_nonstd)}值 空值{len(_null)}行 混合{len(_mixed)}家）")
+else:
+    print("    代理商视图: 源数据缺少 销售模式/代理商 列，视图置空（不影响其他面）")
 
 # 产品型号变迁（全历史扫描：真正的新增=全历史从未出现，≥6000阈值）
 # 预计算每客户的全历史品种集合（起始月 到 前12月结束）
@@ -2495,6 +2693,11 @@ js_data.append("var TREND = "+json.dumps(trend,ensure_ascii=False)+";")
 js_data.append("var SA = "+json.dumps(csa,ensure_ascii=False)+";")
 js_data.append("var PIE = "+json.dumps(pie,ensure_ascii=False)+";")
 js_data.append("var SCAT = "+json.dumps(scat,ensure_ascii=False)+";")
+js_data.append("var B_AGENTS = "+json.dumps(_agent_view,ensure_ascii=False)+";")
+js_data.append("var B_PROD_META = "+json.dumps(_b_prod_meta,ensure_ascii=False)+";")
+js_data.append("var B_PROD_BUCKET = "+json.dumps(_b_prod_bucket,ensure_ascii=False)+";")
+js_data.append("var B_PROD_AGENT = "+json.dumps(_b_prod_agent,ensure_ascii=False)+";")
+js_data.append("var B_PROD_CUST = "+json.dumps(_b_prod_cust,ensure_ascii=False)+";")
 js_data.append("var KAA_REV = "+json.dumps(kaa_rev,ensure_ascii=False)+";")
 js_data.append("var PLINE_MARGINS = "+json.dumps(pline_margins,ensure_ascii=False)+";")
 js_data.append("var CAT_MARGINS = "+json.dumps(cat_margins,ensure_ascii=False)+";")
