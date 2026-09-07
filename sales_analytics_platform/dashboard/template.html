@@ -586,45 +586,54 @@ body{font-family:-apple-system,'Microsoft YaHei','Segoe UI',sans-serif;backgroun
  <div id="eSalesInsight" style="font-size:10px;color:var(--text-tertiary);padding:4px 8px;line-height:1.6;margin-top:4px"></div></div>
 </div>
 
-<!-- F面 H1半年度汇总 -->
+<!-- F面 半年度窗口复盘（方案C：三窗=当前窗/上一半年窗/去年同期窗，窗口由数据月份自动推导） -->
 <div class="tab-content" id="tabF">
  %%FACE_META_F%%
+ <div class="cb" style="padding:10px;margin-bottom:10px"><h3 class="subsection-title"><i class="fa-solid fa-binoculars" style="color:var(--primary)"></i> 窗口概览：%%F_CUR_LABEL%% <span style="font-size:10px;color:var(--text-tertiary)">vs %%F_PREV_HALF_LABEL%%（上一半年窗）· vs %%F_PREV_YEAR_LABEL%%（去年同期窗）</span></h3>
+ <div class="kpi-bar" style="grid-template-columns:repeat(4,1fr);margin-bottom:4px">
+ <div class="kc"><div class="icon-wrap"><i class="fa-solid fa-coins"></i></div><div class="label">%%F_CUR_LABEL%%收入</div><div class="value" id="fOvRev">--</div><div class="sub" id="fOvRevDiff">--</div></div>
+ <div class="kc"><div class="icon-wrap"><i class="fa-solid fa-chart-line"></i></div><div class="label">毛利</div><div class="value" id="fOvProfit">--</div><div class="sub" id="fOvProfitDiff">--</div></div>
+ <div class="kc"><div class="icon-wrap"><i class="fa-solid fa-percent"></i></div><div class="label">毛利率</div><div class="value" id="fOvMg">--</div><div class="sub" id="fOvMgDiff">--</div></div>
+ <div class="kc"><div class="icon-wrap"><i class="fa-solid fa-users"></i></div><div class="label">客户数</div><div class="value" id="fOvCusts">--</div><div class="sub" id="fOvCustsDiff">--</div></div>
+ </div>
+ <div id="fOvAnchor" style="font-size:10px;color:var(--text-tertiary);padding:2px 8px"></div>
+ </div>
  <div class="kpi-bar" style="grid-template-columns:repeat(6,1fr);margin-bottom:12px">
- <div class="kc"><div class="icon-wrap"><i class="fa-solid fa-coins"></i></div><div class="label">H1收入</div><div class="value" id="fH1Rev">--</div><div class="sub" id="fH1RevYoy">同比 --</div></div>
- <div class="kc"><div class="icon-wrap"><i class="fa-solid fa-chart-line"></i></div><div class="label">H1毛利</div><div class="value" id="fH1Profit">--</div><div class="sub" id="fH1Mg">毛利率 --%</div></div>
- <div class="kc"><div class="icon-wrap"><i class="fa-solid fa-percent"></i></div><div class="label">H1毛利率</div><div class="value" id="fH1MgVal">--%</div><div class="sub" id="fH1MgYoy">同比 --pp</div></div>
- <div class="kc"><div class="icon-wrap"><i class="fa-solid fa-tag"></i></div><div class="label">H1 ASP</div><div class="value" id="fH1Asp">--</div><div class="sub" id="fH1AspYoy">同比 --%</div></div>
- <div class="kc"><div class="icon-wrap"><i class="fa-solid fa-handshake"></i></div><div class="label">KA+AA H1</div><div class="value" id="fH1KaaaRev">--</div><div class="sub" id="fH1KaaaInfo">--</div></div>
+ <div class="kc"><div class="icon-wrap"><i class="fa-solid fa-coins"></i></div><div class="label">%%F_CUR_LABEL%%收入</div><div class="value" id="fH1Rev">--</div><div class="sub" id="fH1RevYoy">--</div></div>
+ <div class="kc"><div class="icon-wrap"><i class="fa-solid fa-chart-line"></i></div><div class="label">毛利</div><div class="value" id="fH1Profit">--</div><div class="sub" id="fH1Mg">毛利率 --%</div></div>
+ <div class="kc"><div class="icon-wrap"><i class="fa-solid fa-percent"></i></div><div class="label">毛利率</div><div class="value" id="fH1MgVal">--%</div><div class="sub" id="fH1MgYoy">--</div></div>
+ <div class="kc"><div class="icon-wrap"><i class="fa-solid fa-tag"></i></div><div class="label">ASP</div><div class="value" id="fH1Asp">--</div><div class="sub" id="fH1AspYoy">--</div></div>
+ <div class="kc"><div class="icon-wrap"><i class="fa-solid fa-handshake"></i></div><div class="label">KA+AA</div><div class="value" id="fH1KaaaRev">--</div><div class="sub" id="fH1KaaaInfo">--</div></div>
  <div class="kc"><div class="icon-wrap"><i class="fa-solid fa-flask"></i></div><div class="label">新品渗透率</div><div class="value" id="fNpPenetration">--%</div><div class="sub" id="fNpInfo">--</div></div>
  </div>
  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
- <div class="cb" style="padding:10px"><h3 class="subsection-title"><i class="fa-solid fa-table-columns" style="color:var(--primary)"></i> H1产品线/品类毛利率 <span style="font-size:10px;color:var(--text-tertiary)">[点击跳转E面]</span></h3>
+ <div class="cb" style="padding:10px"><h3 class="subsection-title"><i class="fa-solid fa-table-columns" style="color:var(--primary)"></i> %%F_CUR_LABEL%%产品线/品类毛利率 <span style="font-size:10px;color:var(--text-tertiary)">[点击跳转E面]</span></h3>
   <div class="btn-toggle-group">
 <button onclick="fSwitchMarginTab('pline')" id="fTabPline" class="btn btn-toggle active">产品线</button>
 <button onclick="fSwitchMarginTab('cat')" id="fTabCat" class="btn btn-toggle">品类</button>
  </div>
  <div id="fMarginTable" style="max-height:360px;overflow-y:auto;font-size:12px"></div>
  </div>
- <div class="cb" style="padding:10px;margin-bottom:10px"><h3 class="subsection-title"><i class="fa-solid fa-sitemap" style="color:var(--primary)"></i> H1销售部毛利率 <span style="font-size:10px;color:var(--text-tertiary)">[点击展开成员]</span></h3>
+ <div class="cb" style="padding:10px;margin-bottom:10px"><h3 class="subsection-title"><i class="fa-solid fa-sitemap" style="color:var(--primary)"></i> %%F_CUR_LABEL%%销售部毛利率 <span style="font-size:10px;color:var(--text-tertiary)">[点击展开成员]</span></h3>
  <div id="fDeptTable" style="max-height:320px;overflow-y:auto;font-size:12px;margin-bottom:10px"></div>
  <h4 style="font-size:var(--font-md);margin:0 0 6px"><i class="fa-solid fa-draw-polygon" style="color:var(--primary)"></i> 部门雷达图对比</h4>
  <div id="fDeptRadar" style="width:100%;height:240px"></div>
  </div>
  </div>
- <div class="cb" style="padding:10px;margin-bottom:10px"><h3 style="margin:0 0 6px;font-size:var(--font-md)"><i class="fa-solid fa-layer-group" style="color:var(--primary)"></i> 品类维度H1对比（万元） <span class="chart-guide">%%GUIDE_F_catTable%%</span></h3>
+ <div class="cb" style="padding:10px;margin-bottom:10px"><h3 style="margin:0 0 6px;font-size:var(--font-md)"><i class="fa-solid fa-layer-group" style="color:var(--primary)"></i> 品类维度半年窗口对比（万元） <span class="chart-guide">%%GUIDE_F_catTable%%</span></h3>
  <div id="fCatH1Table" style="max-height:300px;overflow-y:auto;font-size:12px;margin-bottom:12px"></div>
  </div>
- <div class="cb" style="padding:10px;margin-bottom:10px"><h3 style="margin:0 0 6px;font-size:var(--font-md)"><i class="fa-solid fa-cubes" style="color:var(--primary)"></i> 产品维度H1对比（万元） <span class="chart-guide">%%GUIDE_F_prodTable%%</span></h3>
+ <div class="cb" style="padding:10px;margin-bottom:10px"><h3 style="margin:0 0 6px;font-size:var(--font-md)"><i class="fa-solid fa-cubes" style="color:var(--primary)"></i> 产品维度半年窗口对比（万元） <span class="chart-guide">%%GUIDE_F_prodTable%%</span></h3>
  <div id="fProductTable" style="max-height:500px;overflow-y:auto;font-size:12px"></div>
  <div style="font-size:10px;color:var(--text-tertiary);padding:6px 8px;margin-top:4px;border-top:1px dashed var(--border);line-height:1.6">
  <b>代次说明</b>（数据口径：%%Y0%%年1月至今）：<span style="color:var(--danger)">新品</span> = ERP标记"是否新品"=是 且首次出现≤12个月 ｜ <span style="color:#F59E0B">1年+</span> = 首次出现≤12个月（无新品标记） ｜ <span style="color:#2563EB">2年+</span> = 存货名称以Q1结尾 或 首次出现12~24个月 ｜ 无标记 = 成熟产品（首次出现>24个月）<br>
  首次出现日期 = 该存货名称在ERP数据中最早出现的发货日期，点击产品行可在抽屉中查看具体日期。
  </div>
  </div>
- <div class="cb" style="padding:10px;margin-bottom:10px"><h3 style="margin:0 0 6px;font-size:var(--font-md)"><i class="fa-solid fa-handshake" style="color:var(--primary)"></i> H1 KA/AA客户毛利率 <span style="font-size:10px;color:var(--text-tertiary)">[点击跳转B面]</span></h3>
+ <div class="cb" style="padding:10px;margin-bottom:10px"><h3 style="margin:0 0 6px;font-size:var(--font-md)"><i class="fa-solid fa-handshake" style="color:var(--primary)"></i> %%F_CUR_LABEL%% KA/AA客户毛利率 <span style="font-size:10px;color:var(--text-tertiary)">[点击跳转B面]</span></h3>
  <div id="fKaaaTable" style="max-height:400px;overflow-y:auto;font-size:12px"></div>
  </div>
- <div class="cb" style="padding:10px"><h3 style="margin:0 0 6px;font-size:var(--font-md)"><i class="fa-solid fa-lightbulb" style="color:var(--warning)"></i> H1关键问题与解决方案 <span style="font-size:10px;color:var(--text-tertiary)">[点击展开归因分析]</span></h3><div id="fIssues" style="font-size:12px"></div></div>
+ <div class="cb" style="padding:10px"><h3 style="margin:0 0 6px;font-size:var(--font-md)"><i class="fa-solid fa-lightbulb" style="color:var(--warning)"></i> 半年度关键问题与解决方案 <span style="font-size:10px;color:var(--text-tertiary)">[点击展开归因分析]</span></h3><div id="fIssues" style="font-size:12px"></div></div>
 </div>
 
 <script>
@@ -2695,19 +2704,39 @@ try{buildScat()}catch(e){}
 // Replace FA icons with inline SVG (Phase 4.7)
 try{ TABS.icons.replaceAll(); }catch(e){ console.warn('Icon replacement failed:', e); }
 
-// ===== F面 H1半年度汇总 =====
+// ===== F面 半年度窗口复盘（方案C）=====
 var F_MARGIN_TAB='pline';
+// null 语义格式化：mom/asp_mom 窗口外无数据 → JSON null → 显示 '—'（禁止填 0 伪造）
+function fFmt(v,suf){if(v===null||v===undefined)return '—';return (v>0?'+':'')+v+(suf||'');}
+function fFmtPlain(v,suf){if(v===null||v===undefined)return '—';return v+(suf||'');}
+function fWinLabel(which,fallback){
+ if(typeof F_WINDOWS!=='undefined'&&F_WINDOWS&&F_WINDOWS[which])return F_WINDOWS[which].label;
+ return fallback;
+}
 function buildF(){
  if(typeof F_H1_KPI==='undefined')return;
  var k=F_H1_KPI;
+ // 窗口概览卡（F_OVERVIEW 仅 F 开启时注入；防御性判空）
+ if(typeof F_OVERVIEW!=='undefined'&&F_OVERVIEW&&F_OVERVIEW.win_cur){
+  var o=F_OVERVIEW;
+  document.getElementById('fOvRev').innerHTML=o.rev.toLocaleString()+'<span style="font-size:14px;font-weight:400"> 万</span>';
+  document.getElementById('fOvRevDiff').innerText='vs '+o.win_prev_half+' '+fFmt(o.rev_hoh_pct,'%')+' ｜ vs '+o.win_prev_year+' '+fFmt(o.rev_yoy_pct,'%');
+  document.getElementById('fOvProfit').innerHTML=o.profit.toLocaleString()+'<span style="font-size:14px;font-weight:400"> 万</span>';
+  document.getElementById('fOvProfitDiff').innerText='vs '+o.win_prev_half+' '+fFmt(o.profit_hoh_pct,'%')+' ｜ vs '+o.win_prev_year+' '+fFmt(o.profit_yoy_pct,'%');
+  document.getElementById('fOvMg').innerHTML=fFmtPlain(o.mg,'<span style="font-size:14px;font-weight:400">%</span>');
+  document.getElementById('fOvMgDiff').innerText='vs '+o.win_prev_half+' '+fFmt(o.mg_hoh,'pp')+' ｜ vs '+o.win_prev_year+' '+fFmt(o.mg_yoy,'pp');
+  document.getElementById('fOvCusts').innerText=o.custs;
+  document.getElementById('fOvCustsDiff').innerText='vs '+o.win_prev_half+' '+fFmt(o.custs_hoh_pct,'%')+' ｜ vs '+o.win_prev_year+' '+fFmt(o.custs_yoy_pct,'%');
+  document.getElementById('fOvAnchor').innerText='月度环比锚：'+o.mom_anchor+'（窗口内末月 vs 前一月；窗口外无数据显示 —）';
+ }
  document.getElementById('fH1Rev').innerHTML=k.rev.toLocaleString()+'<span style="font-size:14px;font-weight:400"> 万</span>';
- document.getElementById('fH1RevYoy').innerText='同比 '+(k.rev_yoy>0?'+':'')+k.rev_yoy+'%';
+ document.getElementById('fH1RevYoy').innerText='vs '+fWinLabel('prev_half','上一半年窗')+' '+fFmt(k.rev_hoh,'%')+' ｜ 同比 '+fFmt(k.rev_yoy,'%');
  document.getElementById('fH1Profit').innerHTML=k.profit.toLocaleString()+'<span style="font-size:14px;font-weight:400"> 万</span>';
  document.getElementById('fH1Mg').innerText='毛利率 '+k.mg+'%';
  document.getElementById('fH1MgVal').innerHTML=k.mg+'<span style="font-size:14px;font-weight:400">%</span>';
- document.getElementById('fH1MgYoy').innerText='同比 '+(k.mg_yoy>0?'+':'')+k.mg_yoy+'pp';
+ document.getElementById('fH1MgYoy').innerText='半年 '+fFmt(k.mg_hoh,'pp')+' ｜ 同比 '+fFmt(k.mg_yoy,'pp');
  document.getElementById('fH1Asp').innerHTML=k.asp+'<span style="font-size:14px;font-weight:400"> 元</span>';
- document.getElementById('fH1AspYoy').innerText='同比 '+(k.asp_yoy>0?'+':'')+k.asp_yoy+'%';
+ document.getElementById('fH1AspYoy').innerText='半年 '+fFmt(k.asp_hoh,'%')+' ｜ 同比 '+fFmt(k.asp_yoy,'%');
  document.getElementById('fH1KaaaRev').innerHTML=k.kaaa_rev.toLocaleString()+'<span style="font-size:14px;font-weight:400"> 万</span>';
  document.getElementById('fH1KaaaInfo').innerText='占比 '+k.kaaa_pct+'% · '+k.kaaa_count+'个客户';
  var np=F_NP_SUMMARY;
@@ -2725,69 +2754,74 @@ function fSwitchMarginTab(tab){
 function fBuildMarginTable(){
  var data=F_MARGIN_TAB==='pline'?F_PLINE_MARGINS:F_CAT_MARGINS;
  var hasKa=F_MARGIN_TAB==='cat';
- var cols=hasKa?'2fr 0.7fr 0.6fr 0.6fr 0.6fr':'2fr 0.8fr 0.6fr 0.6fr';
- var h='<div style="display:grid;grid-template-columns:'+cols+';gap:4px;font-size:11px;font-weight:600;padding:5px 8px;border-bottom:2px solid var(--border);position:sticky;top:0;background:var(--surface)"><span>名称</span><span class="num">收入(万)</span><span class="ctr">毛利率</span><span class="ctr">同比pp</span>'+(hasKa?'<span class="ctr">KA毛利</span>':'')+'</div>';
+ var cols=hasKa?'2fr 0.7fr 0.6fr 0.6fr 0.6fr 0.6fr 0.6fr':'2fr 0.8fr 0.6fr 0.6fr 0.6fr';
+ var h='<div style="display:grid;grid-template-columns:'+cols+';gap:4px;font-size:11px;font-weight:600;padding:5px 8px;border-bottom:2px solid var(--border);position:sticky;top:0;background:var(--surface)"><span>名称</span><span class="num">收入(万)</span><span class="ctr">毛利率</span><span class="ctr">vs %%F_PREV_HALF_LABEL%% pp</span><span class="ctr">vs %%F_PREV_YEAR_LABEL%% pp</span>'+(hasKa?'<span class="ctr">KA毛利</span><span class="ctr">AA毛利</span>':'')+'</div>';
  data.forEach(function(d,i){
  var zebra=i%2===1?'background:var(--table-stripe);':'';
- var mgClr=d.mg_yoy<-2?'#EF4444':(d.mg_yoy>2?'#10B981':'var(--text-tertiary)');
+ var mgHohClr=d.mg_hoh<-2?'#EF4444':(d.mg_hoh>2?'#10B981':'var(--text-tertiary)');
+ var mgYoyClr=d.mg_yoy<-2?'#EF4444':(d.mg_yoy>2?'#10B981':'var(--text-tertiary)');
  h+='<div style="display:grid;grid-template-columns:'+cols+';gap:4px;font-size:11px;padding:4px 8px;border-bottom:1px solid var(--border);cursor:pointer;'+zebra+'" onclick="fGotoETrend(\''+d.name.replace(/'/g,'\\x27')+'\')">';
- h+='<span>'+d.name+'</span><span class="num">'+d.rev+'</span><span class="ctr">'+d.mg+'%</span><span class="ctr" style="color:'+mgClr+'">'+(d.mg_yoy>0?'+':'')+d.mg_yoy+'</span>'+(hasKa?'<span class="ctr">'+(d.ka_mg||'-')+'%</span>':'')+'</div>';
+ h+='<span>'+d.name+'</span><span class="num">'+d.rev+'</span><span class="ctr">'+d.mg+'%</span><span class="ctr" style="color:'+mgHohClr+'">'+fFmt(d.mg_hoh)+'</span><span class="ctr" style="color:'+mgYoyClr+'">'+fFmt(d.mg_yoy)+'</span>'+(hasKa?'<span class="ctr">'+(d.ka_mg||'-')+'%</span><span class="ctr">'+(d.aa_mg||'-')+'%</span>':'')+'</div>';
  });
  document.getElementById('fMarginTable').innerHTML=h;
 }
 var F_DEPT_EXPANDED=null;
+var F_DEPT_COLS='1.5fr 0.7fr 0.5fr 0.5fr 0.5fr 0.6fr 0.5fr 0.5fr 0.4fr';
+function fDeptHead(){
+ return '<div style="display:grid;grid-template-columns:'+F_DEPT_COLS+';gap:4px;font-size:11px;font-weight:600;padding:5px 8px;border-bottom:2px solid var(--border)"><span>部门</span><span class="num">收入</span><span class="ctr">利率</span><span class="ctr">同比pp</span><span class="ctr">半年pp</span><span class="num">ASP</span><span class="ctr">ASP同比</span><span class="ctr">ASP环比</span><span class="ctr">人</span></div>';
+}
+function fDeptRow(d,i,sel){
+ var mgClr=d.mg_yoy<-2?'#EF4444':(d.mg_yoy>2?'#10B981':'var(--text-tertiary)');
+ var mgHohClr=d.mg_hoh<-2?'#EF4444':(d.mg_hoh>2?'#10B981':'var(--text-tertiary)');
+ var aspYoyClr=d.asp_yoy<-5?'#EF4444':(d.asp_yoy>5?'#10B981':'var(--text-tertiary)');
+ var aspHohClr=d.asp_hoh<-5?'#EF4444':(d.asp_hoh>5?'#10B981':'var(--text-tertiary)');
+ var aspMomClr=(d.asp_mom===null||d.asp_mom===undefined)?'var(--text-tertiary)':(d.asp_mom<-5?'#EF4444':(d.asp_mom>5?'#10B981':'var(--text-tertiary)'));
+ var zebra=i%2===1?'background:var(--table-stripe);':'';
+ var rowBg=sel?'background:var(--primary-50);':zebra;
+ var arrow=sel?'<i class=\"fa-solid fa-chevron-down\" style=\"font-size:10px\"></i>':'<i class=\"fa-solid fa-chevron-right\" style=\"font-size:10px\"></i>';
+ var nameHtml=sel?'<span style="font-weight:700;color:var(--primary)">'+arrow+' '+d.name+'</span>':'<span>'+arrow+' '+d.name+'</span>';
+ return '<div style="display:grid;grid-template-columns:'+F_DEPT_COLS+';gap:4px;font-size:11px;padding:4px 8px;border-bottom:1px solid var(--border);cursor:pointer;'+rowBg+'" onclick="fExpandDept(\''+d.name.replace(/'/g,'\\x27')+'\')">'
+ +nameHtml+'<span class="num">'+d.rev+'</span><span class="ctr">'+d.mg+'%</span><span class="ctr" style="color:'+mgClr+'">'+fFmt(d.mg_yoy)+'</span><span class="ctr" style="color:'+mgHohClr+'">'+fFmt(d.mg_hoh)+'</span><span class="num">'+(d.asp||0)+'</span><span class="ctr" style="color:'+aspYoyClr+'">'+fFmt(d.asp_yoy,'%')+'</span><span class="ctr" style="color:'+aspMomClr+'">'+fFmt(d.asp_mom,'%')+'</span><span class="ctr">'+d.headcount+'</span></div>';
+}
 function fBuildDeptTable(){
- var cols='1.5fr 0.7fr 0.5fr 0.5fr 0.6fr 0.5fr 0.5fr 0.4fr';
- var h='<div style="display:grid;grid-template-columns:'+cols+';gap:4px;font-size:11px;font-weight:600;padding:5px 8px;border-bottom:2px solid var(--border)"><span>部门</span><span class="num">收入</span><span class="ctr">利率</span><span class="ctr">同比</span><span class="num">ASP</span><span class="ctr">ASP同比</span><span class="ctr">ASP环比</span><span class="ctr">人</span></div>';
+ var h=fDeptHead();
  var totR=0,totP=0;
  F_DEPT_MARGINS.forEach(function(d,i){
- totR+=d.rev;totP+=d.profit;
- var mgClr=d.mg_yoy<-2?'#EF4444':(d.mg_yoy>2?'#10B981':'var(--text-tertiary)');
- var aspYoyClr=d.asp_yoy<-5?'#EF4444':(d.asp_yoy>5?'#10B981':'var(--text-tertiary)');
- var aspMomClr=d.asp_mom<-5?'#EF4444':(d.asp_mom>5?'#10B981':'var(--text-tertiary)');
- var zebra=i%2===1?'background:var(--table-stripe);':'';
- h+='<div style="display:grid;grid-template-columns:'+cols+';gap:4px;font-size:11px;padding:4px 8px;border-bottom:1px solid var(--border);cursor:pointer;'+zebra+'" onclick="fExpandDept(\''+d.name.replace(/'/g,'\\x27')+'\')">';
- h+='<span><i class=\"fa-solid fa-chevron-right\" style=\"font-size:10px\"></i> '+d.name+'</span><span class="num">'+d.rev+'</span><span class="ctr">'+d.mg+'%</span><span class="ctr" style="color:'+mgClr+'">'+(d.mg_yoy>0?'+':'')+d.mg_yoy+'</span><span class="num">'+(d.asp||0)+'</span><span class="ctr" style="color:'+aspYoyClr+'">'+(d.asp_yoy>0?'+':'')+d.asp_yoy+'%</span><span class="ctr" style="color:'+aspMomClr+'">'+(d.asp_mom>0?'+':'')+d.asp_mom+'%</span><span class="ctr">'+d.headcount+'</span></div>';
+  totR+=d.rev;totP+=d.profit;
+  h+=fDeptRow(d,i,false);
  });
  var totMg=totR>0?Math.round(totP/totR*1000)/10:0;
- h+='<div style="display:grid;grid-template-columns:'+cols+';gap:4px;font-size:11px;font-weight:700;padding:5px 8px;border-top:2px solid var(--border);background:var(--surface-subtle)"><span>合计</span><span class="num">'+Math.round(totR*10)/10+'</span><span class="ctr">'+totMg+'%</span><span class="ctr">--</span><span class="num">--</span><span class="ctr">--</span><span class="ctr">--</span><span class="ctr">'+F_DEPT_MARGINS.reduce(function(s,d){return s+d.headcount},0)+'</span></div>';
+ h+='<div style="display:grid;grid-template-columns:'+F_DEPT_COLS+';gap:4px;font-size:11px;font-weight:700;padding:5px 8px;border-top:2px solid var(--border);background:var(--surface-subtle)"><span>合计</span><span class="num">'+Math.round(totR*10)/10+'</span><span class="ctr">'+totMg+'%</span><span class="ctr">--</span><span class="ctr">--</span><span class="num">--</span><span class="ctr">--</span><span class="ctr">--</span><span class="ctr">'+F_DEPT_MARGINS.reduce(function(s,d){return s+d.headcount},0)+'</span></div>';
  document.getElementById('fDeptTable').innerHTML=h;
 }
 function fExpandDept(name){
  if(F_DEPT_EXPANDED===name){F_DEPT_EXPANDED=null;fBuildDeptTable();return}
  F_DEPT_EXPANDED=name;
  var dept=F_DEPT_MARGINS.find(function(d){return d.name===name});if(!dept)return;
- var cols='1.5fr 0.7fr 0.5fr 0.5fr 0.6fr 0.5fr 0.5fr 0.4fr';
- var h='<div style="display:grid;grid-template-columns:'+cols+';gap:4px;font-size:11px;font-weight:600;padding:5px 8px;border-bottom:2px solid var(--border)"><span>部门</span><span class="num">收入</span><span class="ctr">利率</span><span class="ctr">同比</span><span class="num">ASP</span><span class="ctr">ASP同比</span><span class="ctr">ASP环比</span><span class="ctr">人</span></div>';
+ var h=fDeptHead();
  F_DEPT_MARGINS.forEach(function(d,i){
- var mgClr=d.mg_yoy<-2?'#EF4444':(d.mg_yoy>2?'#10B981':'var(--text-tertiary)');
- var aspYoyClr=d.asp_yoy<-5?'#EF4444':(d.asp_yoy>5?'#10B981':'var(--text-tertiary)');
- var aspMomClr=d.asp_mom<-5?'#EF4444':(d.asp_mom>5?'#10B981':'var(--text-tertiary)');
- var isSel=d.name===name;
- var arrow=isSel?'<i class=\"fa-solid fa-chevron-down\" style=\"font-size:10px\"></i>':'<i class=\"fa-solid fa-chevron-right\" style=\"font-size:10px\"></i>';
- var zebra=i%2===1?'background:var(--table-stripe);':'';
- var rowBg=isSel?'background:var(--primary-50);':zebra;
- h+='<div style="display:grid;grid-template-columns:'+cols+';gap:4px;font-size:11px;padding:4px 8px;border-bottom:1px solid var(--border);cursor:pointer;'+rowBg+'" onclick="fExpandDept(\''+d.name.replace(/'/g,'\\x27')+'\')">';
- h+='<span style="font-weight:'+(isSel?'700':'400')+';color:'+(isSel?'var(--primary)':'var(--text-primary)')+'">'+arrow+' '+d.name+'</span><span class="num">'+d.rev+'</span><span class="ctr">'+d.mg+'%</span><span class="ctr" style="color:'+mgClr+'">'+(d.mg_yoy>0?'+':'')+d.mg_yoy+'</span><span class="num">'+(d.asp||0)+'</span><span class="ctr" style="color:'+aspYoyClr+'">'+(d.asp_yoy>0?'+':'')+d.asp_yoy+'%</span><span class="ctr" style="color:'+aspMomClr+'">'+(d.asp_mom>0?'+':'')+d.asp_mom+'%</span><span class="ctr">'+d.headcount+'</span></div>';
- if(isSel){
- h+='<div style="padding:6px 8px;background:var(--surface-subtle);border-top:2px solid var(--primary);border-bottom:1px solid var(--border)"><b style="font-size:11px;color:var(--primary)">'+name+' 成员明细</b> <span style="font-size:10px;color:var(--text-tertiary)">[点击行跳转E面]</span></div>';
- dept.individuals.forEach(function(ind,j){
- var zebra=j%2===1?'background:var(--table-stripe);':'';
- h+='<div style="display:grid;grid-template-columns:1.5fr 0.8fr 0.6fr 0.7fr;gap:4px;font-size:11px;padding:4px 8px 4px 24px;border-bottom:1px solid var(--border);cursor:pointer;'+zebra+'" onclick="fGotoE(\''+ind.name.replace(/'/g,'\\x27')+'\')">';
- h+='<span>'+ind.name+'</span><span class="num">'+ind.rev+'</span><span class="ctr">'+ind.mg+'%</span><span class="num">'+(ind.asp||0)+'</span></div>';
- });
- }
+  h+=fDeptRow(d,i,d.name===name);
+  if(d.name===name){
+  h+='<div style="padding:6px 8px;background:var(--surface-subtle);border-top:2px solid var(--primary);border-bottom:1px solid var(--border)"><b style="font-size:11px;color:var(--primary)">'+name+' 成员明细</b> <span style="font-size:10px;color:var(--text-tertiary)">[点击行跳转E面]</span></div>';
+  dept.individuals.forEach(function(ind,j){
+  var zebra=j%2===1?'background:var(--table-stripe);':'';
+  h+='<div style="display:grid;grid-template-columns:1.5fr 0.8fr 0.6fr 0.7fr;gap:4px;font-size:11px;padding:4px 8px 4px 24px;border-bottom:1px solid var(--border);cursor:pointer;'+zebra+'" onclick="fGotoE(\''+ind.name.replace(/'/g,'\\x27')+'\')">';
+  h+='<span>'+ind.name+'</span><span class="num">'+ind.rev+'</span><span class="ctr">'+ind.mg+'%</span><span class="num">'+(ind.asp||0)+'</span></div>';
+  });
+  }
  });
  document.getElementById('fDeptTable').innerHTML=h;
 }
 function fBuildKaaaTable(){
- var h='<div style="display:grid;grid-template-columns:2fr 0.5fr 1fr 0.7fr 0.7fr 0.8fr 0.8fr 0.7fr 0.8fr;gap:4px;font-size:11px;font-weight:600;padding:5px 8px;border-bottom:2px solid var(--border);position:sticky;top:0;background:var(--surface)"><span>客户</span><span class="ctr">级</span><span class="num">收入</span><span class="ctr">利率</span><span class="ctr">同比</span><span class="num">ASP</span><span class="ctr">环比</span><span class="ctr">新品%</span><span class="ctr">YoY%</span></div>';
+ var cols='2fr 0.5fr 1fr 0.7fr 0.7fr 0.7fr 0.8fr 0.8fr 0.7fr 0.8fr';
+ var h='<div style="display:grid;grid-template-columns:'+cols+';gap:4px;font-size:11px;font-weight:600;padding:5px 8px;border-bottom:2px solid var(--border);position:sticky;top:0;background:var(--surface)"><span>客户</span><span class="ctr">级</span><span class="num">收入</span><span class="ctr">利率</span><span class="ctr">同比pp</span><span class="ctr">半年pp</span><span class="num">ASP</span><span class="ctr">环比</span><span class="ctr">新品%</span><span class="ctr">收入同比%</span></div>';
  F_KAAA_MARGINS.forEach(function(d,i){
  var mgClr=d.mg_yoy<-3?'#EF4444':(d.mg_yoy>3?'#10B981':'var(--text-tertiary)');
- var momClr=d.mom>0?'#EF4444':(d.mom<0?'#10B981':'var(--text-tertiary)');
+ var mgHohClr=d.mg_hoh<-3?'#EF4444':(d.mg_hoh>3?'#10B981':'var(--text-tertiary)');
+ var momClr=(d.mom===null||d.mom===undefined)?'var(--text-tertiary)':(d.mom>0?'#EF4444':(d.mom<0?'#10B981':'var(--text-tertiary)'));
  var zebra=i%2===1?'background:var(--table-stripe);':'';
- h+='<div style="display:grid;grid-template-columns:2fr 0.5fr 1fr 0.7fr 0.7fr 0.8fr 0.8fr 0.7fr 0.8fr;gap:4px;font-size:11px;padding:4px 8px;border-bottom:1px solid var(--border);cursor:pointer;'+zebra+'" onclick="fGotoB(\''+d.name.replace(/'/g,'\\x27')+'\')">';
- h+='<span style="color:var(--primary)">'+d.name+'</span><span class="ctr">'+d.tier+'</span><span class="num">'+d.rev+'</span><span class="ctr">'+d.mg+'%</span><span class="ctr" style="color:'+mgClr+'">'+(d.mg_yoy>0?'+':'')+d.mg_yoy+'</span><span class="num">'+d.asp+'</span><span class="ctr" style="color:'+momClr+'">'+(d.mom>0?'+':'')+d.mom+'%</span><span class="ctr">'+(d.new_pct||0)+'%</span><span class="ctr">'+(d.rev_yoy>0?'+':'')+d.rev_yoy+'%</span></div>';
+ h+='<div style="display:grid;grid-template-columns:'+cols+';gap:4px;font-size:11px;padding:4px 8px;border-bottom:1px solid var(--border);cursor:pointer;'+zebra+'" onclick="fGotoB(\''+d.name.replace(/'/g,'\\x27')+'\')">';
+ h+='<span style="color:var(--primary)">'+d.name+'</span><span class="ctr">'+d.tier+'</span><span class="num">'+d.rev+'</span><span class="ctr">'+d.mg+'%</span><span class="ctr" style="color:'+mgClr+'">'+fFmt(d.mg_yoy)+'</span><span class="ctr" style="color:'+mgHohClr+'">'+fFmt(d.mg_hoh)+'</span><span class="num">'+d.asp+'</span><span class="ctr" style="color:'+momClr+'">'+fFmt(d.mom,'%')+'</span><span class="ctr">'+(d.new_pct||0)+'%</span><span class="ctr">'+fFmt(d.rev_yoy,'%')+'</span></div>';
  });
  document.getElementById('fKaaaTable').innerHTML=h;
 }
@@ -2811,7 +2845,7 @@ function fOpenDrawer(type,target){
  else{
  h+='<div style="background:#fee2e2;padding:10px;border-radius:6px;margin-bottom:12px">';
  h+='<div style="font-size:12px;font-weight:600;color:var(--danger)">品类：'+cat.category+'</div>';
- h+='<div style="font-size:11px;margin-top:4px">H1收入 '+cat.rev+'万 · 毛利率 '+cat.mg+'% · 同比 '+cat.mg_yoy+'pp</div>';
+ h+='<div style="font-size:11px;margin-top:4px">'+fWinLabel('cur','当前窗')+'收入 '+cat.rev+'万 · 毛利率 '+cat.mg+'% · 同比 '+cat.mg_yoy+'pp</div>';
  h+='<div style="font-size:10px;color:#991b1b;margin-top:4px">以下产品对品类毛利率下降贡献最大（按利润影响排序）</div></div>';
  h+='<div style="font-size:10px;font-weight:600;padding:4px 0;border-bottom:1px solid var(--border);display:grid;grid-template-columns:1fr 45px 35px 35px 38px 40px 40px;gap:2px"><span>产品</span><span class="num">收入</span><span class="ctr">利率</span><span class="ctr">同比</span><span class="num">影响(万)</span><span class="num">近期收入</span><span class="num">近期ASP</span></div>';
  cat.products.forEach(function(p){
@@ -2835,14 +2869,14 @@ function fOpenDrawer(type,target){
  h+='<div style="background:#fee2e2;padding:10px;border-radius:6px;margin-bottom:12px">';
  h+='<div style="font-size:12px;font-weight:600;color:'+reasonClr+'">归因类型：'+iss.reason+'</div>';
  h+='<div style="font-size:10px;color:#991b1b;margin-top:4px">以下产品对该客户毛利率变化影响最大（按毛利率变化排序）</div></div>';
- h+='<div style="font-size:10px;font-weight:600;padding:4px 0;border-bottom:1px solid var(--border);display:grid;grid-template-columns:1.3fr 1fr 50px 38px 50px 38px 40px 35px;gap:4px"><span>存货名称</span><span>品类</span><span class="num">%%YY_LATEST%%H1收</span><span class="ctr">利率</span><span class="num">%%YY_PREV%%H1收</span><span class="ctr">利率</span><span class="ctr">变化</span><span class="ctr">类型</span></div>';
- iss.cust_attr.forEach(function(p){
- var clr=p.mg_change<-5?'#EF4444':(p.mg_change<0?'#F59E0B':'#10B981');
- var tag=p.is_new?'<span style="color:var(--danger)">新品</span>':'<span style="color:var(--text-tertiary)">老品</span>';
- h+='<div style="font-size:10px;padding:4px 0;border-bottom:1px dotted var(--border);display:grid;grid-template-columns:1.3fr 1fr 50px 38px 50px 38px 40px 35px;gap:4px">';
- h+='<span>'+p.name+'</span><span style="color:var(--text-tertiary);font-size:9px">'+p.cat+'</span>';
- h+='<span class="num">'+p.rev_%%YY_LATEST%%h1+'</span><span class="ctr">'+p.mg_%%YY_LATEST%%h1+'%</span>';
- h+='<span class="num">'+p.rev_%%YY_PREV%%h1+'</span><span class="ctr">'+p.mg_%%YY_PREV%%h1+'%</span>';
+  h+='<div style="font-size:10px;font-weight:600;padding:4px 0;border-bottom:1px solid var(--border);display:grid;grid-template-columns:1.3fr 1fr 50px 38px 50px 38px 40px 35px;gap:4px"><span>存货名称</span><span>品类</span><span class="num">'+fWinLabel('cur','当前窗')+'收</span><span class="ctr">利率</span><span class="num">'+fWinLabel('prev_year','去年同期')+'收</span><span class="ctr">利率</span><span class="ctr">变化</span><span class="ctr">类型</span></div>';
+  iss.cust_attr.forEach(function(p){
+  var clr=p.mg_change<-5?'#EF4444':(p.mg_change<0?'#F59E0B':'#10B981');
+  var tag=p.is_new?'<span style="color:var(--danger)">新品</span>':'<span style="color:var(--text-tertiary)">老品</span>';
+  h+='<div style="font-size:10px;padding:4px 0;border-bottom:1px dotted var(--border);display:grid;grid-template-columns:1.3fr 1fr 50px 38px 50px 38px 40px 35px;gap:4px">';
+  h+='<span>'+p.name+'</span><span style="color:var(--text-tertiary);font-size:9px">'+p.cat+'</span>';
+  h+='<span class="num">'+p.rev_cur+'</span><span class="ctr">'+p.mg_cur+'%</span>';
+  h+='<span class="num">'+p.rev_py+'</span><span class="ctr">'+p.mg_py+'%</span>';
  h+='<span class="ctr" style="color:'+clr+'">'+(p.mg_change>0?'+':'')+p.mg_change+'pp</span>';
  h+='<span class="ctr">'+tag+'</span></div>';
  });
@@ -2865,8 +2899,8 @@ function fGotoE(name){switchTab('E');setTimeout(function(){if(typeof eOpenDrawer
 
 // ===== F面 Phase 4b: 雷达图 + 品类表 + 产品表 + 产品抽屉 =====
 var F_PROD_FILTER_CAT='';
-var F_CAT_SORT={key:'rev_%%YY_LATEST%%h1',asc:false};
-var F_PROD_SORT={key:'h1_%%YY_LATEST%%',field:'rev',asc:false};
+var F_CAT_SORT={key:'rev_cur',asc:false};
+var F_PROD_SORT={key:'cur',field:'rev',asc:false};
 function fBuildDeptRadar(){
  var dom=document.getElementById('fDeptRadar');if(!dom)return;
  var old=echarts.getInstanceByDom(dom);if(old)old.dispose();var chart=TABS.chart.create(dom);
@@ -2892,26 +2926,27 @@ function fBuildDeptRadar(){
 }
 function fBuildCatH1Table(){
  if(typeof F_CAT_H1==='undefined'||!F_CAT_H1.length){document.getElementById('fCatH1Table').innerHTML='<div style="padding:20px;color:var(--text-tertiary)">无品类数据</div>';return}
- var cols='2fr 1fr 0.7fr 1fr 0.7fr 0.8fr 0.8fr 0.8fr 0.8fr 0.5fr';
+ var cols='2fr 0.9fr 0.6fr 0.9fr 0.6fr 0.9fr 0.6fr 0.8fr 0.8fr 0.8fr 0.8fr 0.5fr';
  var sortArrow=function(k){return F_CAT_SORT.key===k?(F_CAT_SORT.asc?' <i class=\"fa-solid fa-arrow-up\" style=\"font-size:10px\"></i>':' <i class=\"fa-solid fa-arrow-down\" style=\"font-size:10px\"></i>'):''};
- var h='<div style="display:grid;grid-template-columns:'+cols+';gap:8px;font-size:11px;font-weight:600;padding:5px 8px;border-bottom:2px solid var(--border);position:sticky;top:0;background:var(--surface)"><span>品类</span><span class="num" style="cursor:pointer" onclick="fSortCat(\'rev_%%YY_LATEST%%h1\')">%%YY_LATEST%%H1收'+sortArrow('rev_%%YY_LATEST%%h1')+'</span><span class="ctr" style="cursor:pointer" onclick="fSortCat(\'mg_%%YY_LATEST%%h1\')">利率'+sortArrow('mg_%%YY_LATEST%%h1')+'</span><span class="num" style="cursor:pointer" onclick="fSortCat(\'rev_%%YY_PREV%%h1\')">%%YY_PREV%%H1收'+sortArrow('rev_%%YY_PREV%%h1')+'</span><span class="ctr" style="cursor:pointer" onclick="fSortCat(\'mg_%%YY_PREV%%h1\')">利率'+sortArrow('mg_%%YY_PREV%%h1')+'</span><span class="ctr" style="cursor:pointer" onclick="fSortCat(\'rev_yoy\')">收入同比'+sortArrow('rev_yoy')+'</span><span class="ctr" style="cursor:pointer" onclick="fSortCat(\'rev_mom\')">收入环比'+sortArrow('rev_mom')+'</span><span class="ctr" style="cursor:pointer" onclick="fSortCat(\'mg_yoy\')">利率同比'+sortArrow('mg_yoy')+'</span><span class="ctr" style="cursor:pointer" onclick="fSortCat(\'mg_mom\')">利率环比'+sortArrow('mg_mom')+'</span><span class="ctr" style="cursor:pointer" onclick="fSortCat(\'prod_count\')">产品'+sortArrow('prod_count')+'</span></div>';
+ var h='<div style="display:grid;grid-template-columns:'+cols+';gap:8px;font-size:11px;font-weight:600;padding:5px 8px;border-bottom:2px solid var(--border);position:sticky;top:0;background:var(--surface)"><span>品类</span><span class="num" style="cursor:pointer" onclick="fSortCat(\'rev_cur\')">%%F_CUR_LABEL%%收'+sortArrow('rev_cur')+'</span><span class="ctr" style="cursor:pointer" onclick="fSortCat(\'mg_cur\')">利率'+sortArrow('mg_cur')+'</span><span class="num" style="cursor:pointer" onclick="fSortCat(\'rev_ph\')">%%F_PREV_HALF_LABEL%%收'+sortArrow('rev_ph')+'</span><span class="ctr" style="cursor:pointer" onclick="fSortCat(\'mg_ph\')">利率'+sortArrow('mg_ph')+'</span><span class="num" style="cursor:pointer" onclick="fSortCat(\'rev_py\')">%%F_PREV_YEAR_LABEL%%收'+sortArrow('rev_py')+'</span><span class="ctr" style="cursor:pointer" onclick="fSortCat(\'mg_py\')">利率'+sortArrow('mg_py')+'</span><span class="ctr" style="cursor:pointer" onclick="fSortCat(\'rev_hoh\')">收入半年%'+sortArrow('rev_hoh')+'</span><span class="ctr" style="cursor:pointer" onclick="fSortCat(\'rev_yoy\')">收入同比%'+sortArrow('rev_yoy')+'</span><span class="ctr" style="cursor:pointer" onclick="fSortCat(\'mg_hoh\')">利率半年pp'+sortArrow('mg_hoh')+'</span><span class="ctr" style="cursor:pointer" onclick="fSortCat(\'mg_yoy\')">利率同比pp'+sortArrow('mg_yoy')+'</span><span class="ctr" style="cursor:pointer" onclick="fSortCat(\'prod_count\')">产品'+sortArrow('prod_count')+'</span></div>';
  var list=F_CAT_H1.slice().sort(function(a,b){var va=a[F_CAT_SORT.key],vb=b[F_CAT_SORT.key];if(typeof va==='string')return F_CAT_SORT.asc?va.localeCompare(vb):vb.localeCompare(va);return F_CAT_SORT.asc?(va>vb?1:-1):(va<vb?1:-1)});
  list.forEach(function(c,i){
+ var hohClr=c.rev_hoh>0?'#EF4444':(c.rev_hoh<0?'#10B981':'var(--text-tertiary)');
  var yoyClr=c.rev_yoy>0?'#EF4444':(c.rev_yoy<0?'#10B981':'var(--text-tertiary)');
- var momClr=c.rev_mom>0?'#EF4444':(c.rev_mom<0?'#10B981':'var(--text-tertiary)');
+ var mghClr=c.mg_hoh>0?'#EF4444':(c.mg_hoh<0?'#10B981':'var(--text-tertiary)');
  var mgyClr=c.mg_yoy>0?'#EF4444':(c.mg_yoy<0?'#10B981':'var(--text-tertiary)');
- var mgmClr=c.mg_mom>0?'#EF4444':(c.mg_mom<0?'#10B981':'var(--text-tertiary)');
  var sel=F_PROD_FILTER_CAT===c.name?'background:var(--primary-100);font-weight:600':'';
  var zebra=i%2===1?'background:var(--table-stripe);':'';
  var rowBg=sel||zebra;
  h+='<div style="display:grid;grid-template-columns:'+cols+';gap:8px;font-size:11px;padding:4px 8px;border-bottom:1px solid var(--border);cursor:pointer;'+rowBg+'" onclick="fFilterByCat(\''+c.name.replace(/'/g,'\\x27')+'\')">';
  h+='<span>'+c.name+'</span>';
- h+='<span class="num">'+c.rev_%%YY_LATEST%%h1+'</span><span class="ctr">'+c.mg_%%YY_LATEST%%h1+'%</span>';
- h+='<span class="num">'+c.rev_%%YY_PREV%%h1+'</span><span class="ctr">'+c.mg_%%YY_PREV%%h1+'%</span>';
- h+='<span class="ctr" style="color:'+yoyClr+'">'+(c.rev_yoy>0?'+':'')+c.rev_yoy+'%</span>';
- h+='<span class="ctr" style="color:'+momClr+'">'+(c.rev_mom>0?'+':'')+c.rev_mom+'%</span>';
- h+='<span class="ctr" style="color:'+mgyClr+'">'+(c.mg_yoy>0?'+':'')+c.mg_yoy+'pp</span>';
- h+='<span class="ctr" style="color:'+mgmClr+'">'+(c.mg_mom>0?'+':'')+c.mg_mom+'pp</span>';
+ h+='<span class="num">'+c.rev_cur+'</span><span class="ctr">'+c.mg_cur+'%</span>';
+ h+='<span class="num">'+c.rev_ph+'</span><span class="ctr">'+c.mg_ph+'%</span>';
+ h+='<span class="num">'+c.rev_py+'</span><span class="ctr">'+c.mg_py+'%</span>';
+ h+='<span class="ctr" style="color:'+hohClr+'">'+fFmt(c.rev_hoh,'%')+'</span>';
+ h+='<span class="ctr" style="color:'+yoyClr+'">'+fFmt(c.rev_yoy,'%')+'</span>';
+ h+='<span class="ctr" style="color:'+mghClr+'">'+fFmt(c.mg_hoh,'pp')+'</span>';
+ h+='<span class="ctr" style="color:'+mgyClr+'">'+fFmt(c.mg_yoy,'pp')+'</span>';
  h+='<span class="ctr">'+c.prod_count+'</span></div>';
  });
  document.getElementById('fCatH1Table').innerHTML=h;
@@ -2936,35 +2971,35 @@ function fBuildProductTable(){
  if(sk==='mg'){va=dA.mg||0;vb=dB.mg||0}
  return sa?(va>vb?1:-1):(va<vb?1:-1);
  });
- if(sk==='mg_yoy'||sk==='mg_mom'){
+ if(sk==='mg_yoy'||sk==='mg_hoh'){
  list.sort(function(a,b){
- var d25h1=a.h1_%%YY_PREV%%||{mg:0},d25h2=a.h2_%%YY_PREV%%||{mg:0},d26h1=a.h1_%%YY_LATEST%%||{mg:0};
- var vA=sk==='mg_yoy'?(d26h1.mg-d25h1.mg):(d26h1.mg-d25h2.mg);
- var d25h1b=b.h1_%%YY_PREV%%||{mg:0},d25h2b=b.h2_%%YY_PREV%%||{mg:0},d26h1b=b.h1_%%YY_LATEST%%||{mg:0};
- var vB=sk==='mg_yoy'?(d26h1b.mg-d25h1b.mg):(d26h1b.mg-d25h2b.mg);
+ var dPh=a.prev_half||{mg:0},dPy=a.prev_year||{mg:0},dCur=a.cur||{mg:0};
+ var vA=sk==='mg_yoy'?(dCur.mg-dPy.mg):(dCur.mg-dPh.mg);
+ var dPhB=b.prev_half||{mg:0},dPyB=b.prev_year||{mg:0},dCurB=b.cur||{mg:0};
+ var vB=sk==='mg_yoy'?(dCurB.mg-dPyB.mg):(dCurB.mg-dPhB.mg);
  return sa?(vA>vB?1:-1):(vA<vB?1:-1);
  });
  }
  var cols='2.5fr 0.5fr 0.4fr 0.8fr 0.5fr 0.6fr 0.6fr 0.8fr 0.5fr 0.8fr 0.5fr 0.8fr';
  var sortArrow=function(k){return F_PROD_SORT.key===k?(F_PROD_SORT.asc?' <i class=\"fa-solid fa-arrow-up\" style=\"font-size:10px\"></i>':' <i class=\"fa-solid fa-arrow-down\" style=\"font-size:10px\"></i>'):''};
  var mgArrow=function(k,f){return F_PROD_SORT.key===k&&F_PROD_SORT.field===f?(F_PROD_SORT.asc?' <i class=\"fa-solid fa-arrow-up\" style=\"font-size:10px\"></i>':' <i class=\"fa-solid fa-arrow-down\" style=\"font-size:10px\"></i>'):''};
- var h='<div style="display:grid;grid-template-columns:'+cols+';gap:8px;font-size:11px;font-weight:600;padding:5px 8px;border-bottom:2px solid var(--border);position:sticky;top:0;background:var(--surface)"><span style="cursor:pointer" onclick="fSortProd(\'name\')">存货名称'+sortArrow('name')+'</span><span class="ctr" style="cursor:pointer" onclick="fSortProd(\'portrait\')">画像'+sortArrow('portrait')+'</span><span class="ctr" style="cursor:pointer" onclick="fSortProd(\'gen\')">代次'+sortArrow('gen')+'</span><span class="num" style="cursor:pointer" onclick="fSortProd(\'h1_%%YY_LATEST%%\',\'rev\')">%%YY_LATEST%%H1收'+sortArrow('h1_%%YY_LATEST%%')+'</span><span class="ctr" style="cursor:pointer" onclick="fSortProd(\'h1_%%YY_LATEST%%\',\'mg\')">利率'+mgArrow('h1_%%YY_LATEST%%','mg')+'</span><span class="ctr" style="cursor:pointer" onclick="fSortProd(\'mg_yoy\')">利率同比'+sortArrow('mg_yoy')+'</span><span class="ctr" style="cursor:pointer" onclick="fSortProd(\'mg_mom\')">利率环比'+sortArrow('mg_mom')+'</span><span class="num" style="cursor:pointer" onclick="fSortProd(\'h1_%%YY_PREV%%\',\'rev\')">%%YY_PREV%%H1收'+sortArrow('h1_%%YY_PREV%%')+'</span><span class="ctr" style="cursor:pointer" onclick="fSortProd(\'h1_%%YY_PREV%%\',\'mg\')">利率'+mgArrow('h1_%%YY_PREV%%','mg')+'</span><span class="num" style="cursor:pointer" onclick="fSortProd(\'h2_%%YY_PREV%%\',\'rev\')">%%YY_PREV%%H2收'+sortArrow('h2_%%YY_PREV%%')+'</span><span class="ctr" style="cursor:pointer" onclick="fSortProd(\'h2_%%YY_PREV%%\',\'mg\')">利率'+mgArrow('h2_%%YY_PREV%%','mg')+'</span><span style="cursor:pointer" onclick="fSortProd(\'top_cust\')">主要客户'+sortArrow('top_cust')+'</span></div>';
+ var h='<div style="display:grid;grid-template-columns:'+cols+';gap:8px;font-size:11px;font-weight:600;padding:5px 8px;border-bottom:2px solid var(--border);position:sticky;top:0;background:var(--surface)"><span style="cursor:pointer" onclick="fSortProd(\'name\')">存货名称'+sortArrow('name')+'</span><span class="ctr" style="cursor:pointer" onclick="fSortProd(\'portrait\')">画像'+sortArrow('portrait')+'</span><span class="ctr" style="cursor:pointer" onclick="fSortProd(\'gen\')">代次'+sortArrow('gen')+'</span><span class="num" style="cursor:pointer" onclick="fSortProd(\'cur\',\'rev\')">%%F_CUR_LABEL%%收'+sortArrow('cur')+'</span><span class="ctr" style="cursor:pointer" onclick="fSortProd(\'cur\',\'mg\')">利率'+mgArrow('cur','mg')+'</span><span class="ctr" style="cursor:pointer" onclick="fSortProd(\'mg_yoy\')">利率同比pp'+sortArrow('mg_yoy')+'</span><span class="ctr" style="cursor:pointer" onclick="fSortProd(\'mg_hoh\')">利率半年pp'+sortArrow('mg_hoh')+'</span><span class="num" style="cursor:pointer" onclick="fSortProd(\'prev_half\',\'rev\')">%%F_PREV_HALF_LABEL%%收'+sortArrow('prev_half')+'</span><span class="ctr" style="cursor:pointer" onclick="fSortProd(\'prev_half\',\'mg\')">利率'+mgArrow('prev_half','mg')+'</span><span class="num" style="cursor:pointer" onclick="fSortProd(\'prev_year\',\'rev\')">%%F_PREV_YEAR_LABEL%%收'+sortArrow('prev_year')+'</span><span class="ctr" style="cursor:pointer" onclick="fSortProd(\'prev_year\',\'mg\')">利率'+mgArrow('prev_year','mg')+'</span><span style="cursor:pointer" onclick="fSortProd(\'top_cust\')">主要客户'+sortArrow('top_cust')+'</span></div>';
  list.forEach(function(p,i){
  var genClr=p.gen==='新品'?'#EF4444':(p.gen==='1年+'?'#F59E0B':(p.gen==='2年+'?'#2563EB':'var(--text-tertiary)'));
- var d25h1=p.h1_%%YY_PREV%%||{rev:0,mg:0},d25h2=p.h2_%%YY_PREV%%||{rev:0,mg:0},d26h1=p.h1_%%YY_LATEST%%||{rev:0,mg:0};
- var mgYoy=Math.round((d26h1.mg-d25h1.mg)*10)/10,mgMom=Math.round((d26h1.mg-d25h2.mg)*10)/10;
+ var dPh=p.prev_half||{rev:0,mg:0},dPy=p.prev_year||{rev:0,mg:0},dCur=p.cur||{rev:0,mg:0};
+ var mgYoy=Math.round((dCur.mg-dPy.mg)*10)/10,mgHoh=Math.round((dCur.mg-dPh.mg)*10)/10;
  var mgyClr=mgYoy>0?'#EF4444':(mgYoy<0?'#10B981':'var(--text-tertiary)');
- var mgmClr=mgMom>0?'#EF4444':(mgMom<0?'#10B981':'var(--text-tertiary)');
+ var mghClr=mgHoh>0?'#EF4444':(mgHoh<0?'#10B981':'var(--text-tertiary)');
  var zebra=i%2===1?'background:var(--table-stripe);':'';
  h+='<div style="display:grid;grid-template-columns:'+cols+';gap:8px;font-size:11px;padding:4px 8px;border-bottom:1px solid var(--border);cursor:pointer;'+zebra+'" onclick="fOpenProdDrawer(\''+p.name.replace(/'/g,'\\x27')+'\')">';
  h+='<span style="font-weight:500">'+p.name+(p.is_new?' <span style="color:var(--danger);font-size:9px">新</span>':'')+'</span>';
  h+='<span class="ctr" style="font-size:10px;color:var(--primary)">'+p.portrait+'</span>';
  h+='<span class="ctr" style="font-size:10px;color:'+genClr+'">'+p.gen+'</span>';
- h+='<span class="num" style="font-weight:600">'+d26h1.rev+'</span><span class="ctr" style="font-weight:600">'+d26h1.mg+'%</span>';
- h+='<span class="ctr" style="color:'+mgyClr+'">'+(mgYoy>0?'+':'')+mgYoy+'pp</span>';
- h+='<span class="ctr" style="color:'+mgmClr+'">'+(mgMom>0?'+':'')+mgMom+'pp</span>';
- h+='<span class="num">'+d25h1.rev+'</span><span class="ctr">'+d25h1.mg+'%</span>';
- h+='<span class="num">'+d25h2.rev+'</span><span class="ctr">'+d25h2.mg+'%</span>';
+ h+='<span class="num" style="font-weight:600">'+dCur.rev+'</span><span class="ctr" style="font-weight:600">'+dCur.mg+'%</span>';
+ h+='<span class="ctr" style="color:'+mgyClr+'">'+fFmt(mgYoy,'pp')+'</span>';
+ h+='<span class="ctr" style="color:'+mghClr+'">'+fFmt(mgHoh,'pp')+'</span>';
+ h+='<span class="num">'+dPh.rev+'</span><span class="ctr">'+dPh.mg+'%</span>';
+ h+='<span class="num">'+dPy.rev+'</span><span class="ctr">'+dPy.mg+'%</span>';
  h+='<span style="font-size:10px;color:var(--text-tertiary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+p.top_cust+'</span></div>';
  });
  document.getElementById('fProductTable').innerHTML=h;
@@ -2981,7 +3016,7 @@ function fOpenProdDrawer(name){
  h+='<div class="ig"><div class="igl">代次</div><div class="igv" style="font-size:13px;color:'+genClr+'">'+p.gen+' (首次:'+p.first_date+')</div></div>';
  h+='</div>';
  h+='<div class="bs"><h4>半年对比</h4><table class="data-table"><tr style="background:var(--surface-subtle)"><th style="text-align:left;padding:4px">期间</th><th style="text-align:right">收入(万)</th><th style="text-align:right">毛利(万)</th><th style="text-align:right">成本(万)</th><th style="text-align:right">毛利率</th></tr>';
- var periods=[['%%YY_PREV%%H1',p.h1_%%YY_PREV%%],['%%YY_PREV%%H2',p.h2_%%YY_PREV%%],['%%YY_LATEST%%H1',p.h1_%%YY_LATEST%%]];
+ var periods=[[fWinLabel('prev_year','去年同期窗'),p.prev_year],[fWinLabel('prev_half','上一半年窗'),p.prev_half],[fWinLabel('cur','当前窗'),p.cur]];
  periods.forEach(function(pp){
  var d=pp[1]||{rev:0,profit:0,cost:0,mg:0};
  h+='<tr style="border-bottom:1px solid var(--border)"><td style="padding:4px">'+pp[0]+'</td><td style="text-align:right">'+d.rev+'</td><td style="text-align:right">'+d.profit+'</td><td style="text-align:right">'+d.cost+'</td><td style="text-align:right">'+d.mg+'%</td></tr>';
