@@ -1,24 +1,32 @@
 # -*- coding: utf-8 -*-
-"""风险与行动面 · 测试版生成器（W4）
+"""风险与行动面 · 测试版生成器（W4）+ R 面编辑功能协议层（v3.1，设计 §9）
 设计依据：docs\\看板叙事结构详细设计_20260825.md §3.5（总体文档模式）/ §6.2（独立测试页）
+编辑功能设计：project_analysis\\R面编辑功能设计_20260907.md §9（JSON 契约 §9.5 为两侧施工唯一依据）
 
-两个职责：
+三个职责：
 1. 初稿生成：读 gold 异常/风险表 + action_items.json 结转 + 可选 meeting_track.md
    → 生成 output\\dashboard\\risk_action_YYYYMM.md（已存在人工审定版则不覆盖，除非 --force-draft；
    旧 dashboard\\ 位置保留兼容回退读取，见 risk_md_path()）
 2. 渲染：解析总体文档 → 按固定模板（template_risk_test.html，与正式看板同风格）
    → 输出 dashboard\\dashboard_risk_test.html，并把行动清单状态回写 action_items.json
+3. 编辑协议（§9 P0-6 stdin 管道）：--export-json / --import-json [month]，JSON 走 stdin/stdout，
+   --file 兜底；错误一律 envelope {"ok":false,"err":...,"stage":"parse|import|render"} 到 stdout + exit 1
 
 用法（工作目录 sales_analytics_platform）：
     python dashboard\\generate_risk_face.py              # 初稿（如缺失）+ 渲染
-    python dashboard\\generate_risk_face.py --force-draft  # 强制重新生成初稿（慎用，覆盖人工审定）
+    python dashboard\\generate_risk_face.py --force-draft [--yes]  # 覆盖人工审定版（需 --yes 确认，覆盖前 .bak 备份）
     python dashboard\\generate_risk_face.py --month 202606  # 指定数据月份
+    python dashboard\\generate_risk_face.py --export-json 202607            # md → JSON（stdout）
+    type payload.json | python dashboard\\generate_risk_face.py --import-json 202607   # JSON → md（stdin）
 """
 import argparse
+import hashlib
 import html
 import json
 import os
+import re
 import sys
+import tempfile
 from datetime import datetime
 
 import pandas as pd
@@ -41,6 +49,25 @@ NEG_LVL_MAP = {"严重": "高", "关注": "中", "轻微": "低"}  # 负毛利�
 STATUS_ORDER = {"待处理": 0, "跟进中": 1, "已关闭": 2}
 NEG_MARGIN_MIN_LOSS = 10000  # 负毛利损失阈值（元；源表为负值存储），设计 §3.2.4
 TOP_N_PER_SOURCE = 10  # 初稿每类最多展示条数，设计 §3.2.4（人工审定可推翻）
+
+# ── R 面编辑协议常量（§9.5 契约；两侧施工唯一依据，键名/枚举勿改）──
+EMOJI_TO_COLOR = {"🔴": "red", "🟠": "orange", "🟢": "green", "⚪": "gray"}
+COLOR_TO_EMOJI = {"red": "🔴", "orange": "🟠", "green": "🟢", "gray": "⚪"}
+COLOR_TO_TEXT = {"red": "红色", "orange": "橙色", "green": "绿色", "gray": "灰色"}
+TEXT_TO_COLOR = {v: k for k, v in COLOR_TO_TEXT.items()}
+# P0-7：剥离正则锚定格首（含 VS16 变体兼容，⚪\uFE0F）；仅格级内容首 emoji，中间不剥
+EMOJI_RE = re.compile(r"^\s*(🔴|🟠|🟢|⚪)\uFE0F?\s*")
+# P2：数值列右对齐按值正则 ^-?[\d,.]+%?万?$
+VALUE_ALIGN_RE = re.compile(r"^-?[\d,.]+%?万?$")
+# P0-5：核心列禁删禁改名（编辑器置灰）；渲染端列名特判仅对这两列生效
+CORE_COLUMNS = ("等级", "状态")
+KPI_SECTION_TITLE = "〇、KPI 卡片"  # 表头驱动新节；缺省=4 张派生卡不落盘
+KPI_COLS = ["标题", "数值", "副文本", "级别", "来源"]
+KPI_LEVEL_TO_CLS = {"red": "kpi-danger", "orange": "kpi-warning", "green": "kpi-success", "gray": ""}
+KPI_TITLES = ("高风险事项", "中风险事项", "负毛利损失合计", "行动项")  # 派生卡标题（第 4 卡既有逻辑）
+LEGEND = {"red": "紧急", "orange": "关注", "green": "好转", "gray": "备注"}
+ROW_COLOR_BG = {"red": "var(--danger-bg)", "orange": "var(--warning-bg)",
+                "green": "var(--success-bg)", "gray": "var(--surface-subtle)"}
 
 
 def risk_md_path(month):
@@ -101,7 +128,8 @@ def _md_table(headers, rows):
 
 
 def _parse_md_tables(md_text):
-    """把总体文档解析为 {section_title: (headers, rows)}。只认 '## ' 节标题与 | 表格行。"""
+    """把总体文档解析为 {section_title: (headers, rows)}。只认 '## ' 节标题与 | 表格行。
+    （遗留接口：build_draft 的 meeting_track.md 并入仍用；总体文档解析走 _parse_doc）"""
     sections = {}
     current = None
     for line in md_text.splitlines():
@@ -117,6 +145,154 @@ def _parse_md_tables(md_text):
             else:
                 sections[current][1].append(cells)
     return sections
+
+
+# ---------- 编辑协议解析层（§9 P0-7：全角｜清洗 → emoji 剥离 → 语义匹配）----------
+
+def _strip_emoji(text):
+    """格级 emoji 剥离（仅内容首 emoji，正则锚定 ^，中间出现不剥）；返回 (去色文本, 色值枚举)。"""
+    m = EMOJI_RE.match(text)
+    if m:
+        return text[m.end():], EMOJI_TO_COLOR[m.group(1)]
+    return text, "none"
+
+
+def _cell_parts(raw):
+    """单元格入解析管线的固定顺序（P0-7）：先 _md_cell 全角｜清洗，再 emoji 剥离，最后语义匹配。
+    语义匹配（r[0]=="高"/STATUS_ORDER 等）消费本函数返回值，保证"先剥离后匹配"。"""
+    text, color = _strip_emoji(_md_cell(raw))
+    return {"text": text, "color": color or "none"}
+
+
+def _table_part(lines):
+    """把节内的 | 表格行解析为表头驱动结构：{"columns": [...], "rows": [{"cells": [{text,color}], "style": {...}}]}。
+    行短于表头容错补空（历史脏文档防御）；行级色 = 首列单元格内容级 emoji（P0-7，JSON 侧 style.row_color）。"""
+    columns = []
+    rows = []
+    for s in lines:
+        s = s.strip()
+        if not s.startswith("|"):
+            continue
+        cells = [c.strip() for c in s.strip("|").split("|")]
+        if all(set(c) <= set("-: ") for c in cells):
+            continue  # 分隔行
+        if not columns:
+            columns = cells
+            continue
+        parts = [_cell_parts(c) for c in cells[:len(columns)]]
+        while len(parts) < len(columns):
+            parts.append({"text": "", "color": "none"})
+        rows.append({"cells": parts, "style": {"row_color": parts[0]["color"]}})
+    return {"columns": columns, "rows": rows}
+
+
+def _kpi_row_parts(raw_cells):
+    """KPI 卡片行解析：级别列文本（红色/橙色/绿色/灰色）→ 语义枚举，容错回 none。"""
+    parts = [_cell_parts(c) for c in raw_cells]
+    while len(parts) < len(KPI_COLS):
+        parts.append({"text": "", "color": "none"})
+    level = TEXT_TO_COLOR.get(parts[3]["text"], "none")
+    return {"title": parts[0]["text"], "value": parts[1]["text"], "sub": parts[2]["text"],
+            "level": level, "source": parts[4]["text"] or "derived"}
+
+
+def _parse_doc(md_text):
+    """总体文档唯一真源解析器（渲染与 export 共用同一管线）。
+    分区结构（§3.1，向后兼容旧 md 无新节按默认处理）：
+      # 标题行 / > 头部元信息（header_raw 逐字节保真）/ ## 〇、KPI 卡片 / ## 一、当月风险摘要
+      / ## 二、行动清单 / ## 备注（自由段落，_md_cell 不触碰）/ ## 三、口径说明（caliber_raw 锁定逐字节）
+    返回 dict: title_line/header_raw/kpi_cards(无节=None)/tables({节标题: _table_part})/notes_raw/caliber_raw。
+    """
+    doc = {"title_line": "", "header_raw": "", "kpi_cards": None,
+           "tables": {}, "notes_raw": "", "caliber_raw": ""}
+    lines = md_text.splitlines()
+    i = 0
+    # 标题行 + 头部元信息（连续 '>' 行块，含其前空行边界逐字节捕获）
+    while i < len(lines):
+        if lines[i].startswith("# "):
+            doc["title_line"] = lines[i]
+            i += 1
+            break
+        i += 1
+    header_lines = []
+    seen_gt = False
+    while i < len(lines):
+        s = lines[i]
+        if s.startswith(">"):
+            header_lines.append(s)
+            seen_gt = True
+            i += 1
+        elif not seen_gt and s.strip() == "":
+            i += 1  # 标题与头部之间的空行
+        else:
+            break
+    doc["header_raw"] = "\n".join(header_lines)
+    # 分区循环
+    while i < len(lines):
+        s = lines[i]
+        if s.startswith("## "):
+            title = s[3:].strip()
+            body = []
+            i += 1
+            while i < len(lines) and not lines[i].startswith("## "):
+                body.append(lines[i])
+                i += 1
+            if KPI_SECTION_TITLE.split("、")[-1] in title or "KPI" in title:
+                cards = []
+                for ln in body:
+                    ln = ln.strip()
+                    if not ln.startswith("|"):
+                        continue
+                    cells = [c.strip() for c in ln.strip("|").split("|")]
+                    if all(set(c) <= set("-: ") for c in cells):
+                        continue
+                    if cells[:len(KPI_COLS)] == KPI_COLS:
+                        continue  # 表头行
+                    cards.append(_kpi_row_parts(cells))
+                doc["kpi_cards"] = cards
+            elif "备注" in title:
+                doc["notes_raw"] = "\n".join(body).strip("\n")
+            elif "口径" in title:
+                doc["caliber_raw"] = "\n".join(body).strip("\n")
+            else:
+                doc["tables"][title] = _table_part(body)
+        else:
+            i += 1
+    return doc
+
+
+def _find_table(doc, keyword):
+    """按关键字在解析分区中定位表格（先精确后包含，兼容节名前后缀变化）。"""
+    for title, part in doc["tables"].items():
+        if title == keyword:
+            return part
+    for title, part in doc["tables"].items():
+        if keyword in title:
+            return part
+    return {"columns": [], "rows": []}
+
+
+def _find_kpi_section(md_text):
+    """md 是否含 KPI 节（import 决定该节是否落盘：原 md 无节且全派生 → 不落盘）。"""
+    return any(l.startswith("## ") and "KPI" in l for l in md_text.splitlines())
+
+
+def _title_month(month):
+    return f"# 风险与行动 · {month[:4]}-{month[4:]}"
+
+
+def _is_month(v):
+    return isinstance(v, str) and re.fullmatch(r"\d{6}", v) is not None
+
+
+def _resolve_target_path(month_or_path):
+    """解析目标 md 路径：'YYYYMM' 月串走 risk_md_path（新位置优先旧位置回退）；
+    其余视为显式文件路径（测试/兜底用途）。校验月串格式防路径注入。"""
+    if _is_month(month_or_path):
+        return risk_md_path(month_or_path)
+    if os.sep in month_or_path or month_or_path.endswith(".md"):
+        return month_or_path
+    raise ValueError(f"非法 month 参数（须 YYYYMM）: {month_or_path!r}")
 
 
 # ---------- 初稿生成 ----------
@@ -234,28 +410,46 @@ def build_draft(month):
 
 # ---------- 渲染 ----------
 
+_TAG_KIND_MAP = {"等级": {"高": "high", "中": "medium", "低": "low"},
+                 "状态": {"待处理": "high", "跟进中": "medium", "已关闭": "low"}}
+_CLS_TO_LEVEL = {"kpi-danger": "red", "kpi-warning": "orange", "kpi-success": "green", "": "none"}
+
+
 def _tag(text, kind_map, prefix="tag"):
     cls = kind_map.get(text, "none")
     return f'<span class="{prefix} {prefix}-{cls}">{_esc(text)}</span>'
 
 
-def _render_table(headers, rows, num_cols=()):
-    th = "".join(f"<th>{_esc(h)}</th>" for h in headers)
+def _render_table(part):
+    """表头驱动动态列渲染（P0-5/动态列）：列名/列数来自 md 表头；核心列（等级/状态）存在时维持
+    tag 色，缺失时降级普通列（调用方在口径条补提示文本）；数值格按值正则右对齐（P2，
+    ^-?[\d,.]+%?万?$）；行级色=首列 emoji（style.row_color）→ 淡色底整行。行短于表头容错补空。"""
+    columns = part.get("columns") or []
+    rows = part.get("rows") or []
+    if not columns:
+        return ""
+    th = "".join(f"<th>{_esc(h)}</th>" for h in columns)
     trs = []
-    for r in rows:
+    for row in rows:
+        cells = row.get("cells") or []
+        row_color = (row.get("style") or {}).get("row_color", "none")
+        row_style = f' style="background:{ROW_COLOR_BG[row_color]}"' if row_color in ROW_COLOR_BG else ""
         tds = []
-        for i, c in enumerate(r):
-            if i >= len(headers):
-                break  # 防御：单元格多于表头（历史脏文档）时截断，不崩溃
-            cls = ' class="num"' if i in num_cols else ""
-            if headers[i] == "等级":
-                tds.append(f"<td>{_tag(c, {'高': 'high', '中': 'medium', '低': 'low'})}</td>")
-            elif headers[i] == "状态":
-                tds.append(f"<td>{_tag(c, {'待处理': 'high', '跟进中': 'medium', '已关闭': 'low'})}</td>")
+        for i, cell in enumerate(cells):
+            if i >= len(columns):
+                break
+            text = cell.get("text", "")
+            cls = ' class="num"' if VALUE_ALIGN_RE.match(text) else ""
+            core_map = _TAG_KIND_MAP.get(columns[i])
+            if core_map is not None:
+                tds.append(f"<td>{_tag(text, core_map)}</td>")
             else:
-                tds.append(f"<td{cls}>{_esc(c)}</td>")
-        trs.append("<tr>" + "".join(tds) + "</tr>")
-    body = "".join(trs) or f'<tr><td colspan="{len(headers)}" style="text-align:center;color:var(--text-muted)">本期无内容</td></tr>'
+                cell_prefix = COLOR_TO_EMOJI.get(cell.get("color", "none"), "")
+                tds.append(f"<td{cls}>{cell_prefix}{_esc(text)}</td>")
+        while len(tds) < len(columns):
+            tds.append("<td></td>")
+        trs.append("<tr" + row_style + ">" + "".join(tds) + "</tr>")
+    body = "".join(trs) or f'<tr><td colspan="{len(columns)}" style="text-align:center;color:var(--text-muted)">本期无内容</td></tr>'
     return f'<table class="data-table"><thead><tr>{th}</tr></thead><tbody>{body}</tbody></table>'
 
 
@@ -264,57 +458,118 @@ def _kc(label, value, sub, cls=""):
             f'<div class="value">{value}</div><div class="sub">{sub}</div></div>')
 
 
+def _derive(risk_part, action_part):
+    """派生 KPI 现算（P0-3）。核心列缺失时降级：对应卡数值 '-'、ints 记 None。
+    返回 (derived, ints)：derived={标题:(数值str,副文本str,css_cls)}，ints={n_high,n_mid,loss_sum,n_todo,n_doing}。"""
+    risk_cols = risk_part.get("columns") or []
+    risk_rows = [r.get("cells") or [] for r in risk_part.get("rows") or []]
+    act_cols = action_part.get("columns") or []
+    act_rows = [r.get("cells") or [] for r in action_part.get("rows") or []]
+    if "等级" in risk_cols:
+        li = risk_cols.index("等级")
+        n_high = sum(1 for r in risk_rows if li < len(r) and r[li]["text"] == "高")
+        n_mid = sum(1 for r in risk_rows if li < len(r) and r[li]["text"] == "中")
+    else:
+        n_high = n_mid = None
+    loss_col = next((i for i, c in enumerate(risk_cols) if "损失金额" in c), None)
+    loss_sum = 0.0
+    if loss_col is not None:
+        for r in risk_rows:
+            if loss_col < len(r):
+                v = r[loss_col]["text"]
+                if v not in ("-", ""):
+                    try:
+                        loss_sum += float(v)
+                    except ValueError:
+                        pass
+    if "状态" in act_cols:
+        si = act_cols.index("状态")
+        n_todo = sum(1 for r in act_rows if si < len(r) and r[si]["text"] == "待处理")
+        n_doing = sum(1 for r in act_rows if si < len(r) and r[si]["text"] == "跟进中")
+    else:
+        n_todo = n_doing = None
+    derived = {
+        "高风险事项": (str(n_high) if n_high is not None else "-", "需立即处理", "kpi-danger"),
+        "中风险事项": (str(n_mid) if n_mid is not None else "-", "需关注", "kpi-warning"),
+        "负毛利损失合计": (f"{loss_sum:.1f}万" if loss_col is not None else "-",
+                        "审定后展示口径", "kpi-danger" if loss_sum > 0 else ""),
+        "行动项": (str(n_todo + n_doing) if n_todo is not None else "-",
+                   f"待处理 {n_todo} · 跟进中 {n_doing}" if n_todo is not None else "「状态」列缺失，无法统计", ""),
+    }
+    ints = {"n_high": n_high, "n_mid": n_mid, "loss_sum": loss_sum,
+            "n_todo": n_todo, "n_doing": n_doing}
+    return derived, ints
+
+
+def _kpi_cards_for(doc):
+    """渲染/导出共用的 KPI 卡数组（§3.3）：md 有 KPI 节用人工卡，否则 4 张派生默认（不落盘语义）。"""
+    derived, _ = _derive(_find_table(doc, "风险摘要"), _find_table(doc, "行动清单"))
+    if doc.get("kpi_cards"):
+        return doc["kpi_cards"]
+    return [{"title": t, "value": derived[t][0], "sub": derived[t][1],
+             "level": _CLS_TO_LEVEL.get(derived[t][2], "none"), "source": "derived"}
+            for t in KPI_TITLES]
+
+
+def _kpi_bar_html(cards):
+    """KPI 卡数组 → kpi-bar HTML（P0-3/P1）：repeat(min(n,8),1fr) Python 计算注入；n=0 隐藏整条。"""
+    n = len(cards or [])
+    if n == 0:
+        return ""
+    cols = f"repeat({min(n, 8)},1fr)"
+    inner = "".join(
+        _kc(c.get("title", ""), c.get("value", ""), c.get("sub", ""),
+            KPI_LEVEL_TO_CLS.get(c.get("level", "none"), ""))
+        for c in cards)
+    return (f'<div class="kpi-bar" style="grid-template-columns:{cols};margin-left:auto;margin-right:auto">\n'
+            + inner + "\n</div>\n")
+
+
+def _notes_html(notes_raw):
+    """## 备注 自由段落节渲染（P1）：普通段落区；_md_cell 清洗不触碰该节，import 逐字节回写。"""
+    if not (notes_raw or "").strip():
+        return ""
+    paras = "".join(f"<p>{_esc(ln)}</p>" for ln in notes_raw.splitlines() if ln.strip())
+    if not paras:
+        return ""
+    return '<div class="cb"><h3>备注</h3><div class="caliber">' + paras + "</div></div>\n"
+
+
 def _build_r_parts(month):
-    """解析总体文档并构建 R 面各区块（测试页与正式看板并入共用）。
-    返回 dict: ok / err / risk_kpi / risk_table / action_table / caliber / stats。
-    副作用：行动清单状态回写 action_items.json（跨月结转的持久化层）。"""
+    """解析总体文档并构建 R 面各区块（测试页与正式看板并入共用；编辑协议与渲染同一解析器）。
+    返回 dict: ok / err / kpi_bar / risk_table / action_table / caliber / notes_html / stats。
+    副作用：行动清单状态回写 action_items.json（P1 稳定键：行内容 sha1 前 8 位）。"""
     md_path = risk_md_path(month)
     if not os.path.exists(md_path):
         return {"ok": False, "err": md_path}
     with open(md_path, encoding="utf-8") as f:
-        md = f.read()
-    sec = _parse_md_tables(md)
+        doc = _parse_doc(f.read())
+    risk_part = _find_table(doc, "风险摘要")
+    action_part = _find_table(doc, "行动清单")
+    derived, ints = _derive(risk_part, action_part)
 
-    def get(keyword):
-        for title, (headers, rows) in sec.items():
-            if keyword in title:
-                return headers, rows
-        return [], []
+    # P0-5：核心列降级提示（渲染端列名特判在核心列缺失时降级普通列，口径条补提示文本）
+    degrade_hints = []
+    if risk_part.get("columns") and "等级" not in risk_part["columns"]:
+        degrade_hints.append("「等级」核心列缺失：风险表等级着色与派生统计已降级为普通列。")
+    if action_part.get("columns") and "状态" not in action_part["columns"]:
+        degrade_hints.append("「状态」核心列缺失：行动清单状态着色与派生统计已降级为普通列。")
+    caliber = doc.get("caliber_raw", "")
+    if degrade_hints:
+        caliber = (caliber + "\n" + "\n".join(degrade_hints)) if caliber else "\n".join(degrade_hints)
 
-    risk_h, risk_rows = get("风险摘要")
-    act_h, act_rows = get("行动清单")
-
-    # KPI 卡
-    n_high = sum(1 for r in risk_rows if r and r[0] == "高")
-    n_mid = sum(1 for r in risk_rows if r and r[0] == "中")
-    loss_col = risk_h.index("损失金额(万元)") if "损失金额(万元)" in risk_h else None
-    loss_sum = sum(float(r[loss_col]) for r in risk_rows
-                   if loss_col is not None and len(r) > loss_col and r[loss_col] not in ("-", ""))
-    n_todo = sum(1 for r in act_rows if r and r[0] == "待处理")
-    n_doing = sum(1 for r in act_rows if r and r[0] == "跟进中")
-
-    risk_kpi = (
-        _kc("高风险事项", n_high, "需立即处理", "kpi-danger")
-        + _kc("中风险事项", n_mid, "需关注", "kpi-warning")
-        + _kc("负毛利损失合计", f"{loss_sum:.1f}万", "审定后展示口径", "kpi-danger" if loss_sum > 0 else "")
-        + _kc("行动项", f"{n_todo + n_doing}", f"待处理 {n_todo} · 跟进中 {n_doing}")
-    )
-
-    # 口径说明（取 md 第三节的纯文本）
-    caliber = ""
-    marker = "## 三、口径说明"
-    if marker in md:
-        caliber = md.split(marker, 1)[1].strip()
-
-    # 行动清单状态回写 action_items.json（持久化层；json 不是人工编辑对象）
-    if act_h:
-        idx = {h: i for i, h in enumerate(act_h)}
+    # P1：行动清单状态回写 action_items.json（稳定键 = 行内容 sha1 前 8 位）
+    act_cols = action_part.get("columns") or []
+    if act_cols:
+        idx = {h: i for i, h in enumerate(act_cols)}
         items = []
-        for r in act_rows:
+        for row in action_part.get("rows") or []:
+            r = [c["text"] for c in row["cells"]]
             if not r or len(r) < 2:
                 continue
+            _raw = "|".join(r)
             items.append({
-                "id": f"manual:{r[1]}:{month}",
+                "id": f"row:{hashlib.sha1(_raw.encode('utf-8')).hexdigest()[:8]}",
                 "title": r[1],
                 "status": r[0] if r[0] in STATUS_ORDER else "待处理",
                 "owner": r[idx["负责人"]] if "负责人" in idx and len(r) > idx["负责人"] else "",
@@ -327,27 +582,32 @@ def _build_r_parts(month):
         closed = [it for it in actions.get("items", []) if it.get("status") == "已关闭"]
         save_actions({"version": "1", "last_batch_month": month, "items": items + closed})
 
-    return {"ok": True, "risk_kpi": risk_kpi,
-            "risk_table": _render_table(risk_h, risk_rows, num_cols={3}),
-            "action_table": _render_table(act_h, act_rows),
+    risk_cells = [r.get("cells") or [] for r in risk_part.get("rows") or []]
+    act_cells = [r.get("cells") or [] for r in action_part.get("rows") or []]
+    n_high = ints["n_high"] if ints["n_high"] is not None else 0
+    n_mid = ints["n_mid"] if ints["n_mid"] is not None else 0
+    return {"ok": True, "kpi_bar": _kpi_bar_html(_kpi_cards_for(doc)),
+            "risk_table": _render_table(risk_part),
+            "action_table": _render_table(action_part),
             "caliber": caliber,
-            "stats": (len(risk_rows), n_high, n_mid, loss_sum, len(act_rows))}
+            "notes_html": _notes_html(doc.get("notes_raw", "")),
+            "stats": (len(risk_cells), n_high, n_mid, float(ints["loss_sum"]), len(act_cells))}
 
 
 def build_r_face_inner_html(month):
     """供 generate_dashboard.py 并入正式看板（W4）：返回 R 面内容 HTML（不含页面框架，
-    样式复用 template.html 的 kpi-bar/kc/cb/data-table 组件）。"""
+    样式复用 template.html 的 kpi-bar/kc/cb/data-table 组件）。签名不变（公共 API 边界）。"""
     parts = _build_r_parts(month)
     if not parts["ok"]:
         return ('<div class="cb"><h3>风险与行动</h3><div class="note">本月总体文档未生成：'
                 '请先在明文窗口跑批后运行 <code>python dashboard\\generate_risk_face.py</code> '
                 '生成并审定总体文档（缺失：' + _esc(parts["err"]) + '）</div></div>')
-    return ('<div class="kpi-bar" style="grid-template-columns:repeat(4,1fr);max-width:960px;margin-left:auto;margin-right:auto">\n'
-            + parts["risk_kpi"] + '\n</div>\n'
+    return (parts["kpi_bar"]
             + '<div class="cb"><h3>一、当月风险摘要</h3><div class="note">初稿由系统按规则生成，经人工审定后展示。</div>'
             + parts["risk_table"] + '</div>\n'
             + '<div class="cb"><h3>二、行动清单</h3><div class="note">状态：待处理 / 跟进中 / 已关闭。未关闭事项跨月自动结转。</div>'
             + parts["action_table"] + '</div>\n'
+            + parts.get("notes_html", "")
             + '<div class="cb"><h3>三、口径说明</h3><div class="caliber">'
             + _esc(parts["caliber"]) + '</div></div>')
 
@@ -362,9 +622,10 @@ def render(month):
     page = (page
             .replace("%%DATA_MONTH%%", month)
             .replace("%%GEN_TIME%%", f"{datetime.now():%Y-%m-%d %H:%M}")
-            .replace("%%RISK_KPI%%", parts["risk_kpi"])
+            .replace("%%RISK_KPI%%", parts["kpi_bar"])
             .replace("%%RISK_TABLE%%", parts["risk_table"])
-            .replace("%%ACTION_TABLE%%", parts["action_table"])
+            # P1：备注自由段落节跟在行动清单表后（测试页模板不新增占位符，运行时拼接）
+            .replace("%%ACTION_TABLE%%", parts["action_table"] + parts.get("notes_html", ""))
             .replace("%%CALIBER%%", _esc(parts["caliber"])))
     out = os.path.join(DASH_DIR, "dashboard_risk_test.html")
     with open(out, "w", encoding="utf-8") as f:
@@ -376,18 +637,293 @@ def render(month):
     return 0
 
 
-def main():
-    ap = argparse.ArgumentParser(description="风险与行动面 · 测试版生成器")
-    ap.add_argument("--force-draft", action="store_true", help="强制重新生成初稿（覆盖人工审定版，慎用）")
-    ap.add_argument("--month", default=None, help="数据月份 YYYYMM（默认取 silver 最新月）")
-    args = ap.parse_args()
+# ---------- 编辑协议：export / import（§9.5 契约，两侧施工唯一依据）----------
 
-    month = args.month or _data_month()
+class ProtocolError(Exception):
+    """协议层错误：err 进 envelope，stage ∈ parse|import|render。"""
+
+    def __init__(self, err, stage="import"):
+        super().__init__(err)
+        self.err = err
+        self.stage = stage
+
+
+def _check_color(v, where):
+    if v not in ("red", "orange", "green", "gray", "none"):
+        raise ProtocolError(f"{where}: 非法色值 {v!r}（须 red/orange/green/gray/none）")
+    return v
+
+
+def _export_table(part):
+    """表导出：columns/col_meta（核心列 locked=true，P0-5）/rows（cells[{text,color}]+style.row_color）。"""
+    columns = part.get("columns") or []
+    return {"columns": columns,
+            "col_meta": [{"name": c, "locked": c in CORE_COLUMNS} for c in columns],
+            "rows": part.get("rows") or []}
+
+
+def export_to_dict(month_or_path):
+    """--export-json 核心：md → §9.5 契约 JSON dict。
+    month_or_path: 'YYYYMM'（走 risk_md_path 新位置优先旧位置回退）或显式 md 文件路径。"""
+    path = _resolve_target_path(month_or_path)
+    if not os.path.exists(path):
+        raise FileNotFoundError(path)
+    month = (month_or_path if _is_month(month_or_path)
+             else os.path.splitext(os.path.basename(path))[0].replace("risk_action_", ""))
+    with open(path, encoding="utf-8") as f:
+        doc = _parse_doc(f.read())
+    risk_part = _find_table(doc, "风险摘要")
+    action_part = _find_table(doc, "行动清单")
+    derived, ints = _derive(risk_part, action_part)
+    # P0-3：KPI 卡（md 有节用人工卡覆盖同标题派生卡，附加卡追加；每卡附 derived_value+stale）
+    md_cards = {c.get("title"): c for c in (doc.get("kpi_cards") or [])}
+    cards = []
+    for t in KPI_TITLES:
+        c = md_cards.pop(t, None)
+        card = {"title": t, "value": derived[t][0], "sub": derived[t][1],
+                "level": _CLS_TO_LEVEL.get(derived[t][2], "none"), "source": "derived",
+                "derived_value": derived[t][0]}
+        if c:
+            for k in ("value", "sub", "level", "source"):
+                if c.get(k):
+                    card[k] = c[k]
+        # P0-3：stale = 卡面 value 与现算派生值不一致（无论来源；纯派生卡天然 False）
+        card["stale"] = bool(card["derived_value"] is not None
+                             and str(card["value"]) != str(card["derived_value"]))
+        cards.append(card)
+    for t, c in md_cards.items():  # 非派生标题的自定义卡
+        cards.append({"title": c.get("title", ""), "value": c.get("value", ""),
+                      "sub": c.get("sub", ""), "level": c.get("level", "none"),
+                      "source": c.get("source") or "custom",
+                      "derived_value": None, "stale": False})
+    n_high = ints["n_high"] if ints["n_high"] is not None else 0
+    n_mid = ints["n_mid"] if ints["n_mid"] is not None else 0
+    return {
+        "month": month,
+        "mtime": os.path.getmtime(path),
+        "header_raw": doc.get("header_raw", ""),
+        "kpi_cards": cards,
+        "risk_table": _export_table(risk_part),
+        "action_table": _export_table(action_part),
+        "notes_section": doc.get("notes_raw", ""),
+        "caliber_raw": doc.get("caliber_raw", ""),
+        "derived_snapshot": {"n_high": n_high, "n_mid": n_mid,
+                             "loss_sum": round(float(ints["loss_sum"]), 1)},
+        "legend": dict(LEGEND),
+    }
+
+
+def _import_table(data, key):
+    """import 表校验（P1 矩形校验：列数不齐显式报错行号）+ 文本规范化（P0-4 换行拒绝）。"""
+    part = data.get(key)
+    if not isinstance(part, dict) or not part.get("columns"):
+        raise ProtocolError(f"{key}: 缺少 columns 或为空")
+    columns = [str(c) for c in part["columns"]]
+    rows = []
+    for rn, row in enumerate(part.get("rows") or [], 1):
+        if not isinstance(row, dict):
+            raise ProtocolError(f"{key}: 第 {rn} 行不是对象")
+        cells = row.get("cells")
+        if not isinstance(cells, list) or len(cells) != len(columns):
+            got = len(cells) if isinstance(cells, list) else "缺失"
+            raise ProtocolError(f"{key}: 第 {rn} 行单元格数 {got} 与列数 {len(columns)} 不一致（矩形校验失败）")
+        row_color = _check_color((row.get("style") or {}).get("row_color", "none"),
+                                 f"{key} 第 {rn} 行行级色")
+        out_cells = []
+        for ci, cell in enumerate(cells):
+            if not isinstance(cell, dict):
+                raise ProtocolError(f"{key} 第 {rn} 行第 {ci + 1} 列不是对象")
+            raw = str(cell.get("text", ""))
+            if "\n" in raw or "\r" in raw:
+                raise ProtocolError(f"{key} 第 {rn} 行第 {ci + 1} 列含换行：请改用编辑器的宽幅抽屉分段编辑"
+                                    f"（多条建议用全角｜分隔，由编辑器拆分/回拼）")
+            out_cells.append({"text": _md_cell(raw),
+                              "color": _check_color(cell.get("color", "none"),
+                                                    f"{key} 第 {rn} 行第 {ci + 1} 列色值")})
+        if out_cells and out_cells[0]["color"] != "none":
+            row_color = out_cells[0]["color"]  # P0-7：行级色=首列单元格内容级 emoji
+        rows.append({"cells": out_cells, "style": {"row_color": row_color}})
+    return {"columns": columns, "rows": rows}
+
+
+def _part_md_table(part):
+    """表 → md 行（emoji 回编码：color→前缀，§3.2；多条建议的全角｜由编辑器层处理，Python 透传）。
+    0 数据行也必须落表头+分隔行，保证列结构在往返中不丢失。"""
+    columns = part.get("columns") or []
+    if not columns:
+        return []
+    lines = ["| " + " | ".join(columns) + " |", "|" + "---|" * len(columns)]
+    for row in part.get("rows") or []:
+        cells = []
+        for cell in row["cells"]:
+            text = cell["text"]
+            if cell["color"] in COLOR_TO_EMOJI:
+                text = COLOR_TO_EMOJI[cell["color"]] + text
+            cells.append(text)
+        lines.append("| " + " | ".join(_md_cell(c) for c in cells) + " |")
+    return lines
+
+
+def _compose_md(month, header_raw, cards, risk_part, action_part, notes, caliber_raw, had_kpi):
+    """md 组装（单一真源，import 专用）：分区顺序固定（§3.1）。
+    KPI 节仅在"原 md 有节或存在非派生卡"时落盘（§3.3：初稿/全派生默认不落盘，保持派生默认）。"""
+    parts = [_title_month(month), ""]
+    if header_raw:
+        parts.append(header_raw)
+    parts.append("")
+    persist_kpi = bool(cards) and (had_kpi or any(c["source"] != "derived" for c in cards))
+    if persist_kpi:
+        kpi_rows = [[c["title"], c["value"], c["sub"], COLOR_TO_TEXT.get(c["level"], ""), c["source"]]
+                    for c in cards]
+        parts += [f"## {KPI_SECTION_TITLE}", "", _md_table(KPI_COLS, kpi_rows), ""]
+    parts += ["## 一、当月风险摘要", ""] + _part_md_table(risk_part) + ["",
+              "## 二、行动清单", ""] + _part_md_table(action_part) + [""]
+    if (notes or "").strip():
+        parts += ["## 备注", "", notes.replace("\r\n", "\n").replace("\r", "\n"), ""]
+    parts += ["## 三、口径说明（从 faces.yaml 自动带入，勿改）", "", caliber_raw, ""]
+    return "\n".join(parts)
+
+
+def import_from_dict(data, month, write=True):
+    """--import-json 核心：§9.5 契约 JSON → md 组装并写盘（P0-2 头部/口径逐字节回写）。
+    校验：month 匹配 / mtime 并发（P1）/ 矩形（P1）/ 换行（P0-4）/ 色值枚举。
+    write=False 仅组装返回 {"path","md_text"}（往返不变式测试用）。"""
+    if not isinstance(data, dict):
+        raise ProtocolError("JSON 顶层必须是对象")
+    if data.get("month") != month:
+        raise ProtocolError(f"month 不匹配：JSON={data.get('month')!r} 参数={month!r}")
+    path = _resolve_target_path(month)
+    if not os.path.exists(path):
+        raise ProtocolError(f"总体文档不存在: {path}", "parse")
+    # P1：mtime 并发校验（export 附的 mtime 与 import 时文件实际 mtime 不符 → 冲突）
+    exp_mtime = data.get("mtime")
+    if isinstance(exp_mtime, (int, float)) and abs(os.path.getmtime(path) - float(exp_mtime)) > 1e-6:
+        raise ProtocolError("mtime 冲突：文档在导出后被修改过，请重新导出后再导入")
+    with open(path, encoding="utf-8") as f:
+        had_kpi = _find_kpi_section(f.read())
+    header_raw = str(data.get("header_raw") or "")
+    caliber_raw = str(data.get("caliber_raw") or "")
+    risk_part = _import_table(data, "risk_table")
+    action_part = _import_table(data, "action_table")
+    notes = str(data.get("notes_section") or "")
+    kpi_cards = data.get("kpi_cards")
+    cards = None
+    if kpi_cards is not None:
+        if not isinstance(kpi_cards, list):
+            raise ProtocolError("kpi_cards 必须是数组")
+        cards = []
+        for i, c in enumerate(kpi_cards):
+            if not isinstance(c, dict):
+                raise ProtocolError(f"kpi_cards[{i}]: 不是对象")
+            cards.append({
+                "title": _md_cell(str(c.get("title", ""))),
+                "value": _md_cell(str(c.get("value", ""))),
+                "sub": _md_cell(str(c.get("sub", ""))),
+                "level": _check_color(c.get("level", "none"), f"kpi_cards[{i}].level"),
+                "source": str(c.get("source") or "custom"),
+            })
+    md_text = _compose_md(month, header_raw, cards, risk_part, action_part,
+                          notes, caliber_raw, had_kpi)
+    if write:
+        # P1：原子写（临时文件 + os.replace）——直接 open(path,"w") 会先截断原文件，
+        # 若写入中途抛错（编码/磁盘）将留下 0 字节残骸（实测踩坑：cp936 乱码代理对触发）。
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(path), prefix=".risk_import_", suffix=".tmp")
+        try:
+            with os.fdopen(tmp_fd, "w", encoding="utf-8") as f:
+                f.write(md_text)
+            os.replace(tmp_path, path)
+        except BaseException:
+            try:
+                os.unlink(tmp_path)
+            except OSError:
+                pass
+            raise
+    return {"path": path, "md_text": md_text}
+
+
+# ---------- CLI ----------
+
+def _emit_json(payload):
+    # P0-6：stdout 显式按 utf-8 字节写出——Windows 控制台默认 cp936，
+    # 经 print 会按 GBK 编码，破坏「--export-json | --import-json」管道契约（§9.6）。
+    text = json.dumps(payload, ensure_ascii=False, indent=2) + "\n"
+    buf = getattr(sys.stdout, "buffer", None)
+    if buf is not None:
+        buf.write(text.encode("utf-8"))
+        buf.flush()
+    else:
+        sys.stdout.write(text)
+        sys.stdout.flush()
+
+
+def _emit_envelope(err, stage):
+    _emit_json({"ok": False, "err": str(err), "stage": stage})
+
+
+def run_protocol(args):
+    """--export-json / --import-json 入口（P0-6：JSON 强制 stdin 管道，--file 兜底；
+    错误一律 envelope {"ok":false,"err":...,"stage":"parse|import|render"} 到 stdout + exit 1）。"""
+    try:
+        month = args.month or _data_month()
+        if not _is_month(month):
+            raise ProtocolError(f"非法 month（须 YYYYMM）: {month!r}",
+                                "import" if getattr(args, "import_json", False) else "parse")
+        if args.export_json:
+            _emit_json(export_to_dict(month))
+            return 0
+        if args.file:
+            with open(args.file, encoding="utf-8") as f:
+                data = json.load(f)
+        else:
+            # §9.6 管道契约：stdin/stdout 一律 UTF-8 字节——Windows 控制台默认 cp936，
+            # 直接 json.load(sys.stdin) 会把 UTF-8 字节按 GBK 解出乱码代理对（实测踩坑）。
+            data = json.loads(sys.stdin.buffer.read().decode("utf-8"))
+        import_from_dict(data, month)
+        _emit_json({"ok": True, "month": month})
+        return 0
+    except ProtocolError as e:
+        _emit_envelope(e.err, e.stage)
+        return 1
+    except FileNotFoundError as e:
+        _emit_envelope(f"文件不存在: {e}", "parse")
+        return 1
+    except json.JSONDecodeError as e:
+        _emit_envelope(f"JSON 解析失败: {e}", "import")
+        return 1
+    except Exception as e:  # noqa: BLE001 —— 协议层兜底，错误一律 envelope
+        _emit_envelope(f"{type(e).__name__}: {e}", "render")
+        return 1
+
+
+def main():
+    ap = argparse.ArgumentParser(description="风险与行动面 · 生成器 + R 面编辑协议（v3.1 §9）")
+    ap.add_argument("month", nargs="?", default=None, help="数据月份 YYYYMM（默认取 silver 最新月）")
+    ap.add_argument("--month", dest="month_kw", default=None, help=argparse.SUPPRESS)  # 兼容旧式 --month
+    ap.add_argument("--force-draft", action="store_true", help="强制重新生成初稿（覆盖人工审定版，须配合 --yes）")
+    ap.add_argument("--yes", action="store_true", help="--force-draft 覆盖人工审定版的二次确认（P1）")
+    ap.add_argument("--export-json", action="store_true", help="md → JSON（§9.5 契约，写 stdout）")
+    ap.add_argument("--import-json", action="store_true", help="JSON（stdin）→ md，自动逐字节回写头部/口径")
+    ap.add_argument("--file", default=None, help="JSON 文件路径兜底（import 缺省读 stdin 管道）")
+    args = ap.parse_args()
+    args.month = args.month or args.month_kw or _data_month()
+
+    if args.export_json or args.import_json:
+        return run_protocol(args)
+
+    month = args.month
     md_path = risk_md_path(month)  # 读取语义：新位置优先、旧位置回退
 
     if os.path.exists(md_path) and not args.force_draft:
         print(f"[跳过] 总体文档已存在（人工审定版不覆盖）: {md_path}")
     else:
+        if os.path.exists(md_path) and not args.yes:
+            print("[错误] --force-draft 将覆盖已审定文档：请加 --yes 确认（覆盖前自动 .bak 备份）")
+            return 1
+        if os.path.exists(md_path):
+            import shutil
+            shutil.copyfile(md_path, md_path + ".bak")  # P1：覆盖前备份
+            print(f"[备份] 已备份: {md_path}.bak")
         # 写盘一律落新位置 output/dashboard\（旧 dashboard\ 位置不再写入）
         md_path = os.path.join(RISK_MD_DIR, f"risk_action_{month}.md")
         md, stats = build_draft(month)
