@@ -719,6 +719,19 @@ if not _NO_CACHE and _fp is not None:
             _cached_obj = None
             print(f"  [缓存] preagg.json 读取/比对失败: {_e}")
 
+# geo 字典/解析器/地图数据不入指纹（fingerprint.py 在 processing/ 禁触区）——mtime 守卫兜底：
+# 任一 geo 文件比 preagg.json 新 → 视为缓存不新鲜，防止改字典/换地图后静默复用旧聚合（R3 精神）。
+if _cache_hit and os.path.exists(PREAGG_PATH):
+    _preagg_mtime = os.path.getmtime(PREAGG_PATH)
+    _geo_guard_dir = os.path.dirname(os.path.abspath(__file__))
+    for _gf in ("geo_dict.json", "geo_resolver.py", os.path.join("geo", "china.json"),
+                os.path.join("geo", "guangdong.json")):
+        _gfp = os.path.join(_geo_guard_dir, _gf)
+        if os.path.isfile(_gfp) and os.path.getmtime(_gfp) > _preagg_mtime:
+            _cache_hit = False
+            print(f"  [缓存] geo 文件比缓存新（{_gf}），按不新鲜处理，走全算")
+            break
+
 if _cache_hit and _cached_obj:
     # ---- 缓存命中：跳过全部重算，直接进 JSON 注入 + 渲染 ----
     _T_CACHE0 = _time_mod.time()
@@ -816,6 +829,7 @@ if _cache_hit and _cached_obj:
         ("PIE饼图", "var PIE = [" in _html_c),
         ("SCAT散点", "var SCAT = [" in _html_c),
         ("B_CUSTS", "var B_CUSTS = [" in _html_c),
+        ("GEO数据", "var GEO_PROVINCES = [" in _html_c and "var GEO_KPIS = {" in _html_c),
         ("C面DATA", "const DATA = {" in _html_c and "TABS" in _html_c),
     ]
     _all_ok_c = True
@@ -864,7 +878,7 @@ if _FROM_EXCEL:
     sales_col_raw = resolve_dashboard_col(raw_all_cols, "实际业务员", _cfg_cands.get("sales", ["实际业务员", "业务员", "销售员"]))
     # 存货名称列（用于A面产品型号变迁）
     item_col = next((c for c in raw_all_cols if "存货名称" in str(c)), None)
-    keep_cols = ["发货日期","RMB 未税金额小计","利润","发货数量","终端客户名称_客户类别","终端客户简称","客户订单号"]
+    keep_cols = ["发货日期","RMB 未税金额小计","利润","发货数量","终端客户名称_客户类别","终端客户简称","客户订单号","发货地址"]
     if prod_col: keep_cols.append(prod_col)
     if cat_col: keep_cols.append(cat_col)
     if item_col: keep_cols.append(item_col)
@@ -894,7 +908,7 @@ else:
     # ── Silver 底座（默认）：读 silver_cleaned_rows，列名已是 ERP_COL_MAP 归一后的标准名 ──
     _keep = ["发货日期","金额","利润","数量","客户类别","客户编号","客户订单号",
              "产品一级分类","产品品类","产品品种","型号_产品线（新）","新品标记","实际业务员",
-             "销售模式","代理商/直供名称","客户"]  # 后三列：代理商视图（按经销模式）数据段用，缺失时该视图优雅置空
+             "销售模式","代理商/直供名称","客户","发货地址"]  # 后三列：代理商视图（按经销模式）数据段用，缺失时该视图优雅置空；发货地址：A面地域分布用
     _keep = [c for c in _keep if c in pd.read_csv(os.path.join(SILVER, "silver_cleaned_rows.csv"), nrows=0, encoding="utf-8-sig").columns]
     rex = _load_silver_rows(os.path.join(SILVER, "silver_cleaned_rows.csv"), _keep)
     # 语义列变量（与 --from-excel 路径同名，供下游 D面6a/E面7c 等使用）
@@ -920,6 +934,19 @@ else:
     rex["_cat_new"] = rex["产品品类"].astype(str).str.strip() if "产品品类" in rex.columns else pd.Series("", index=rex.index)
     rex["_is_new"] = rex["新品标记"].astype(str).str.contains("是") if "新品标记" in rex.columns else pd.Series(False, index=rex.index)
     rex["_ym"] = rex["_d"].dt.strftime("%Y-%m")
+
+# 地域分布（A面）用发货地址——语义列；两路径（silver 归一名 / Excel 原名均为「发货地址」）。
+# 列缺失（异常输入）时优雅降级为空串 → 全部落入「未识别」，不阻断生成。
+rex["_addr"] = rex["发货地址"].astype(str).str.strip() if "发货地址" in rex.columns else pd.Series("", index=rex.index)
+# 解析在取材后立即完成：E面 `_REX_BY_YM` 月份预分组（line ~2035）须携带 _region/_sub/_abroad 三列，
+# 供第 9 段地域聚合 O(月数×省数) 直取（若放在第 9 段才解析，预分组帧无这三列，KeyError）。
+# 解析器：dashboard/geo_resolver.py + geo_dict.json（规则全配置化，代码零地址词）。
+import geo_resolver as _geo
+_geod = _geo.load_dict()
+_addr_res = {a: _geo.resolve_region(a, _geod) for a in rex["_addr"].unique()}
+rex["_region"] = rex["_addr"].map(lambda a: _addr_res[a][0])
+rex["_sub"] = rex["_addr"].map(lambda a: _addr_res[a][1])
+rex["_abroad"] = rex["_addr"].map(lambda a: _addr_res[a][2])
 
 # ---- 自动检测最新月份及衍生日期变量（批次②：统一由纯函数 derive_periods 推导）----
 _max_date = rex["_d"].max()
@@ -2848,6 +2875,125 @@ else:
     _asp_axis_cache = {"min": 0.0, "max": 0.0}  # 缓存写入处引用（原始浮点）；F 跳过时给空，否则 NameError 静默阻断缓存重盖戳
     print("  [F面] 平时关闭（visible=false），跳过 H1 计算。半年度复盘期在 dashboard\\faces.yaml 改 visible=true")
 
+# ========== 9. 地域分布（发货地址→省市解析，按交易行聚合）==========
+# 解析已在取材后完成（见 _addr 段注释）；窗口：近12月（start_12m~latest）聚合 + YTD（KPI/Top5客户）；
+# 月度趋势数组按 _REX_BY_YM 预分组复用（三列已在预分组前挂到 rex）。
+print("[9/9] 地域分布...")
+_t_seg0 = _timed("F面前置汇总", _t_seg0)
+
+_geo_r12 = rex[(rex["_ym"] >= start_12m) & (rex["_ym"] <= latest)]
+_total12 = float(_geo_r12["_rev"].sum()) or 1e-9
+_totalytd = float(r26["_rev"].sum()) or 1e-9
+_geo_months = sorted(m for m in _REX_BY_YM.keys() if start_12m <= m <= latest)
+
+# 月份×region / 月份×(region|sub) 收入映射（预分组一次取材，O(月数×省数)）
+_geo_rm: dict[str, dict[str, float]] = {}
+_geo_rms: dict[str, dict[str, float]] = {}
+for _m in _geo_months:
+    _dm = _REX_BY_YM[_m]
+    for _reg, _v in _dm.groupby("_region")["_rev"].sum().items():
+        _geo_rm.setdefault(str(_reg), {})[_m] = float(_v)
+    _ab_dm = _dm[_dm["_abroad"]]
+    if len(_ab_dm):
+        for (_g, _c), _v in _ab_dm.groupby(["_region", "_sub"])["_rev"].sum().items():
+            _geo_rms.setdefault(f"{_g}|{_c}", {})[_m] = float(_v)
+
+
+def _geo_trend(region_name: str) -> list:
+    return [round(_geo_rm.get(region_name, {}).get(m, 0.0) / 1e4, 1) for m in _geo_months]
+
+
+def _geo_trend_sub(key: str) -> list:
+    return [round(_geo_rms.get(key, {}).get(m, 0.0) / 1e4, 1) for m in _geo_months]
+
+
+def _geo_top5(df_part) -> list:
+    _t = (df_part.groupby("_cust").agg(rv=("_rev", "sum"), pf=("_profit", "sum"))
+          .sort_values("rv", ascending=False).head(5))
+    return [{"n": str(_n), "r": round(float(_x["rv"]) / 1e4, 1),
+             "mg": round(float(_x["pf"]) / float(_x["rv"]) * 100, 1) if _x["rv"] > 0 else 0}
+            for _n, _x in _t.iterrows()]
+
+
+_ml12 = _geo_r12[(~_geo_r12["_abroad"]) & (_geo_r12["_region"] != "未识别")]
+geo_provinces = []
+for _name, _g in _ml12.groupby("_region"):
+    _r = float(_g["_rev"].sum()); _p = float(_g["_profit"].sum())
+    geo_provinces.append({
+        "n": _name, "map": _geo.short_to_full_province(_name, _geod),
+        "r": round(_r / 1e4, 1), "p": round(_p / 1e4, 1),
+        "mg": round(_p / _r * 100, 1) if _r > 0 else 0,
+        "custs": int(_g["_cust"].nunique()),
+        "share": round(_r / _total12 * 100, 2),
+        "trend": _geo_trend(_name),
+    })
+geo_provinces.sort(key=lambda x: -x["r"])
+
+_gd12 = _ml12[_ml12["_region"] == "广东"]
+geo_gd_cities = []
+for _city, _g in _gd12.groupby(_gd12["_sub"].replace("", "未细分")):
+    _r = float(_g["_rev"].sum()); _p = float(_g["_profit"].sum())
+    geo_gd_cities.append({"n": _city, "r": round(_r / 1e4, 1), "p": round(_p / 1e4, 1),
+                          "mg": round(_p / _r * 100, 1) if _r > 0 else 0})
+geo_gd_cities.sort(key=lambda x: -x["r"])
+
+# 海外/港澳台分行（region×sub），末尾附「未识别」行；仅按实际地理位置展示
+_ab12 = _geo_r12[_geo_r12["_abroad"]]
+geo_abroad = []
+for (_g, _c), _gg in _ab12.groupby(["_region", "_sub"]):
+    _r = float(_gg["_rev"].sum()); _p = float(_gg["_profit"].sum())
+    geo_abroad.append({"g": _g, "c": _c, "k": f"{_g}|{_c}",
+                       "r": round(_r / 1e4, 1), "p": round(_p / 1e4, 1),
+                       "mg": round(_p / _r * 100, 1) if _r > 0 else 0,
+                       "share": round(_r / _total12 * 100, 2),
+                       "trend": _geo_trend_sub(f"{_g}|{_c}")})
+_un12 = _geo_r12[_geo_r12["_region"] == "未识别"]
+_un_r = float(_un12["_rev"].sum()); _un_p = float(_un12["_profit"].sum())
+geo_abroad.append({"g": "未识别", "c": "", "k": "未识别",
+                   "r": round(_un_r / 1e4, 1), "p": round(_un_p / 1e4, 1),
+                   "mg": round(_un_p / _un_r * 100, 1) if _un_r > 0 else 0,
+                   "share": round(_un_r / _total12 * 100, 2),
+                   "trend": _geo_trend("未识别")})
+geo_abroad.sort(key=lambda x: -x["r"])
+
+# 弹层 Top5 客户（YTD）：大陆按省聚合，海外按 region×sub 聚合
+_geo_ytd = r26
+geo_top5: dict[str, list] = {}
+for _name, _g in _geo_ytd[(~_geo_ytd["_abroad"]) & (_geo_ytd["_region"] != "未识别")].groupby("_region"):
+    geo_top5[_name] = _geo_top5(_g)
+for (_g, _c), _gg in _geo_ytd[_geo_ytd["_abroad"]].groupby(["_region", "_sub"]):
+    geo_top5[f"{_g}|{_c}"] = _geo_top5(_gg)
+
+# KPI 卡组（YTD 口径）：广东占比 / 海外+港澳台占比 / 未识别披露
+_gd_ytd = float(_geo_ytd[(~_geo_ytd["_abroad"]) & (_geo_ytd["_region"] == "广东")]["_rev"].sum())
+_ovs_ytd = float(_geo_ytd[_geo_ytd["_abroad"]]["_rev"].sum())
+_un_ytd = float(_geo_ytd[_geo_ytd["_region"] == "未识别"]["_rev"].sum())
+geo_kpis = {"gd_pct": round(_gd_ytd / _totalytd * 100, 1),
+            "ovs_pct": round(_ovs_ytd / _totalytd * 100, 1),
+            "gd_rev": round(_gd_ytd / 1e4), "ovs_rev": round(_ovs_ytd / 1e4),
+            "unid_pct": round(_un_ytd / _totalytd * 100, 2), "unid_rev": round(_un_ytd / 1e4),
+            "prov": len(geo_provinces), "months": len(_geo_months)}
+
+# 地图 GeoJSON（vendored：dashboard/geo/，DataV areas_v3，含南海诸岛完整版图）
+_geo_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "geo")
+
+
+def _load_geojson(_fn: str):
+    _p = os.path.join(_geo_dir, _fn)
+    if not os.path.isfile(_p):
+        print(f"  [地域] 警告: 地图数据缺失 {_p}（地图降级为提示条，其余地域图表不受影响）")
+        return None
+    with open(_p, "r", encoding="utf-8") as _f:
+        return json.load(_f)
+
+
+_geo_china = _load_geojson("china.json")
+_geo_gd = _load_geojson("guangdong.json")
+_geo_hit = float((~_geo_r12["_abroad"] & (_geo_r12["_region"] != "未识别")).sum())
+print(f"  地域: 省{len(geo_provinces)}个 广东市{len(geo_gd_cities)}个 海外/港澳台/未识别行{len(geo_abroad)}个 "
+      f"| 近12月识别率 {_geo_hit / max(len(_geo_r12), 1):.2%} | 广东占比 {geo_kpis['gd_pct']}% "
+      f"海外+港澳台 {geo_kpis['ovs_pct']}% 未识别 {geo_kpis['unid_pct']}%")
+
 # ========== 保存 JSON ==========
 with open(os.path.join(DATA_DIR,"b_custs.json"),"w",encoding="utf-8") as f: json.dump(call,f,ensure_ascii=False)
 with open(os.path.join(DATA_DIR,"b_trend.json"),"w",encoding="utf-8") as f: json.dump(ctr,f,ensure_ascii=False)
@@ -2903,6 +3049,14 @@ js_data.append("var F_CAT_ATTRIBUTION = "+json.dumps(h1_cat_attribution,ensure_a
 js_data.append("var F_PRODUCT_LIST = "+json.dumps(f_product_list,ensure_ascii=False)+";")
 js_data.append("var F_CAT_H1 = "+json.dumps(f_cat_h1,ensure_ascii=False)+";")
 js_data.append("var D_DEPT_LIST = "+json.dumps(dept_list,ensure_ascii=False)+";")
+js_data.append("var GEO_MONTHS = "+json.dumps(_geo_months,ensure_ascii=False)+";")
+js_data.append("var GEO_PROVINCES = "+json.dumps(geo_provinces,ensure_ascii=False)+";")
+js_data.append("var GEO_ABROAD = "+json.dumps(geo_abroad,ensure_ascii=False)+";")
+js_data.append("var GEO_GD_CITIES = "+json.dumps(geo_gd_cities,ensure_ascii=False)+";")
+js_data.append("var GEO_TOP5 = "+json.dumps(geo_top5,ensure_ascii=False)+";")
+js_data.append("var GEO_KPIS = "+json.dumps(geo_kpis,ensure_ascii=False)+";")
+js_data.append("var GEO_CHINA_JSON = "+json.dumps(_geo_china,ensure_ascii=False,separators=(",",":"))+";")
+js_data.append("var GEO_GD_JSON = "+json.dumps(_geo_gd,ensure_ascii=False,separators=(",",":"))+";")
 data_block = "// ===== DATA LAYER =====\n" + "\n".join(js_data)
 
 # C面数据
@@ -3072,6 +3226,10 @@ template = template_path.read_text(encoding="utf-8")
 replacements = {
     "%%KPI_R%%":f"{kpi_r:,.0f}","%%KPI_P%%":f"{kpi_p:,.0f}","%%KPI_C%%":f"{kpi_c:,.0f}",
     "%%KPI_MG%%":str(kpi_mg),"%%KPI_RY%%":f"{kpi_ry:+.1f}","%%KPI_PY%%":f"{kpi_py:+.1f}",
+    # ---- A面地域分布 KPI 卡（值由 refreshKPIs 依 GEO_KPIS 运行时刷新，此处为无 JS 兜底静态值）----
+    "%%GEO_GD_PCT%%":f"{geo_kpis['gd_pct']:.1f}","%%GEO_GD_SUB%%":f"YTD {geo_kpis['gd_rev']:,.0f} 万元",
+    "%%GEO_OVS_PCT%%":f"{geo_kpis['ovs_pct']:.1f}",
+    "%%GEO_OVS_SUB%%":f"YTD {geo_kpis['ovs_rev']:,.0f} 万元 · 未识别 {geo_kpis['unid_pct']}%",
     "%%KPI_MG_YOY%%":f"{kpi_mg_yoy:+.1f}","%%KPI_SR%%":f"{kpi_sr:,.0f}","%%KPI_SP%%":f"{kpi_sp:,.0f}",
     "%%KPI_SM%%":str(kpi_sm),"%%KPI_SPT%%":str(kpi_spt),"%%KPI_SC%%":str(kpi_sc),
     "%%KPCT%%":str(kpct),"%%LATEST%%":latest,"%%YTD_PERIOD%%":f"{_latest_y}-01~{latest[-2:]}","%%D_HEADCOUNT%%":str(len(d_sales_list)),"%%KA_REV%%":f"{ka_kpi['rev']:,.0f}",
@@ -3170,6 +3328,7 @@ checks = [
     ("PIE饼图","var PIE = [" in html),
     ("SCAT散点","var SCAT = [" in html),
     ("B_CUSTS","var B_CUSTS = [" in html),
+    ("GEO数据","var GEO_PROVINCES = [" in html and "var GEO_KPIS = {" in html),
     ("C面DATA","const DATA = {" in html and "TABS" in html),
 ]
 if raw_silver_ok is not None:
