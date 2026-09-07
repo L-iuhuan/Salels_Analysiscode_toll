@@ -2053,7 +2053,10 @@ else:
 
 # 7a. 全量月度KPI（所有月份 + 所有客户）
 rex["_yr"] = rex["_d"].dt.year
-all_months = sorted(rex["_ym"].unique())
+# 防御：发货日期空值行（如 8 月 silver 存在的 1 行全空行）使 _ym 为 NaN（float），
+# sorted(混合 float/str) 直接 TypeError。过滤非字符串月键——该行为全空行（金额/数量均 NaN→0），
+# 对月度 KPI 零贡献； rex 级 YTD 合计不受影响（pandas groupby 默认 dropna 本就排除 NaN 键）。
+all_months = sorted(m for m in rex["_ym"].unique() if isinstance(m, str))
 
 # [批次⑤ P1 性能优化] 一次性 groupby 预分组，替代循环内 rex[rex[键]==值] 全表布尔扫描。
 # groupby(sort=False) 组内保留原始行序，与布尔过滤结果逐行一致 → 下游计算零变化。
@@ -2759,7 +2762,8 @@ if _face_visible("F"):
         _risk_map = dict(zip(prod_df["产品名称"].astype(str), prod_df["综合风险等级"].astype(str)))
 
     # 月度趋势数据（24个月，起始月动态）
-    _all_months = sorted(rex["_ym"].unique())
+    # 防御：同 E面 all_months——_ym 含 NaN（发货日期空值行）时 sorted 混型崩溃，过滤非字符串月键
+    _all_months = sorted(m for m in rex["_ym"].unique() if isinstance(m, str))
     _trend_months = [m for m in _all_months if m >= _trend_months_start][-24:]
     _prod_trend = {}
     for _item in _major_items:
