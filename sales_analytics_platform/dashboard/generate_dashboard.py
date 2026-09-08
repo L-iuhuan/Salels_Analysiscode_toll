@@ -864,7 +864,11 @@ if _FROM_EXCEL:
         raise FileNotFoundError("data/ 目录下未找到 .xlsx 文件")
     excel_path = _xl_candidates[0]
     print(f"  数据源: {os.path.basename(excel_path)} (--from-excel 直读)")
-    raw_all_cols = list(pd.read_excel(excel_path, sheet_name=DATA_SHEET_NAME, nrows=0, engine="calamine").columns)
+    _DATA_SHEET = getattr(cfg, "resolve_data_sheet", None)
+    DATA_SHEET_RESOLVED = _DATA_SHEET(excel_path) if callable(_DATA_SHEET) else DATA_SHEET_NAME
+    if DATA_SHEET_RESOLVED != DATA_SHEET_NAME:
+        print(f"  [sheet] DATA_SHEET_NAME='{DATA_SHEET_NAME}' 未命中，探测回退→ '{DATA_SHEET_RESOLVED}'")
+    raw_all_cols = list(pd.read_excel(excel_path, sheet_name=DATA_SHEET_RESOLVED, nrows=0, engine="calamine").columns)
     # 找到产品列（含"产品线"或"产品品种"关键字）
     prod_cols_avail = [c for c in raw_all_cols if "产品" in str(c) or "型号" in str(c)]
     # 优先选"产品线"列，其次"产品品种"
@@ -889,7 +893,7 @@ if _FROM_EXCEL:
         keep_cols.append(newprod_col)
     if sales_col_raw and sales_col_raw not in keep_cols:
         keep_cols.append(sales_col_raw)
-    rex = pd.read_excel(excel_path, sheet_name=DATA_SHEET_NAME, usecols=keep_cols, engine="calamine")
+    rex = pd.read_excel(excel_path, sheet_name=DATA_SHEET_RESOLVED, usecols=keep_cols, engine="calamine")
     rex = rex[keep_cols]
     print(f"  产品列: {repr(prod_col)}  品类列: {repr(cat_col)}")
     rex["_d"] = pd.to_datetime(rex["发货日期"], errors="coerce")
@@ -1075,6 +1079,17 @@ kaaa_mo = rex[rex["_tier"].str.contains("KA|AA",na=False)].groupby("_ym").agg(r=
 kaa_rev = {}
 for _,r in kaaa_mo.iterrows(): kaa_rev[str(r["_ym"])]=round(float(r["r"])/1e4,2)
 
+# ========== [M4 拍板] 空客户编号统一哨兵 ==========
+# 议会终审口径决策：客户维度一律「全部剔除」——jx pairs / zx 列表 / 桶级 KPI custs 计数 /
+# 地域 Top5 与客户数 / A面饼图 / E面月度矩阵 / Top 产品客户键，全部走同一判定，不再各写各的元组。
+_CUST_NAN_KEYS = {"nan", "None", "", "未知客户"}
+
+
+def _cust_key_ok(k) -> bool:
+    """客户编号/客户键是否有效（非空客户编号哨兵）。六处统一调用入口。"""
+    return str(k).strip() not in _CUST_NAN_KEYS
+
+
 # ========== 4. 饼图+散点 ==========
 _timed("月度趋势/分层趋势", _t_seg0); _t_seg0 = _time_mod.time()
 print("[4/5] 饼图+散点...")
@@ -1088,7 +1103,7 @@ for tier in ["KA","AA","KM"]:
         mask = r26["_tier"].str.contains(tier, na=False)
     # 排除nan/空客户名
     valid = r26[mask]
-    valid = valid[~valid["_cust"].isin(["nan","None","","未知客户"])]
+    valid = valid[valid["_cust"].map(_cust_key_ok)]
     tier_cust_counts[tier] = valid["_cust"].nunique()
 pie = [{"name":t,"value":int(tier_cust_counts.get(t,0))} for t in ["KA","AA","KM"]]
 # K类收入 = KA+AA+KM 交易收入合计
@@ -1278,6 +1293,7 @@ if "销售模式" in rex.columns and _ag_ent_col:
             "nc": int(_g["c"].nunique()), "npd": int(_g["it"].nunique())})
         _prs = []
         for _c, _gc in _g.groupby("c"):
+            if not _cust_key_ok(_c): continue  # [M4] 空客户编号行剔除（原不滤，点击无响应）
             _cr = float(_gc["r"].sum()); _cp = float(_gc["p"].sum())
             _prs.append({"id": str(_c), "n": cid_to_name.get(str(_c), str(_c)),
                          "r": round(_cr / 1e4, 1), "p": round(_cp / 1e4, 1),
@@ -1292,19 +1308,20 @@ if "销售模式" in rex.columns and _ag_ent_col:
          "mg": round(float(_gc["p"].sum()) / float(_gc["r"].sum()) * 100, 1) if float(_gc["r"].sum()) > 0 else 0,
          "t": _ag_tier.get(str(_c), ""), "npd": int(_gc["it"].nunique())}
         for _c, _gc in _zx.groupby("c")
-        if str(_c) not in ("nan", "None", "", "未知客户")]  # 直销客户编号缺失不产 nan 行（M1，对齐 jx 侧哨兵）
+        if _cust_key_ok(_c)]  # 直销客户编号缺失不产 nan 行（M1/M4 统一哨兵）
     for _b in ("jx", "zx"):
         _agent_view[_b].sort(key=lambda x: -x["r"])
     _agent_view["pairs"] = _ag_pairs
     # 桶级 KPI + 月度趋势（YTD，供右栏概况图表；视图仅 jx/zx 两桶）
     for _b in ("jx", "zx"):
         _sub = _ry[_ry["b"] == _b]
+        _subc = _sub[_sub["c"].map(_cust_key_ok)]  # [M4] 桶 KPI 客户计数剔除空客户编号
         _kr = float(_sub["r"].sum()); _kp = float(_sub["p"].sum())
         _agent_view["kpi"][_b] = {
-            "n": int(_sub["c"].nunique()) if _b == "zx" else int(_sub["e"].nunique()),
+            "n": int(_subc["c"].nunique()) if _b == "zx" else int(_sub["e"].nunique()),
             "rev": round(_kr / 1e4, 1), "profit": round(_kp / 1e4, 1),
             "mg": round(_kp / _kr * 100, 1) if _kr > 0 else 0,
-            "custs": int(_sub["c"].nunique()), "prods": int(_sub["prod"].nunique())}
+            "custs": int(_subc["c"].nunique()), "prods": int(_sub["prod"].nunique())}
         _bmo = _sub.groupby("ym").agg(r=("r", "sum"), p=("p", "sum"), q=("q", "sum")).reset_index().sort_values("ym")
         _agent_view["btrend"][_b] = [{"m": str(_x["ym"]), "r": round(float(_x["r"]) / 1e4, 2),
                                       "p": round(float(_x["p"]) / 1e4, 2),
@@ -1366,6 +1383,9 @@ if "销售模式" in rex.columns and _ag_ent_col:
     _hot_months = [{"ym": str(_i), "pct": round(float(_v["other"] / _v["_tot"] * 100), 1),
                     "rev": round(float(_v["other"]) / 1e4, 1)} for _i, _v in _hot.iterrows()]
     _dq_path = os.path.join(OUT_DIR, f"销售模式数据问题_{latest}.md")
+    # [M1/M4] 空客户编号交易行统计：客户维度（B列表/层级环/桶KPI/地域Top5等）一律剔除，真实收入不静默隐形
+    _cn_rex = rex[~rex["_cust"].map(_cust_key_ok)]
+    _cn_rows = int(len(_cn_rex)); _cn_rev = round(float(_cn_rex["_rev"].sum()) / 1e4, 1)
     _md = [f"# 销售模式数据问题（数据月份 {latest}）", "",
            "> 跑批自动生成。汇总「销售模式」列未规范填写与经销行代理商名缺失情况；看板内不展示本提示。",
            "> 所有交易未做剔除或归并；未规范填写的交易暂不进入「按销售模式」视图（在「按终端客户」视图中完整保留），修正源数据后归入对应分组、本文件内容自动收敛。", "",
@@ -1374,6 +1394,7 @@ if "销售模式" in rex.columns and _ag_ent_col:
            f"- 空值：{len(_null)} 行 / {round(float(_null['r'].sum()) / 1e4, 1)} 万",
            f"- 经销但代理商名缺失：{len(_jxm)} 行 / {round(float(_jxm['r'].sum()) / 1e4, 1)} 万 / 涉及 {len(_jxm_months)} 个月份",
            f"- 混合实体（同一实体经销与直销并存）：{len(_mixed)} 家",
+           f"- 无客户编号交易行（客户维度已剔除，真实收入仍计入面级合计）：{_cn_rows} 行 / {_cn_rev} 万（B 列表「未知客户」零值行已同步剔除）",
            f"- 客户层级异常值（层级不在 KA/AA/KM/MM 四类）：{_tier_anom_rows} 行 / {_tier_anom_rev} 万 / 涉及 {_tier_anom_custs} 家（详见下文「客户层级异常值」小节）",
            f"- 问题集中月份（「其他」占比>5%）：" + ("；".join(f"{h['ym']}（{h['pct']}%，{h['rev']}万）" for h in _hot_months) if _hot_months else "无"), "",
            "## 经销但代理商名缺失", "",
@@ -1433,7 +1454,7 @@ if "销售模式" in rex.columns and _ag_ent_col:
         预分组模式：在共享工作帧上一次 (键→子表) groupby 建索引后各组查表组装，禁止逐组全表过滤。"""
         _wk = _pwk.copy()
         _wk.insert(0, "mkey", _member)
-        _wk = _wk[_wk["mkey"].notna() & (_wk["mkey"].astype(str) != "") & (~_wk["mkey"].astype(str).isin(["nan", "None", "未知客户"]))]
+        _wk = _wk[_wk["mkey"].notna() & (_wk["mkey"].map(_cust_key_ok))]
         _c = _wk[(_wk["ym"] >= start_12m) & (_wk["ym"] <= latest)]
         _cells = _c.groupby(["mkey", "it", "ym"], as_index=False).agg(
             r=("r", "sum"), p=("p", "sum"), q=("q", "sum"))
@@ -1472,7 +1493,7 @@ if "销售模式" in rex.columns and _ag_ent_col:
     _m_bucket = pd.Series(np.where(_ag_bucket == "jx", "jx", np.where(_ag_bucket == "zx", "zx", None)),
                           index=rex.index, dtype=object)
     _m_agent = _ag_ent.where(_ag_bucket == "jx")
-    _m_cust = rex["_cust"].where(~rex["_cust"].isin(["nan", "None", "", "未知客户"]))
+    _m_cust = rex["_cust"].where(rex["_cust"].map(_cust_key_ok))
     _b_prod_bucket = _build_prod_map(_m_bucket)
     _b_prod_agent = _build_prod_map(_m_agent)
     _b_prod_cust = _build_prod_map(_m_cust)
@@ -1584,8 +1605,13 @@ new_pct = round(float(rex_true_new["_rev"].sum())/ytd_r*100,1) if ytd_r>0 else 0
 new_flag_pct = new_pct
 
 call=[]
+_call_skip_unknown = 0   # [M1] gold「未知客户」=空客户编号聚合桶（data_cleaning fillna），其收入在 rex _cust="nan" 下，
+                         # cid_fin/cid_12m_data 均按 _cust 键→查无此行→r/p/pc/trend 全 0 静默隐形；按 M4 口径从 B_CUSTS 剔除，统计落 DQ
 for _,row in all_sorted.iterrows():
     cid=str(row.get("客户编号","")); name=str(row.get("客户名称","")).strip()
+    if not _cust_key_ok(cid) or name in _CUST_NAN_KEYS:
+        _call_skip_unknown += 1
+        continue
     fin=cid_fin.get(name,{})
     r_p=j(row.get("近12月收入",0)); p_p=j(row.get("近12月毛利",0))
     ld=j(row.get("距上次采购天数",0)); iv=j(row.get("常规平均采购间隔",60))
@@ -2048,7 +2074,7 @@ d_waterfall = {"team_avg": team_force_avg, "labels": [force_labels_cn[fk] for fk
 # 6n. 客户热力图（销售员 × Top33客户 × 利润金额万元）
 # 批次④a 向量化：858 次 rex 布尔过滤（26人×33客户）→ 一次 groupby 预聚合（纯等价）
 top33_custs = list(rex[(rex["_d"]>=ytd_start)&(rex["_d"]<=ytd_end)].groupby("_cust")["_rev"].sum().sort_values(ascending=False).head(33).index)
-top33_custs = [c for c in top33_custs if c not in ("nan","None","","未知客户")]
+top33_custs = [c for c in top33_custs if _cust_key_ok(c)]
 _hm_rex = rex[(rex["_d"]>=ytd_start)&(rex["_d"]<=ytd_end)&(rex["_cust"].isin(top33_custs))]
 _hm_agg = _hm_rex.groupby(["_sales","_cust"]).agg(rev=("_rev","sum"), profit=("_profit","sum")).reset_index()
 _hm_map = {(str(_r["_sales"]), str(_r["_cust"])): (float(_r["rev"]), float(_r["profit"])) for _, _r in _hm_agg.iterrows()}
@@ -2120,7 +2146,7 @@ for m in all_months:
     cagg = dm.groupby("_cust").agg(rev=("_rev","sum"), profit=("_profit","sum"), qty=("_qty","sum")).reset_index()
     for _, r in cagg.iterrows():
         cid = str(r["_cust"]); rev = float(r["rev"]); profit = float(r["profit"])
-        if cid in ("nan","None","","未知客户"): continue
+        if not _cust_key_ok(cid): continue
         if cid not in e_cust_monthly: e_cust_monthly[cid] = {}
         e_cust_monthly[cid][m] = {
             "r": round(rev/1e4, 2), "p": round(profit/1e4, 2),
@@ -2952,7 +2978,8 @@ def _geo_trend_city(city: str) -> list:
 
 def _geo_top5(df_part, df_prev) -> list:
     # [三期] 加同比列（对比上年同期 YTD，r25 复用零新增扫描），抽屉内 Top5 客户/产品列结构对齐
-    _t = (df_part.groupby("_cust").agg(rv=("_rev", "sum"), pf=("_profit", "sum"))
+    # [M4] 空客户编号行不进 Top5（原不滤，"nan"客户占位）
+    _t = (df_part[df_part["_cust"].map(_cust_key_ok)].groupby("_cust").agg(rv=("_rev", "sum"), pf=("_profit", "sum"))
           .sort_values("rv", ascending=False).head(5))
     _pv = df_prev.groupby("_cust")["_rev"].sum().to_dict() if len(df_prev) else {}
     _out = []
@@ -2976,7 +3003,7 @@ for _name, _g in _ml12.groupby("_region"):
         "r": round(_r / 1e4, 1), "p": round(_p / 1e4, 1),
         "q": int(round(float(_g["_qty"].sum()))),
         "mg": round(_p / _r * 100, 1) if _r > 0 else 0,
-        "custs": int(_g["_cust"].nunique()),
+        "custs": int(_g.loc[_g["_cust"].map(_cust_key_ok), "_cust"].nunique()),
         "share": round(_r / _total12 * 100, 2),
         "mom": round((_mcur - _mprv) / _mprv * 100, 1) if _mprv > 0 else None,
         "trend": _geo_trend(_name),
@@ -2990,7 +3017,7 @@ for _city, _g in _gd12.groupby(_gd12["_sub"].replace("", "未细分")):
     geo_gd_cities.append({"n": _city, "r": round(_r / 1e4, 1), "p": round(_p / 1e4, 1),
                           "q": int(round(float(_g["_qty"].sum()))),
                           "mg": round(_p / _r * 100, 1) if _r > 0 else 0,
-                          "custs": int(_g["_cust"].nunique()),
+                          "custs": int(_g.loc[_g["_cust"].map(_cust_key_ok), "_cust"].nunique()),
                           "share": round(_r / _total12 * 100, 2),
                           "trend": _geo_trend_city(_city)})
 geo_gd_cities.sort(key=lambda x: -x["r"])

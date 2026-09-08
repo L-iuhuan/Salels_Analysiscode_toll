@@ -2433,6 +2433,12 @@ function _geoTop5ProdTable(key){
 }
 function geoOpenDrawer(key){
  if(typeof GEO_PROVINCES==='undefined')return;
+ // [M2] 代际计数器：快速连点时旧省份的 trend 不得渲进新弹层（参照 _B_DET_GEN 先例）
+ var _gen=++_GEO_DET_GEN;
+ // [M2] open() 直接覆盖 _content.innerHTML 不 dispose——先清抽屉容器内 ECharts 实例，防连点泄漏
+ if(TABS.ChartRegistry&&TABS.ChartRegistry.disposeInContainer&&TABS.drawer&&TABS.drawer._content){
+  TABS.ChartRegistry.disposeInContainer(TABS.drawer._content);
+ }
  var title=key,kpiRow=[],trend=[],isProv=false;
  var prov=GEO_PROVINCES.find(function(d){return d.n===key;});
  var city=null;
@@ -2461,6 +2467,7 @@ function geoOpenDrawer(key){
  h+=_geoTop5ProdTable(key);
  TABS.drawer.open({title:'地域详情 · '+title,contentHTML:h,width:660,onOpen:function(){
  setTimeout(function(){
+  if(_gen!==_GEO_DET_GEN)return;   // [M2] 代际守卫：已被更新的打开动作取代则放弃渲染
   var dom=document.getElementById('geoDrawerTrend');if(!dom)return;
   var c=TABS.charts.init('geoDrawerTrend');if(!c)return;
   var months=(typeof GEO_MONTHS!=='undefined')?GEO_MONTHS:[];
@@ -2490,6 +2497,7 @@ function openB(name){if(!ALL){ALL=B_CUSTS;CTR=B_TREND}var f=ALL.find(function(c)
 // ── 代理商视图（按经销模式）：三桶字面值分类，零清洗零归类；DQ 提示落盘独立文件不进看板 ──
 var B_MODE='cust',B_SUBMODE='jx',B_AGENT_EXPANDED=null,B_PAIR_SEL=null,B_AGSEL=null,_AG_DET_KEY='';
 var _B_DET_GEN=0;
+var _GEO_DET_GEN=0;   // [M2] geo 弹层代际计数（strict 模式下须显式声明，禁隐式全局）
 function bSetMode(m){B_MODE=m;B_AGENT_EXPANDED=null;B_PAIR_SEL=null;B_AGSEL=null;_AG_DET_KEY='';var wc=document.getElementById('bModeCust'),wa=document.getElementById('bModeAgent');if(wc&&wa){wc.className=m==='cust'?'on':'';wa.className=m==='agent'?'on':''}var sw=document.getElementById('bSubWrap');if(sw)sw.style.display=m==='agent'?'flex':'none';var fr=document.getElementById('bFilterRow');if(fr){fr.style.display=m==='agent'?'none':'flex'}var ly=document.getElementById('bLayout');if(ly)ly.className=m==='agent'?'bl agent':'bl';renderBList()}
 function bSetSub(s){B_SUBMODE=s;B_AGENT_EXPANDED=null;B_PAIR_SEL=null;B_AGSEL=null;_AG_DET_KEY='';var map={jx:'bSubJx',zx:'bSubZx',other:'bSubOther'};for(var k in map){var el=document.getElementById(map[k]);if(el)el.className=(k===s?'on':'')}renderBList()}
 function bSelAgent(a){B_AGENT_EXPANDED=(B_AGENT_EXPANDED===a)?null:a;B_AGSEL=(B_AGENT_EXPANDED===a)?a:null;B_PAIR_SEL=null;renderBList()}

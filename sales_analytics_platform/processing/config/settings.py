@@ -34,7 +34,39 @@ OUTPUT_REPORT = os.path.join(OUTPUT_DIR, "report")      # Excel报告输出
 # ============================================================
 
 # 数据源Excel工作表名称（0=第一个sheet，或指定名称如"总表"）
+# [M3 拍板] 该值只作「优先命中项」：源表跨年改名（如 24-26 → 25-27）时由
+# resolve_data_sheet() 按「两位年份-两位年份」模式探测，不再硬编码失效即崩。
 DATA_SHEET_NAME = "24-26"
+
+# sheet 名「两位年份-两位年份」模式（如 "24-26"、"25-27"）：探测时的次优先命中
+import re as _re  # noqa: E402  (配置模块允许局部 import，保持集中)
+DATA_SHEET_YEAR_PAT = _re.compile(r"^\d{2}-\d{2}$")
+
+
+def resolve_data_sheet(xl_path, engine="calamine", required_cols=("发货日期",)):
+    """[M3] 数据源 sheet 解析（向后兼容 DATA_SHEET_NAME 为优先命中项）：
+    1) DATA_SHEET_NAME 在 sheet 列表中 → 直接用它（既有行为零变化）；
+    2) 否则取第一个匹配 ``^\\d{2}-\\d{2}$`` 的 sheet（如源表改名 "25-27"）；
+    3) 否则回退 sheet_name=0，并做表头校验（含任一 required_cols 关键列），
+       校验也失败仍回退 0（保持旧兜底语义，读取错误照常上抛不静默）。
+    """
+    import pandas as pd  # 局部导入：配置模块不强制依赖 pandas
+    try:
+        names = [str(n).strip() for n in pd.ExcelFile(xl_path, engine=engine).sheet_names]
+    except Exception:
+        return 0
+    if DATA_SHEET_NAME in names:
+        return DATA_SHEET_NAME
+    for n in names:
+        if DATA_SHEET_YEAR_PAT.match(n):
+            return n
+    try:
+        hdr = set(map(str, pd.read_excel(xl_path, sheet_name=0, nrows=0, engine=engine).columns))
+        if not any(c in hdr for c in required_cols):
+            return 0  # 表头校验失败：仍回退 0（与旧兜底一致，不做猜测）
+    except Exception:
+        pass
+    return 0
 
 # ============================================================
 # Dashboard 直读原始 Excel 的语义列优先级（批次② 车道A 新增）
