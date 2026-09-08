@@ -2304,13 +2304,8 @@ function _geoMapPieces(){
  }
  return [{max:5,label:'<5%',color:'#EFF6FF'},{min:5,max:20,label:'5-20%',color:'#93C5FD'},{min:20,max:50,label:'20-50%',color:'#3B82F6'},{min:50,label:'>50%',color:'#1D4ED8'}];
 }
-function _geoLabelMin(){
- var ds=_geoMapData(),mx=0;
- ds.forEach(function(d){if(d.value>mx)mx=d.value;});
- return Math.max(mx*0.08,1);   // 仅大省显名：收入≥最大值8%的区块才渲染省名标签，防挤
-}
-function _geoMapSetOption(c,mapName){
- c.setOption({tooltip:{confine:true,formatter:function(p){if(!p.data)return p.name+'<br/>无数据';var rv=(p.data.r!==undefined?p.data.r:p.data.value);var h='<b>'+p.name+'</b><br/>近12月收入: '+Number(rv).toLocaleString()+'万<br/>毛利: '+(p.data.p||0).toLocaleString()+'万 · 毛利率: '+(p.data.mg||0)+'%';if(p.data.share!==undefined)h+='<br/>占比: '+p.data.share+'%';return h;}},visualMap:{type:'piecewise',orient:'vertical',left:'auto',right:6,top:'middle',itemWidth:12,itemHeight:10,itemGap:4,textStyle:{fontSize:TYPO.xs},pieces:_geoMapPieces()},series:[{type:'map',map:mapName,roam:false,selectedMode:false,aspectScale:mapName==='china_main'?1.0:0.75,label:{show:true,fontSize:9,color:'#64748B',formatter:function(p){var v=(p.data&&typeof p.data.value==='number')?p.data.value:0;return v>=_geoLabelMin()?p.name:'';}},emphasis:{label:{show:true,fontSize:TYPO.base,color:'#1E293B'},itemStyle:{areaColor:'#BFDBFE'}},itemStyle:{borderColor:'#CBD5E1',borderWidth:0.5,areaColor:'#D1D5DB'},data:_geoMapData()}]},true);
+ function _geoMapSetOption(c,mapName){
+  c.setOption({tooltip:{confine:true,formatter:function(p){if(!p.data)return p.name+'<br/>无数据';var rv=(p.data.r!==undefined?p.data.r:p.data.value);var h='<b>'+p.name+'</b><br/>近12月收入: '+Number(rv).toLocaleString()+'万<br/>毛利: '+(p.data.p||0).toLocaleString()+'万 · 毛利率: '+(p.data.mg||0)+'%';if(p.data.share!==undefined)h+='<br/>占比: '+p.data.share+'%';return h;}},visualMap:{type:'piecewise',orient:'vertical',left:'auto',right:6,top:'middle',itemWidth:12,itemHeight:10,itemGap:4,textStyle:{fontSize:TYPO.xs},pieces:_geoMapPieces()},series:[{type:'map',map:mapName,roam:false,selectedMode:false,aspectScale:mapName==='china_main'?1.0:0.75,label:{show:true,fontSize:9,color:'#64748B',formatter:function(p){var v=(p.data&&typeof p.data.value==='number')?p.data.value:0;return v>0?p.name:'';}},emphasis:{label:{show:true,fontSize:TYPO.base,color:'#1E293B'},itemStyle:{areaColor:'#BFDBFE'}},itemStyle:{borderColor:'#CBD5E1',borderWidth:0.5,areaColor:'#D1D5DB'},data:_geoMapData()}]},true);
  c.off('click');
  c.on('click',function(p){
    if(GEO_DRILL==='china_main'){
