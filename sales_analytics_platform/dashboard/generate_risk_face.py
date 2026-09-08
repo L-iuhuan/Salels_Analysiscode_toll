@@ -20,6 +20,7 @@
     type payload.json | python dashboard\\generate_risk_face.py --import-json 202607   # JSON → md（stdin）
 """
 import argparse
+import calendar
 import hashlib
 import html
 import json
@@ -37,6 +38,7 @@ PLATFORM = os.path.dirname(DASH_DIR)
 GOLD = os.path.join(PLATFORM, "output", "gold")
 SILVER = os.path.join(PLATFORM, "output", "silver")
 FACES_YAML = os.path.join(DASH_DIR, "faces.yaml")
+RISK_TEMPLATES_YAML = os.path.join(DASH_DIR, "risk_templates.yaml")  # v2 策展阈值+建议模板库
 TEMPLATE = os.path.join(DASH_DIR, "template_risk_test.html")
 ACTIONS_JSON = os.path.join(DASH_DIR, "action_items.json")
 # 迁移拍板：risk_action_*.md 与 meeting_track.md 移至 output\dashboard\（壳端编辑产物与源码目录分离，
@@ -309,48 +311,570 @@ def save_actions(data):
         json.dump(data, f, ensure_ascii=False, indent=2)
 
 
-def build_draft(month):
-    """生成总体文档初稿。返回 (md_text, 统计dict)。初稿应用策展规则：同客户合并 + 每类 Top-N。"""
-    stats = {"anomaly": 0, "anomaly_overflow": 0, "neg_margin": 0, "neg_overflow": 0,
-             "carryover": 0, "meeting": 0}
+# ---------- 策展引擎 v2（设计 §2：8 通道信号源 + 去重合并 + 月度对拍 + Top12）----------
 
-    # --- 风险摘要：异常日志（高/中；同客户多条合并；Top-N）---
-    risk_rows = []
+def _load_templates():
+    """risk_templates.yaml：阈值 + 建议模板库（代码零文案，可持续调整不改代码）。"""
+    if not os.path.exists(RISK_TEMPLATES_YAML):
+        return {"top_n": TOP_N_PER_SOURCE, "channels": {}, "seeds": {"min_level": "高", "min_consecutive": 2},
+                "templates": {}}
+    with open(RISK_TEMPLATES_YAML, encoding="utf-8") as f:
+        return yaml.safe_load(f)
+
+
+def _safe_format(tpl, ctx):
+    """模板填充：缺省占位符留原样（{xxx} 原样输出），异常不抛。"""
+    class _D(dict):
+        def __missing__(self, key):
+            return "{" + key + "}"
+    try:
+        return str(tpl).format_map(_D({k: v for k, v in ctx.items()}))
+    except Exception:
+        return str(tpl)
+
+
+def _render_template(cfg, rtype, level, ctx, fallback_detail="", alt_key=None):
+    """类型×等级模板渲染：先精确（类型→等级），缺等级回退类型任意等级，再回退 _default，最后详情透传。
+    alt_key：同类型多数据源时改用替代模板键（如异常日志的 _log_营收断崖），避免数据位错位。"""
+    tpls = (cfg.get("templates") or {})
+    ctx = dict(ctx)
+    ctx.setdefault("detail", fallback_detail)
+    by_type = tpls.get(alt_key) or tpls.get(rtype) or {}
+    tpl = by_type.get(level) or next(iter(by_type.values()), None)
+    if tpl is None:
+        dft = tpls.get("_default") or {}
+        tpl = dft.get(level) or next(iter(dft.values()), None)
+    if tpl is None:
+        return str(ctx.get("detail") or "")[:120]
+    return _safe_format(tpl, ctx)[:160]
+
+
+def _sig(customer, rtype, level, loss, context, suggestion, channel):
+    """统一信号记录。loss 单位元（无损失口径记 0）。"""
+    return {"customer": str(customer).strip(), "types": [rtype], "rtype": rtype,
+            "level": level if level in RISK_LEVEL_ORDER else "中",
+            "loss": float(loss or 0.0), "context": str(context or ""),
+            "suggestion": str(suggestion or ""), "channel": channel}
+
+
+def _num(v, default=0.0):
+    try:
+        if pd.isna(v):
+            return default
+        return float(v)
+    except (TypeError, ValueError):
+        return default
+
+
+_DETAIL_RE = {
+    "rev12m": re.compile(r"近12月收入([\d,]+(?:\.\d+)?)"),
+    "growth": re.compile(r"增长率(-?\d+(?:\.\d+)?)%"),
+    "months": re.compile(r"连续(下滑|增长)(\d+)个?月"),
+}
+
+
+def _parse_anomaly_detail(detail):
+    """异常详情列解析：近12月收入/增长率%/连续下滑N个月 → 建议模板数据位 + 上下文。"""
+    out = {}
+    m = _DETAIL_RE["rev12m"].search(detail)
+    if m:
+        out["rev12m"] = f"{float(m.group(1).replace(',', '')) / 10000:.1f}"
+    m = _DETAIL_RE["growth"].search(detail)
+    if m:
+        out["growth"] = m.group(1)
+    m = _DETAIL_RE["months"].search(detail)
+    if m:
+        out["months"] = f"连续{m.group(1)}{m.group(2)}个月"
+    return out
+
+
+def _ch_anomaly_log(cfg):
+    """通道1 异常日志（既有增强）：高/中入选；异常详情解析进建议+上下文。"""
+    c = (cfg.get("channels") or {}).get("anomaly_log") or {}
+    if c.get("enabled", True) is False:
+        return []
     df = _read_gold("异常日志.csv")
-    if df is not None and len(df) > 0:
-        df = df[df["异常等级"].isin(["高", "中"])].copy()
-        df["_o"] = df["异常等级"].map(RISK_LEVEL_ORDER).fillna(9)
-        # 同客户多条异常合并为一条（等级取最高，类型合并）
-        df = (df.groupby("客户编号", sort=False)
-                .agg(异常等级=("异常等级", "first"),
-                     异常类型=("异常类型", lambda s: "、".join(dict.fromkeys(s.astype(str)))),
-                     _o=("_o", "min"))
-                .reset_index())
-        df = df.sort_values(["_o", "客户编号"], kind="stable")
-        stats["anomaly_overflow"] = max(0, len(df) - TOP_N_PER_SOURCE)
-        df = df.head(TOP_N_PER_SOURCE)
-        for _, r in df.iterrows():
-            risk_rows.append([r["异常等级"], f"客户{r['异常类型']}", r["客户编号"], "-",
-                              "查看客户 360 面", ""])
-        stats["anomaly"] = len(df)
+    if df is None or not len(df):
+        return []
+    levels = c.get("levels") or ["高", "中"]
+    df = df[df["异常等级"].isin(levels)]
+    out = []
+    for _, r in df.iterrows():
+        detail = str(r.get("异常详情") or "").strip()
+        info = _parse_anomaly_detail(detail)
+        rtype = str(r["异常类型"]).strip() or "异常"
+        suggestion = _render_template(cfg, rtype, r["异常等级"], info, fallback_detail=detail,
+                                      alt_key=f"_log_{rtype}")
+        out.append(_sig(r["客户编号"], rtype, r["异常等级"], 0.0,
+                        detail[:60], suggestion, "异常日志"))
+    return out
 
-    # --- 风险摘要：负毛利（损失 ≤ -阈值；源表负值存储；等级映射 严重/关注/轻微→高/中/低；Top-N）---
+
+def _ch_neg_margin(cfg):
+    """通道8 负毛利（既有）：损失 ≤ -阈值；等级映射 严重/关注/轻微→高/中/低。"""
+    c = (cfg.get("channels") or {}).get("neg_margin") or {}
+    if c.get("enabled", True) is False:
+        return []
+    min_loss = float(c.get("min_loss", NEG_MARGIN_MIN_LOSS))
     df = _read_gold("负毛利分析.csv")
-    if df is not None and len(df) > 0:
-        df = df[(df["负毛利品种数"] > 0) & (df["负毛利损失总额"] <= -NEG_MARGIN_MIN_LOSS)].copy()
-        df["_等级"] = df["负毛利严重等级"].map(NEG_LVL_MAP).fillna("中")
-        df["_o"] = df["_等级"].map(RISK_LEVEL_ORDER).fillna(9)
-        df["_损失"] = df["负毛利损失总额"].abs()
-        df = df.sort_values(["_o", "_损失"], ascending=[True, False], kind="stable")
-        stats["neg_overflow"] = max(0, len(df) - TOP_N_PER_SOURCE)
-        df = df.head(TOP_N_PER_SOURCE)
-        for _, r in df.iterrows():
-            risk_rows.append([r["_等级"], f"负毛利产品 {int(r['负毛利品种数'])} 个", r["客户编号"],
-                              _fmt_wan(r["_损失"]),
-                              (str(r["建议动作"])[:80] + "…") if pd.notna(r["建议动作"]) else "", ""])
-        stats["neg_margin"] = len(df)
+    if df is None or not len(df):
+        return []
+    df = df[(df["负毛利品种数"] > 0) & (df["负毛利损失总额"] <= -min_loss)]
+    out = []
+    for _, r in df.iterrows():
+        level = NEG_LVL_MAP.get(str(r.get("负毛利严重等级") or ""), "中")
+        loss = abs(_num(r["负毛利损失总额"]))
+        n = int(_num(r["负毛利品种数"]))
+        total = int(_num(r.get("在采品种数"))) or n
+        raw_pct = _num(r.get("负毛利品种占比"))
+        # 负毛利品种占比源表存百分数（15.2 即 15.2%）；>1 视为已是百分数，避免 ×100  twice
+        pct = (f"{raw_pct:.0f}" if raw_pct > 1 else f"{raw_pct * 100:.0f}") if raw_pct else \
+            f"{n / total * 100:.0f}"
+        gold_advice = str(r.get("建议动作") or "").strip()
+        if len(gold_advice) > 90:
+            gold_advice = gold_advice[:90] + "…"
+        ctx = {"n": n, "total": total, "pct": pct, "loss": f"{loss / 10000:.1f}",
+               "gold_advice": gold_advice or "逐品种复核定价与成本"}
+        context = f"{n}/{total}个品种({pct}%)负毛利，损失{loss / 10000:.1f}万"
+        out.append(_sig(r["客户编号"], "负毛利", level, loss, context,
+                        _render_template(cfg, "负毛利", level, ctx), "负毛利"))
+    return out
 
-    # --- 行动清单：上月未关闭结转 ---
+
+def _ch_revenue_shock(month, cfg):
+    """通道2 营收异动：客户月度趋势当月行，环比 ≤ -50%（断崖）或 ≥ +50%（新导入）且月收入 ≥ 10万。"""
+    c = (cfg.get("channels") or {}).get("revenue_shock") or {}
+    if c.get("enabled", True) is False:
+        return []
+    df = _read_gold("客户月度趋势.csv")
+    if df is None or not len(df):
+        return []
+    m = f"{month[:4]}-{month[4:]}"
+    df = df[df["月份"] == m]
+    out = []
+    for _, r in df.iterrows():
+        rev = _num(r.get("月收入"))
+        mom = _num(r.get("月环比%"), default=float("nan"))
+        if pd.isna(mom) or rev < float(c.get("min_month_revenue", 100000)):
+            continue
+        ctx = {"cur": f"{rev / 10000:.1f}", "mom": f"{mom:.0f}", "months": ""}
+        if mom <= float(c.get("mom_drop", -50)):
+            prev = rev / (1 + mom / 100.0) if mom > -100 else 0.0
+            out.append(_sig(r["客户编号"], "营收断崖", "高", max(0.0, prev - rev),
+                            f"本月收入{rev / 10000:.1f}万，环比{mom:.0f}%",
+                            _render_template(cfg, "营收断崖", "高", ctx), "营收异动"))
+        elif mom >= float(c.get("mom_surge", 50)):
+            out.append(_sig(r["客户编号"], "新导入", "中", 0.0,
+                            f"本月收入{rev / 10000:.1f}万，环比{mom:.0f}%（上月≈0）",
+                            _render_template(cfg, "新导入", "中", ctx), "营收异动"))
+    return out
+
+
+def _ch_purchase_interrupt(cfg):
+    """通道3 采购中断预警：客户全景 预警=True（剔除近12月收入 < 阈值防刷屏）；≥N 天 → 高。"""
+    c = (cfg.get("channels") or {}).get("purchase_interrupt") or {}
+    if c.get("enabled", True) is False:
+        return []
+    df = _read_gold("客户全景.csv")
+    if df is None or not len(df):
+        return []
+    df = df[df["采购中断预警"].astype(str) == "True"]
+    min_rev = float(c.get("min_rev12m", 0))
+    if min_rev:
+        df = df[df["近12月收入"].apply(lambda v: _num(v)) >= min_rev]
+    out = []
+    for _, r in df.iterrows():
+        days = _num(r.get("距上次采购天数"))
+        rev12m = _num(r.get("近12月收入"))
+        zero_pct = _num(r.get("零采购月占比")) * 100
+        level = "高" if days >= float(c.get("high_days", 120)) else "中"
+        ctx = {"rev12m": f"{rev12m / 10000:.1f}", "days": f"{days:.0f}", "zero_pct": f"{zero_pct:.0f}"}
+        reason = str(r.get("策略触发原因") or "").strip()
+        context = f"距上次采购{days:.0f}天，零采购月占比{zero_pct:.0f}%" + (f"，{reason}" if reason else "")
+        out.append(_sig(r["客户编号"], "采购中断", level, 0.0, context,
+                        _render_template(cfg, "采购中断", level, ctx), "采购中断"))
+    return out
+
+
+def _ch_margin_deterioration(cfg):
+    """通道4 毛利率恶化：客户全景 毛利率跌幅% ≥ 5pct 且 近12月收入 ≥ 50万。"""
+    c = (cfg.get("channels") or {}).get("margin_deterioration") or {}
+    if c.get("enabled", True) is False:
+        return []
+    df = _read_gold("客户全景.csv")
+    if df is None or not len(df):
+        return []
+    df = df[df["毛利率跌幅%"].apply(lambda v: _num(v)) >= float(c.get("min_drop_pct", 5))]
+    df = df[df["近12月收入"].apply(lambda v: _num(v)) >= float(c.get("min_rev12m", 500000))]
+    out = []
+    for _, r in df.iterrows():
+        drop = _num(r["毛利率跌幅%"])
+        mg = _num(r.get("近12月毛利率"))
+        rev12m = _num(r.get("近12月收入"))
+        level = "高" if drop >= float(c.get("high_drop_pct", 15)) else "中"
+        ctx = {"drop": f"{drop:.1f}", "mg": f"{mg:.1f}", "rev12m": f"{rev12m / 10000:.1f}"}
+        out.append(_sig(r["客户编号"], "毛利率恶化", level, 0.0,
+                        f"毛利率跌{drop:.1f}pct至{mg:.1f}%",
+                        _render_template(cfg, "毛利率恶化", level, ctx), "毛利率恶化"))
+    return out
+
+
+def _ch_decline_risk(cfg):
+    """通道5 衰退风险：客户组合健康度 衰退风险品金额占比 ≥ 阈值。"""
+    c = (cfg.get("channels") or {}).get("decline_risk") or {}
+    if c.get("enabled", True) is False:
+        return []
+    df = _read_gold("客户组合健康度.csv")
+    if df is None or not len(df):
+        return []
+    df = df[df["衰退风险品金额占比"].apply(lambda v: _num(v)) >= float(c.get("min_share", 0.30))]
+    out = []
+    for _, r in df.iterrows():
+        share = _num(r["衰退风险品金额占比"])
+        hidden = _num(r.get("隐性衰退_金额"))
+        level = "高" if share >= float(c.get("high_share", 0.50)) else "中"
+        ctx = {"pct": f"{share * 100:.0f}", "hidden": f"{hidden / 10000:.1f}"}
+        out.append(_sig(r["客户编号"], "衰退风险", level, 0.0,
+                        f"衰退风险品金额占比{share * 100:.0f}%",
+                        _render_template(cfg, "衰退风险", level, ctx), "衰退风险"))
+    return out
+
+
+def _ch_high_risk_product(cfg):
+    """通道6 高风险产品：产品画像 综合风险等级入选 且 品种近12月销售额 ≥ 20万（客户列=产品）。"""
+    c = (cfg.get("channels") or {}).get("high_risk_product") or {}
+    if c.get("enabled", True) is False:
+        return []
+    df = _read_gold("gold_product_portrait.csv")
+    if df is None or not len(df):
+        return []
+    levels = c.get("levels") or ["高风险"]
+    df = df[df["综合风险等级"].isin(levels)]
+    df = df[df["近12月销售额"].apply(lambda v: _num(v)) >= float(c.get("min_product_revenue", 200000))]
+    high_levels = c.get("high_levels") or ["极高风险"]
+    out = []
+    for _, r in df.iterrows():
+        grade = str(r["综合风险等级"]).strip()
+        level = "高" if grade in high_levels else "中"
+        factor = str(r.get("风险主导因子") or "").strip()
+        rev = _num(r.get("近12月销售额"))
+        gold_advice = str(r.get("通用策略建议") or "").strip()
+        if len(gold_advice) > 90:
+            gold_advice = gold_advice[:90] + "…"
+        ctx = {"factor": factor or "-", "rev": f"{rev / 10000:.1f}",
+               "gold_advice": gold_advice or "复盘产品策略"}
+        out.append(_sig(r["产品名称"], "高风险产品", level, 0.0,
+                        f"综合风险【{grade}】，主导因子：{factor or '-'}，近12月销售额{rev / 10000:.1f}万",
+                        _render_template(cfg, "高风险产品", level, ctx), "高风险产品"))
+    return out
+
+
+def _ch_pricing_anomaly(cfg):
+    """通道7 定价异常：定价合理性分析 异常低价标记=异常值 且 |偏离P50%| ≥ 10%。"""
+    c = (cfg.get("channels") or {}).get("pricing_anomaly") or {}
+    if c.get("enabled", True) is False:
+        return []
+    df = _read_gold("定价合理性分析.csv")
+    if df is None or not len(df):
+        return []
+    flags = set(c.get("abnormal_flags") or ["异常低价"])
+    df = df[df["异常低价标记"].astype(str).isin(flags)]
+    df = df[df["价格偏离P50%"].apply(lambda v: abs(_num(v))) >= float(c.get("min_deviation", 10))]
+    out = []
+    for _, r in df.iterrows():
+        dev = _num(r["价格偏离P50%"])
+        level = "高" if dev <= -float(c.get("high_deviation", 20)) else "中"
+        sales = str(r.get("业务负责人") or "").strip() or "-"
+        attribution = str(r.get("归因分析") or "").strip()
+        ctx = {"sales": sales, "dev": f"{dev:.0f}", "attribution": attribution or "-"}
+        out.append(_sig(r["客户编号"], "定价异常", level, 0.0,
+                        f"业务员{sales}，偏离P50达{dev:.0f}%（{r['产品品种']}）",
+                        _render_template(cfg, "定价异常", level, ctx), "定价异常"))
+    return out
+
+
+def _snapshot_path(month):
+    """回填用 erp 快照路径（.parquet 优先，.kbdat 容器回退）。"""
+    base = os.path.join(PLATFORM, "data_warehouse", month)
+    for name in ("erp_snapshot.parquet", "erp_snapshot.kbdat"):
+        p = os.path.join(base, name)
+        if os.path.exists(p):
+            return p
+    return None
+
+
+def _backfill_signals(month, cfg):
+    """简化回填模式：仅基于 erp 快照重算两通道（营收断崖 + 负毛利）。
+    限制：不跑完整 silver→gold 主链（不动主链），口径为快照内 12 个月窗口的简化重算；
+    其余 6 通道需 gold 派生表（客户全景/趋势/组合健康度/产品画像/定价分析），历史月不可行。
+    """
+    path = _snapshot_path(month)
+    if not path:
+        print(f"  [警告] 无 {month} 快照，简化回填两通道不可用（仅生成头部与空表）")
+        return []
+    sys.path.insert(0, os.path.join(PLATFORM, "processing"))
+    from shared.snapshot_container import load_snapshot_frame  # noqa: PLC0415
+    df = load_snapshot_frame(path)
+    # 客户键：终端客户简称与 gold 客户编号同源（如 中兴康讯），缺失回退 客户（全称）
+    cust_col = "终端客户简称" if "终端客户简称" in df.columns else "客户"
+    df = df.assign(_cust=df[cust_col].where(df[cust_col].notna()
+                                            & (df[cust_col].astype(str).str.strip() != ""),
+                                            df["客户"]))
+    cols = {"date": "发货日期", "cust": "_cust", "sku": "存货名称",
+            "rev": "RMB 未税金额小计", "cost": "总成本"}
+    df = df[[cols[k] for k in ("date", "cust", "sku", "rev", "cost")]].copy()
+    df["_d"] = pd.to_datetime(df[cols["date"]], errors="coerce")
+    df = df.dropna(subset=["_d"])
+    end = pd.Timestamp(int(month[:4]), int(month[4:]), 1) + pd.offsets.MonthEnd(0)
+    start = end - pd.DateOffset(months=11)
+    win = df[(df["_d"] >= start) & (df["_d"] <= end)]
+    c = (cfg.get("channels") or {}).get("neg_margin") or {}
+    min_loss = float(c.get("min_loss", NEG_MARGIN_MIN_LOSS))
+    c2 = (cfg.get("channels") or {}).get("revenue_shock") or {}
+    min_rev = float(c2.get("min_month_revenue", 100000))
+    out = []
+    # —— 负毛利（快照简化口径：窗口内 客户×SKU 收入<成本 聚合）——
+    g = (win.assign(_rev=pd.to_numeric(win[cols["rev"]], errors="coerce").fillna(0),
+                    _cost=pd.to_numeric(win[cols["cost"]], errors="coerce").fillna(0))
+              .groupby([cols["cust"], cols["sku"]], sort=False)[["_rev", "_cost"]].sum())
+    neg = g[g["_rev"] < g["_cost"]]
+    if len(neg):
+        cust = neg.assign(_loss=neg["_cost"] - neg["_rev"]).groupby(level=0, sort=False)
+        for name, grp in cust:
+            loss = float(grp["_loss"].sum())
+            if loss < min_loss:
+                continue
+            n = len(grp)
+            level = "高" if loss >= 100000 else "中"
+            ctx = {"n": n, "total": n, "pct": "-", "loss": f"{loss / 10000:.1f}",
+                   "gold_advice": "逐品种复核定价与成本（简化回填口径）"}
+            out.append(_sig(name, "负毛利", level, loss,
+                            f"{n}个品种负毛利，损失{loss / 10000:.1f}万",
+                            _render_template(cfg, "负毛利", level, ctx), "负毛利"))
+    # —— 营收断崖（当月 vs 上月 客户月收入环比）——
+    win = win.assign(_m=win["_d"].dt.strftime("%Y-%m"))
+    piv = win.pivot_table(index=cols["cust"], columns="_m",
+                          values=cols["rev"], aggfunc="sum").fillna(0.0)
+    cur_m, prev_m = f"{month[:4]}-{month[4:]}", f"{end - pd.DateOffset(months=1):%Y-%m}"
+    if cur_m in piv.columns:
+        cur = piv[cur_m]
+        prev = piv[prev_m] if prev_m in piv.columns else pd.Series(0.0, index=piv.index)
+        for cust in piv.index:
+            cv, pv = float(cur[cust]), float(prev[cust])
+            if cv >= min_rev and pv > 0:
+                mom = (cv - pv) / pv * 100.0
+                if mom <= float(c2.get("mom_drop", -50)):
+                    ctx = {"cur": f"{cv / 10000:.1f}", "mom": f"{mom:.0f}", "months": "环比骤降"}
+                    out.append(_sig(cust, "营收断崖", "高", max(0.0, pv - cv),
+                                    f"本月收入{cv / 10000:.1f}万，环比{mom:.0f}%",
+                                    _render_template(cfg, "营收断崖", "高", ctx), "营收异动"))
+            elif cv >= min_rev and pv <= 0:
+                ctx = {"cur": f"{cv / 10000:.1f}", "mom": "新导入"}
+                out.append(_sig(cust, "新导入", "中", 0.0,
+                                f"本月收入{cv / 10000:.1f}万（上月≈0）",
+                                _render_template(cfg, "新导入", "中", ctx), "营收异动"))
+    return out
+
+
+def collect_signals(month, cfg, simplified=False):
+    """8 通道信号采集（简化回填模式仅两通道，数据源=当月 erp 快照）。"""
+    if simplified:
+        return _backfill_signals(month, cfg)
+    sigs = []
+    for fn in (_ch_anomaly_log, _ch_neg_margin, _ch_purchase_interrupt,
+               _ch_margin_deterioration, _ch_decline_risk, _ch_high_risk_product,
+               _ch_pricing_anomaly):
+        sigs.extend(fn(cfg))
+    sigs.extend(_ch_revenue_shock(month, cfg))
+    return sigs
+
+
+def merge_signals(sigs):
+    """去重合并：同客户多通道 → 一行（类型顿号拼接 / 等级取最高 / 上下文与建议取最严重通道）。"""
+    groups, order = {}, []
+    for s in sigs:
+        if s["customer"] not in groups:
+            groups[s["customer"]] = []
+            order.append(s["customer"])
+        groups[s["customer"]].append(s)
+    merged = []
+    for cust in order:
+        gs = groups[cust]
+        gs.sort(key=lambda s: (RISK_LEVEL_ORDER.get(s["level"], 9), -s["loss"]))
+        best = gs[0]
+        types = []
+        for s in gs:
+            for t in s["types"]:
+                if t not in types:
+                    types.append(t)
+        merged.append({**best, "types": types, "rtype": "、".join(types),
+                       "loss": max(x["loss"] for x in gs),
+                       "channels": [x["channel"] for x in gs]})
+    return merged
+
+
+def _norm_types(事项):
+    """事项文本 → 风险类型令牌集（兼容旧版"客户XX"前缀与"负毛利产品 N 个"写法）。"""
+    t = str(事项 or "").strip()
+    if t.startswith("客户"):
+        t = t[2:]
+    out = set()
+    for x in re.split(r"[、，,/]", t):
+        x = x.strip()
+        if not x:
+            continue
+        out.add("负毛利" if "负毛利" in x else x)
+    return out
+
+
+_CONT_RE = re.compile(r"连续第\s*(\d+)\s*月")
+
+
+def _prev_month(month):
+    y, m = int(month[:4]), int(month[4:])
+    m -= 1
+    if m == 0:
+        y, m = y - 1, 12
+    return f"{y}{m:02d}"
+
+
+def load_prev_month_risks(month):
+    """上月 risk_action md → [{customer, types, level, loss_wan, months}]（无上月/解析失败 → []）。"""
+    path = risk_md_path(_prev_month(month))
+    if not os.path.exists(path):
+        return []
+    with open(path, encoding="utf-8") as f:
+        sections = _parse_md_tables(f.read())
+    part = None
+    for sec, val in sections.items():
+        if "风险摘要" in sec:
+            part = val
+            break
+    if not part or not part[0]:
+        return []
+    headers, rows = part
+    idx = {h: i for i, h in enumerate(headers)}
+    ci = idx.get("客户/产品", idx.get("客户编号", 2))
+    ii, li = idx.get("事项", 1), idx.get("等级", 0)
+    di = next((i for h, i in idx.items() if "损失金额" in h), None)
+    ti = idx.get("持续")
+    out = []
+    for r in rows:
+        if len(r) <= max(ci, ii):
+            continue
+        loss_wan = None
+        if di is not None and len(r) > di:
+            try:
+                loss_wan = float(str(r[di]).replace(",", ""))
+            except ValueError:
+                loss_wan = None
+        months = 1
+        if ti is not None and len(r) > ti:
+            mcont = _CONT_RE.search(str(r[ti]))
+            if mcont:
+                months = int(mcont.group(1))
+        out.append({"customer": r[ci].strip(), "types": _norm_types(r[ii]),
+                    "level": r[li].strip() if len(r) > li else "中",
+                    "loss_wan": loss_wan, "months": months})
+    return out
+
+
+def annotate_month_over_month(merged, prev):
+    """月度对拍（设计 §2.2）：连续第 N 月 + 较上月恶化/好转/持平；返回 (annotated, released)。
+    关联键 = 客户编号 × 风险类型（令牌交集匹配，负毛利含别名）。"""
+    used = set()
+    annotated = []
+    for s in merged:
+        match = None
+        for i, p in enumerate(prev):
+            if i in used or p["customer"] != s["customer"] or not (p["types"] & set(s["types"])):
+                continue
+            if match is None or p["months"] > prev[match]["months"]:
+                match = i
+        s = dict(s)
+        if match is None:
+            s["months"], s["持续"], s["较上月"] = 0, "新增", "-"
+        else:
+            used.add(match)
+            p = prev[match]
+            s["months"] = p["months"] + 1
+            s["持续"] = f"连续第 {s['months']} 月"
+            s["较上月"] = _mom_change(s, p)
+        annotated.append(s)
+    released = [p for i, p in enumerate(prev) if i not in used]
+    return annotated, released
+
+
+def _mom_change(cur, prev):
+    """较上月判定：损失额对比（±10% 且 ≥1万 死区）优先，其次等级升降，否则持平。"""
+    cl, pl = cur["level"], prev["level"]
+    cw, pw = cur["loss"] / 10000.0, prev["loss_wan"]
+    if pw is not None and pw > 0 and cw > 0:
+        if cw > pw * 1.1 and cw - pw >= 1.0:
+            return "较上月恶化"
+        if cw < pw * 0.9 and pw - cw >= 1.0:
+            return "较上月好转"
+    co, po = RISK_LEVEL_ORDER.get(cl, 9), RISK_LEVEL_ORDER.get(pl, 9)
+    if co < po:
+        return "较上月恶化"
+    if co > po:
+        return "较上月好转"
+    return "持平"
+
+
+def _month_end_due(month):
+    last = calendar.monthrange(int(month[:4]), int(month[4:]))[1]
+    return f"{month[:4]}-{month[4:]}-{last:02d}"
+
+
+def _write_overflow(month, overflow, stats):
+    r"""溢出附件：全量未上榜信号 → output\dashboard\风险溢出明细_YYYY-MM.md（通道×等级排序）。"""
+    path = os.path.join(RISK_MD_DIR, f"风险溢出明细_{month[:4]}-{month[4:]}.md")
+    rows = sorted(overflow,
+                  key=lambda s: (s["channel"], RISK_LEVEL_ORDER.get(s["level"], 9), -s["loss"]))
+    lines = [f"# 风险溢出明细 · {month[:4]}-{month[4:]}", "",
+             f"> 生成时间：{datetime.now():%Y-%m-%d %H:%M} ｜ 合并去重后未进 Top 榜的全量信号"
+             f"（共 {len(rows)} 条，按通道×等级排序），深挖时人工查阅，不上主文档。", ""]
+    lines.append(_md_table(["通道", "等级", "客户/产品", "风险类型", "损失金额(万元)", "上下文"],
+                           [[s["channel"], s["level"], s["customer"], s["rtype"],
+                             _fmt_wan(s["loss"]) if s["loss"] > 0 else "-", s["context"]]
+                            for s in rows]))
+    with open(path, "w", encoding="utf-8") as f:
+        f.write("\n".join(lines) + "\n")
+    stats["overflow_file"] = path
+    return path
+
+
+def build_draft(month):
+    """生成总体文档初稿（策展引擎 v2）。返回 (md_text, 统计dict)。
+    v2 策展：8 通道信号 → 同客户合并 → 上月对拍（连续月/恶化好转/本月解除）→ Top12
+    → 溢出附件；高等级+连续≥2月 自动转行动种子。历史月无 gold 时走简化回填（两通道）。"""
+    stats = {"signals": 0, "merged": 0, "listed": 0, "overflow": 0, "carryover": 0,
+             "meeting": 0, "seeds": 0, "released": 0, "consecutive": 0, "simplified": False}
+    cfg = _load_templates()
+    top_n = int(cfg.get("top_n") or TOP_N_PER_SOURCE)
+    data_month = _data_month()
+    simplified = month != data_month
+    stats["simplified"] = simplified
+
+    # --- 信号采集 + 合并 + 月度对拍 ---
+    sigs = collect_signals(month, cfg, simplified=simplified)
+    stats["signals"] = len(sigs)
+    merged = merge_signals(sigs)
+    stats["merged"] = len(merged)
+    annotated, released = annotate_month_over_month(merged, load_prev_month_risks(month))
+    stats["released"] = len(released)
+    stats["consecutive"] = sum(1 for s in annotated if s["months"] >= 2)
+    annotated.sort(key=lambda s: (RISK_LEVEL_ORDER.get(s["level"], 9), -s["loss"]))
+    top, overflow = annotated[:top_n], annotated[top_n:]
+    stats["listed"], stats["overflow"] = len(top), len(overflow)
+    _write_overflow(month, overflow, stats)
+
+    risk_rows = [[s["level"], s["rtype"], s["customer"],
+                 _fmt_wan(s["loss"]) if s["loss"] > 0 else "-",
+                 s["持续"], s["较上月"], s["suggestion"], ""] for s in top]
+
+    # --- 行动清单：上月未关闭结转（created_month 保留修复在渲染回写处）---
     action_rows = []
     actions = load_actions()
     for it in actions.get("items", []):
@@ -358,6 +882,20 @@ def build_draft(month):
             action_rows.append([it["status"], it["title"], it.get("owner", ""),
                                 it.get("due_date", ""), it.get("note", "")])
             stats["carryover"] += 1
+
+    # --- 行动种子：高等级 + 连续≥N月 → 自动转行动项草稿（负责人空，期望完成日=月末）---
+    sc = cfg.get("seeds") or {}
+    seed_level, seed_months = sc.get("min_level", "高"), int(sc.get("min_consecutive", 2))
+    existing_titles = {r[1] for r in action_rows}
+    for s in top:
+        if s["level"] == seed_level and s["months"] >= seed_months:
+            title = f"[自动种子] {s['customer']}：{s['rtype']}"
+            if title in existing_titles:
+                continue
+            action_rows.append(["待处理", title, "", _month_end_due(month),
+                                f"已连续 {s['months']} 月上榜（{s['较上月']}），请指派负责人"])
+            existing_titles.add(title)
+            stats["seeds"] += 1
 
     # --- 行动清单：可选速记 meeting_track.md 并入 ---
     _mt_path = _meeting_md_path()
@@ -374,6 +912,14 @@ def build_draft(month):
 
     action_rows.sort(key=lambda r: STATUS_ORDER.get(r[0], 9))
 
+    # --- 备注：本月解除（上月上榜本月消失，闭环反馈；经既有「备注」节渲染进看板）---
+    notes_lines = []
+    if released:
+        notes_lines.append("【本月解除】上月上榜、本月消失（疑似改善，闭环确认）：")
+        for p in released:
+            types = "、".join(sorted(p["types"])) or "-"
+            notes_lines.append(f"- {p['customer']}（{types}，上月等级 {p['level']}）")
+
     # --- 口径说明（从 faces.yaml R 面 sections 带入）---
     with open(FACES_YAML, encoding="utf-8") as f:
         faces = yaml.safe_load(f)["faces"]
@@ -386,21 +932,29 @@ def build_draft(month):
         caliber_lines.append(f"【术语·{_g['term']}】{_g['definition']}")
     caliber = "\n".join(caliber_lines)
 
+    mode_note = ("简化回填模式：历史月无 gold 派生表，仅基于当月 erp 快照重算"
+                 "【营收断崖+负毛利】两通道，其余 6 通道自 202609 起全通道。") if simplified else \
+                "8 通道信号源（异常日志/营收异动/采购中断/毛利率恶化/衰退风险/高风险产品/定价异常/负毛利）。"
     md = f"""# 风险与行动 · {month[:4]}-{month[4:]}
 
 > 本文件由跑批自动生成初稿，请审定后渲染进看板。增删改随意，以本文件为准。
 > 渲染：python run_chain.py --dashboard-only（或双击 2_只生成看板.bat）
 > 生成时间：{datetime.now():%Y-%m-%d %H:%M} ｜ 数据月份：{month}
-> 初稿策展：同客户多条异常已合并；每类最多 Top {TOP_N_PER_SOURCE}；另 {stats['anomaly_overflow'] + stats['neg_overflow']} 条未列入（低优先级/超 Top-N，详见 output\\gold\\ 源表）。人工审定可增删改任何条目。
+> 初稿策展（v2）：{mode_note}同客户多通道合并为一行；上榜 Top {top_n}（等级优先+损失额加权）；
+> 共 {stats['signals']} 条信号 → 合并 {stats['merged']} 条 → 上榜 {stats['listed']} 条，溢出 {stats['overflow']} 条（详见 风险溢出明细_{month[:4]}-{month[4:]}.md）；
+> 与上月对拍：连续≥2月 {stats['consecutive']} 条 / 本月解除 {stats['released']} 条；行动种子 {stats['seeds']} 条。人工审定可增删改任何条目。
 
 ## 一、当月风险摘要
 
-{_md_table(["等级", "事项", "客户/产品", "损失金额(万元)", "建议动作", "负责人"], risk_rows)}
+{_md_table(["等级", "事项", "客户/产品", "损失金额(万元)", "持续", "较上月", "建议动作", "负责人"], risk_rows)}
 
 ## 二、行动清单
 
 {_md_table(["状态", "事项", "负责人", "期望完成日", "备注"], action_rows)}
-
+"""
+    if notes_lines:
+        md += f"\n## 备注\n\n" + "\n".join(notes_lines) + "\n"
+    md += f"""
 ## 三、口径说明（从 faces.yaml 自动带入，勿改）
 
 {caliber}
@@ -579,7 +1133,15 @@ def _build_r_parts(month):
                 "source": "总体文档",
             })
         actions = load_actions()
+        old_by_id = {it.get("id"): it for it in actions.get("items", [])}
+        for it in items:  # 结转修复①：created_month 保留首次创建月，不随渲染回写刷新成当月
+            old = old_by_id.get(it["id"])
+            if old and _is_month(str(old.get("created_month") or "")):
+                it["created_month"] = old["created_month"]
         closed = [it for it in actions.get("items", []) if it.get("status") == "已关闭"]
+        for it in closed:  # 结转修复②：补 closed_month（归档关闭月）
+            if not it.get("closed_month"):
+                it["closed_month"] = month
         save_actions({"version": "1", "last_batch_month": month, "items": items + closed})
 
     risk_cells = [r.get("cells") or [] for r in risk_part.get("rows") or []]
@@ -931,9 +1493,10 @@ def main():
         with open(md_path, "w", encoding="utf-8") as f:
             f.write(md)
         print(f"[初稿] 已生成: {md_path}")
-        print(f"       异常日志 {stats['anomaly']} 条（另 {stats['anomaly_overflow']} 条超 Top-N 未列入）/ "
-              f"负毛利 {stats['neg_margin']} 条（另 {stats['neg_overflow']} 条未列入）/ "
-              f"上月结转 {stats['carryover']} 条 / 会议速记 {stats['meeting']} 条")
+        mode = "简化回填(两通道)" if stats.get("simplified") else "全通道(8通道)"
+        print(f"       模式 {mode} ｜ 信号 {stats['signals']} → 合并 {stats['merged']} → 上榜 {stats['listed']} "
+              f"（溢出 {stats['overflow']} 条）｜ 连续≥2月 {stats['consecutive']} / 本月解除 {stats['released']} "
+              f"｜ 行动：结转 {stats['carryover']} + 种子 {stats['seeds']} + 速记 {stats['meeting']}")
 
     return render(month)
 

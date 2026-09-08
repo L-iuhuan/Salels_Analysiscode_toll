@@ -1,0 +1,85 @@
+# R 面「风险与行动」策展引擎 v2 · 阈值与建议动作模板库
+# 设计依据：project_analysis\R面生成质量深化设计_20260908.md §2.1/§2.3
+# 维护纪律：阈值与文案全部入本文件，generate_risk_face.py 零硬编码文案；
+#           改阈值/改建议措辞只需改本文件，重跑 --force-draft 生效。
+version: "2"
+
+# 合并去重后上榜条数（用户拍板 Top12：等级优先 + 损失额加权）
+top_n: 12
+
+channels:
+  anomaly_log:                       # 通道1（既有增强）：gold 异常日志
+    enabled: true
+    levels: ["高", "中"]             # 入选等级
+  revenue_shock:                     # 通道2：营收异动（客户月度趋势）
+    enabled: true
+    mom_drop: -50                    # 环比 ≤ -50%（%）
+    mom_surge: 50                    # 环比 ≥ +50%（上月≈0 记新导入）
+    min_month_revenue: 100000        # 月收入 ≥ 10万（元）
+  purchase_interrupt:                # 通道3：采购中断预警（客户全景）
+    enabled: true
+    min_rev12m: 100000               # 近12月收入 ≥ 10万（元）——剔除微小客户刷屏
+    high_days: 120                   # 距上次采购 ≥ N 天 → 高，否则中
+  margin_deterioration:              # 通道4：毛利率恶化（客户全景）
+    enabled: true
+    min_drop_pct: 5                  # 毛利率跌幅 ≥ 5pct
+    high_drop_pct: 15                # 跌幅 ≥ 15pct → 高，否则中
+    min_rev12m: 500000               # 近12月收入 ≥ 50万（元）
+  decline_risk:                      # 通道5：衰退风险（客户组合健康度）
+    enabled: true
+    min_share: 0.30                  # 衰退风险品金额占比 ≥ 30%
+    high_share: 0.50                 # 占比 ≥ 50% → 高，否则中
+  high_risk_product:                 # 通道6：高风险产品（gold_product_portrait）
+    enabled: true
+    levels: ["高风险", "极高风险"]    # 综合风险等级入选值
+    high_levels: ["极高风险"]         # 极高风险 → 高；其余入选值 → 中
+    min_product_revenue: 200000      # 品种近12月销售额 ≥ 20万（元）
+  pricing_anomaly:                   # 通道7：定价异常（定价合理性分析）
+    enabled: true
+    abnormal_flags: ["异常低价", "是", "True", "true"]  # 异常低价标记入选值
+    min_deviation: 10                # |价格偏离P50%| ≥ 10%
+    high_deviation: 20               # 偏离 ≤ -20%（深跌价）→ 高，否则中
+  neg_margin:                        # 通道8（既有）：负毛利分析
+    enabled: true
+    min_loss: 10000                  # 负毛利损失阈值（元；源表负值存储）
+
+# 行动种子：高等级 + 连续 ≥ 2 月 → 自动转行动项草稿（负责人空、期望完成日=月末）
+seeds:
+  min_level: "高"
+  min_consecutive: 2
+
+# 建议动作模板库：类型 × 等级；{xxx} 为数据占位符（代码填充，缺省留原样）
+templates:
+  采购中断:
+    高: "近12月收入{rev12m}万，已{days}天无出货（零采购月占比{zero_pct}%），建议：客户健康检查+业务员本周拜访确认存续性"
+    中: "近12月收入{rev12m}万，已{days}天无出货，建议：业务员本月内回访确认订单节奏"
+  营收断崖:
+    高: "本月收入{cur}万（环比{mom}%），{months}建议：核实订单节奏+评估备货调整"
+    中: "本月收入{cur}万（环比{mom}%），建议：关注次月走势，必要时回访客户"
+  _log_营收断崖:                 # 异常日志通道同款类型：数据位来自异常详情列（近12月窗口）
+    高: "近12月收入{rev12m}万，增长率{growth}%，{months}，建议：核实订单节奏+评估备货调整"
+    中: "近12月收入{rev12m}万，增长率{growth}%，建议：关注次月走势"
+  新导入:
+    中: "本月新导入/激增收入{cur}万（环比{mom}%），建议：确认订单可持续性与信用额度"
+    低: "本月新导入收入{cur}万，建议：确认订单可持续性"
+  库存呆滞:
+    高: "{detail}，建议：盘点库存与在途订单，制定去化方案"
+    中: "{detail}，建议：关注库存周转，避免积压扩大"
+  负毛利:
+    高: "{n}/{total}个品种({pct}%)负毛利，损失{loss}万。{gold_advice}（停售可增利{loss}万）"
+    中: "{n}/{total}个品种({pct}%)负毛利，损失{loss}万。{gold_advice}"
+  毛利率恶化:
+    高: "毛利率跌{drop}pct至{mg}%（近12月收入{rev12m}万），建议：产品组合复查+提价评估"
+    中: "毛利率跌{drop}pct至{mg}%，建议：核查低价订单与成本变动"
+  衰退风险:
+    高: "衰退风险品种金额占比{pct}%（隐性衰退{hidden}万），建议：复核在采品种生命周期，制定退出/换代计划"
+    中: "衰退风险品种金额占比{pct}%，建议：关注在采品种生命周期迁移"
+  高风险产品:
+    高: "产品综合风险【极高】，主导因子：{factor}，近12月销售额{rev}万，建议：{gold_advice}"
+    中: "产品综合风险【高】，主导因子：{factor}，近12月销售额{rev}万，建议：{gold_advice}"
+  定价异常:
+    高: "业务员{sales}成交价偏离P50达{dev}%（异常低价），建议：价格纪律复核；归因：{attribution}"
+    中: "业务员{sales}成交价偏离P50达{dev}%，建议：价格纪律复核；归因：{attribution}"
+  _default:                         # 异常日志未识别类型的兜底：详情列透传
+    高: "{detail}，建议：查看客户 360 面定位根因，本周内给出处置意见"
+    中: "{detail}，建议：查看客户 360 面跟进"
