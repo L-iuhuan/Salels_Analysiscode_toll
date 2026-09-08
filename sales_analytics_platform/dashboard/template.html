@@ -377,8 +377,8 @@ body{font-family:-apple-system,'Microsoft YaHei','Segoe UI',sans-serif;backgroun
  <div>
  <div style="display:flex;align-items:center;gap:var(--gap-sm);margin-bottom:var(--gap-sm)"><h4 class="subsection-title" style="margin:0;font-size:var(--font-md)">中国地图 · 收入分布<span class="chart-guide">%%GUIDE_A_geoMap%%</span></h4><span id="geoCrumb" style="font-size:var(--font-xs);color:var(--text-tertiary)">全国</span><button id="geoBack" class="btn btn-secondary btn-sm" style="display:none" onclick="geoDrillBack()"><i class="fa-solid fa-arrow-left"></i> 返回全国</button></div>
  <div style="position:relative">
- <div id="geoMap" style="width:100%;height:520px"></div>
- <div id="geoNhInset" title="南海诸岛" style="position:absolute;right:8px;bottom:8px;width:158px;height:126px;border:1px solid var(--border);border-radius:6px;background:rgba(255,255,255,0.92);box-shadow:var(--shadow-sm);z-index:5;overflow:hidden"></div>
+ <div id="geoMap" style="width:100%;height:620px"></div>
+ <div id="geoNhInset" title="南海诸岛" style="position:absolute;right:10px;bottom:10px;width:186px;height:148px;border:1px solid var(--border);border-radius:6px;background:rgba(255,255,255,0.92);box-shadow:var(--shadow-sm);z-index:5;overflow:hidden"></div>
  </div>
  </div>
  <div style="display:flex;flex-direction:column;gap:var(--space-card)">
@@ -2266,12 +2266,12 @@ function renderGeoAbroad(){
  var el=document.getElementById('geoAbroad');if(!el)return;
  if(typeof GEO_ABROAD==='undefined'||!GEO_ABROAD.length){el.innerHTML='<div style="color:var(--text-tertiary);text-align:center;padding:24px 0">暂无海外/港澳台数据</div>';return;}
  var COLS='display:grid;grid-template-columns:1.25fr 0.62fr 0.62fr 0.62fr 0.66fr;gap:4px;';
- var h='<div style="'+COLS+'font-size:var(--font-xs);color:var(--text-tertiary);padding:4px 8px;border-bottom:2px solid var(--border)"><span>地区·城市</span><span style="text-align:right">数量(件)</span><span style="text-align:right">毛利(万)</span><span style="text-align:right">毛利率%</span><span style="text-align:right">占收入比%</span></div>';
+ var h='<div style="'+COLS+'font-size:var(--font-xs);color:var(--text-tertiary);padding:4px 8px;border-bottom:2px solid var(--border)"><span>地区·城市</span><span style="text-align:right">数量</span><span style="text-align:right">毛利(万)</span><span style="text-align:right">毛利率%</span><span style="text-align:right">占收入比%</span></div>';
  GEO_ABROAD.forEach(function(d,i){
   var name=d.c?(d.g+'·'+d.c):d.g;
   var zebra=i%2===1?'background:var(--table-stripe);':'';
   var key=String(d.k).replace(/'/g,"\\'");
-  var q=(d.q!==undefined&&d.q!==null)?d.q.toLocaleString():'--';
+  var q=(d.q!==undefined&&d.q!==null)?_geoQtyK(d.q):'--';
   var mg=(d.mg!==undefined)?Number(d.mg).toFixed(1):'--';
   var sh=(d.share!==undefined)?Number(d.share).toFixed(1):'--';
   h+='<div class="geo-abroad-row" data-k="'+key+'" onclick="geoAbroadToggle(\''+key+'\')" title="点击展开/收起月度趋势" style="'+COLS+'font-size:var(--font-sm);padding:6px 8px;border-bottom:1px solid var(--border);cursor:pointer;'+zebra+'"><span>'+name+'</span><span style="text-align:right;font-variant-numeric:tabular-nums">'+q+'</span><span style="text-align:right;font-variant-numeric:tabular-nums">'+Number(d.p||0).toFixed(1)+'</span><span style="text-align:right;font-variant-numeric:tabular-nums">'+mg+'</span><span style="text-align:right;font-variant-numeric:tabular-nums">'+sh+'</span></div>';
@@ -2281,18 +2281,19 @@ function renderGeoAbroad(){
 }
 function geoAbroadToggle(key){_geoAbExpanded=(_geoAbExpanded===key)?null:key;renderGeoAbroad();}
 window.geoAbroadToggle=geoAbroadToggle;
-// [三期] 数量列与海外富表对齐：件数缩写（≥100万按 M、≥1000 按 K，如 3.7M / 12.3K）
+// [四期] 数量列统一折算无小数：≥100万按 KK、≥1000 按 K 取整（如 3709KK / 822K），否则原值
 function _geoQtyK(q){
  if(q===undefined||q===null)return '--';
  q=Number(q);
- if(q>=1e6)return (q/1e6).toFixed(1)+'M';
- if(q>=1000)return (q/1000).toFixed(1)+'K';
+ if(q>=1e6)return Math.round(q/1e6)+'KK';
+ if(q>=1000)return Math.round(q/1e3)+'K';
  return q.toLocaleString();
 }
 function renderGeoTopProv(){
  var el=document.getElementById('geoTopProv');if(!el)return;
  if(typeof GEO_PROVINCES==='undefined'||!GEO_PROVINCES.length){el.innerHTML='<div style="color:var(--text-tertiary);text-align:center;padding:20px 0">暂无数据</div>';return;}
- var COLS='display:grid;grid-template-columns:18px 1fr auto auto auto auto;gap:6px;align-items:center;';
+ // [四期] 数字列定宽右对齐、省份列弹性，防数据挤右侧
+ var COLS='display:grid;grid-template-columns:16px minmax(40px,1fr) 54px 70px 46px 62px;gap:6px;align-items:center;';
  var h='<div style="'+COLS+'font-size:var(--font-xs);color:var(--text-tertiary);padding:4px 8px;border-bottom:2px solid var(--border)"><span>#</span><span>省份</span><span style="text-align:right">数量</span><span style="text-align:right">收入(万)</span><span style="text-align:right">占比</span><span style="text-align:right">环比</span></div>';
  GEO_PROVINCES.slice(0,10).forEach(function(d,i){
   var key=String(d.n).replace(/'/g,"\\'");
