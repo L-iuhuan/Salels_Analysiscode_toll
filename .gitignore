@@ -49,3 +49,5 @@ kanban/
 
 # r14b: 本机运行配置(数据共享目录等机器相关配置防入库)
 sales_analytics_platform/chain_config.json
+
+.opencode/
