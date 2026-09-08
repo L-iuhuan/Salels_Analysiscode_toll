@@ -2920,12 +2920,18 @@ _totalytd = float(r26["_rev"].sum()) or 1e-9
 _geo_months = sorted(m for m in _REX_BY_YM.keys() if start_12m <= m <= latest)
 
 # 月份×region / 月份×(region|sub) 收入映射（预分组一次取材，O(月数×省数)）
+# [三期] 月份×广东市级映射一并预分组（市级抽屉趋势图复用）
 _geo_rm: dict[str, dict[str, float]] = {}
 _geo_rms: dict[str, dict[str, float]] = {}
+_geo_rmc: dict[str, dict[str, float]] = {}
 for _m in _geo_months:
     _dm = _REX_BY_YM[_m]
     for _reg, _v in _dm.groupby("_region")["_rev"].sum().items():
         _geo_rm.setdefault(str(_reg), {})[_m] = float(_v)
+    _gd_dm = _dm[(_dm["_region"] == "广东") & (~_dm["_abroad"])]
+    if len(_gd_dm):
+        for _ct, _v in _gd_dm.groupby(_gd_dm["_sub"].replace("", "未细分"))["_rev"].sum().items():
+            _geo_rmc.setdefault(str(_ct), {})[_m] = float(_v)
     _ab_dm = _dm[_dm["_abroad"]]
     if len(_ab_dm):
         for (_g, _c), _v in _ab_dm.groupby(["_region", "_sub"])["_rev"].sum().items():
@@ -2940,12 +2946,22 @@ def _geo_trend_sub(key: str) -> list:
     return [round(_geo_rms.get(key, {}).get(m, 0.0) / 1e4, 1) for m in _geo_months]
 
 
-def _geo_top5(df_part) -> list:
+def _geo_trend_city(city: str) -> list:
+    return [round(_geo_rmc.get(city, {}).get(m, 0.0) / 1e4, 1) for m in _geo_months]
+
+
+def _geo_top5(df_part, df_prev) -> list:
+    # [三期] 加同比列（对比上年同期 YTD，r25 复用零新增扫描），抽屉内 Top5 客户/产品列结构对齐
     _t = (df_part.groupby("_cust").agg(rv=("_rev", "sum"), pf=("_profit", "sum"))
           .sort_values("rv", ascending=False).head(5))
-    return [{"n": str(_n), "r": round(float(_x["rv"]) / 1e4, 1),
-             "mg": round(float(_x["pf"]) / float(_x["rv"]) * 100, 1) if _x["rv"] > 0 else 0}
-            for _n, _x in _t.iterrows()]
+    _pv = df_prev.groupby("_cust")["_rev"].sum().to_dict() if len(df_prev) else {}
+    _out = []
+    for _n, _x in _t.iterrows():
+        _rv = float(_x["rv"]); _pr = float(_pv.get(_n, 0.0))
+        _out.append({"n": str(_n), "r": round(_rv / 1e4, 1),
+                     "mg": round(float(_x["pf"]) / _rv * 100, 1) if _rv > 0 else 0,
+                     "yoy": round((_rv - _pr) / _pr * 100, 1) if _pr > 0 else None})
+    return _out
 
 
 _ml12 = _geo_r12[(~_geo_r12["_abroad"]) & (_geo_r12["_region"] != "未识别")]
@@ -2958,6 +2974,7 @@ for _name, _g in _ml12.groupby("_region"):
     geo_provinces.append({
         "n": _name, "map": _geo.short_to_full_province(_name, _geod),
         "r": round(_r / 1e4, 1), "p": round(_p / 1e4, 1),
+        "q": int(round(float(_g["_qty"].sum()))),
         "mg": round(_p / _r * 100, 1) if _r > 0 else 0,
         "custs": int(_g["_cust"].nunique()),
         "share": round(_r / _total12 * 100, 2),
@@ -2971,7 +2988,11 @@ geo_gd_cities = []
 for _city, _g in _gd12.groupby(_gd12["_sub"].replace("", "未细分")):
     _r = float(_g["_rev"].sum()); _p = float(_g["_profit"].sum())
     geo_gd_cities.append({"n": _city, "r": round(_r / 1e4, 1), "p": round(_p / 1e4, 1),
-                          "mg": round(_p / _r * 100, 1) if _r > 0 else 0})
+                          "q": int(round(float(_g["_qty"].sum()))),
+                          "mg": round(_p / _r * 100, 1) if _r > 0 else 0,
+                          "custs": int(_g["_cust"].nunique()),
+                          "share": round(_r / _total12 * 100, 2),
+                          "trend": _geo_trend_city(_city)})
 geo_gd_cities.sort(key=lambda x: -x["r"])
 
 # 海外/港澳台分行（region×sub），末尾附「未识别」行；仅按实际地理位置展示
@@ -2995,13 +3016,17 @@ geo_abroad.append({"g": "未识别", "c": "", "k": "未识别",
                    "trend": _geo_trend("未识别")})
 geo_abroad.sort(key=lambda x: -x["r"])
 
-# 弹层 Top5 客户（YTD）：大陆按省聚合，海外按 region×sub 聚合
+# 弹层 Top5 客户（YTD）：大陆按省聚合，广东按市聚合（键 广东|市名），海外按 region×sub 聚合
 _geo_ytd = r26
 geo_top5: dict[str, list] = {}
 for _name, _g in _geo_ytd[(~_geo_ytd["_abroad"]) & (_geo_ytd["_region"] != "未识别")].groupby("_region"):
-    geo_top5[_name] = _geo_top5(_g)
+    geo_top5[_name] = _geo_top5(_g, r25[r25["_region"] == _name])
+for _city, _g in _geo_ytd[(_geo_ytd["_region"] == "广东") & (~_geo_ytd["_abroad"])].groupby(
+        _geo_ytd["_sub"].replace("", "未细分")):
+    geo_top5[f"广东|{_city}"] = _geo_top5(_g, r25[(r25["_region"] == "广东")
+                                                   & (r25["_sub"].replace("", "未细分") == _city)])
 for (_g, _c), _gg in _geo_ytd[_geo_ytd["_abroad"]].groupby(["_region", "_sub"]):
-    geo_top5[f"{_g}|{_c}"] = _geo_top5(_gg)
+    geo_top5[f"{_g}|{_c}"] = _geo_top5(_gg, r25[(r25["_region"] == _g) & (r25["_sub"] == _c)])
 
 # 弹层 Top5 产品（YTD 口径）：收入 + 毛利率 + 同比变化（对比上年同期 YTD，r25 复用零新增扫描）
 def _geo_top5p(df_part, df_prev) -> list:
@@ -3019,6 +3044,10 @@ def _geo_top5p(df_part, df_prev) -> list:
 geo_top5p: dict[str, list] = {}
 for _name, _g in _geo_ytd[(~_geo_ytd["_abroad"]) & (_geo_ytd["_region"] != "未识别")].groupby("_region"):
     geo_top5p[_name] = _geo_top5p(_g, r25[r25["_region"] == _name])
+for _city, _g in _geo_ytd[(_geo_ytd["_region"] == "广东") & (~_geo_ytd["_abroad"])].groupby(
+        _geo_ytd["_sub"].replace("", "未细分")):
+    geo_top5p[f"广东|{_city}"] = _geo_top5p(_g, r25[(r25["_region"] == "广东")
+                                                     & (r25["_sub"].replace("", "未细分") == _city)])
 for (_g, _c), _gg in _geo_ytd[_geo_ytd["_abroad"]].groupby(["_region", "_sub"]):
     geo_top5p[f"{_g}|{_c}"] = _geo_top5p(_gg, r25[(r25["_region"] == _g) & (r25["_sub"] == _c)])
 

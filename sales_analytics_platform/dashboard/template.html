@@ -376,10 +376,13 @@ body{font-family:-apple-system,'Microsoft YaHei','Segoe UI',sans-serif;backgroun
  <div style="display:grid;grid-template-columns:2fr 1fr;gap:var(--space-card)">
  <div>
  <div style="display:flex;align-items:center;gap:var(--gap-sm);margin-bottom:var(--gap-sm)"><h4 class="subsection-title" style="margin:0;font-size:var(--font-md)">中国地图 · 收入分布<span class="chart-guide">%%GUIDE_A_geoMap%%</span></h4><span id="geoCrumb" style="font-size:var(--font-xs);color:var(--text-tertiary)">全国</span><button id="geoBack" class="btn btn-secondary btn-sm" style="display:none" onclick="geoDrillBack()"><i class="fa-solid fa-arrow-left"></i> 返回全国</button></div>
- <div id="geoMap" style="width:100%;height:460px"></div>
+ <div style="position:relative">
+ <div id="geoMap" style="width:100%;height:520px"></div>
+ <div id="geoNhInset" title="南海诸岛" style="position:absolute;right:8px;bottom:8px;width:158px;height:126px;border:1px solid var(--border);border-radius:6px;background:rgba(255,255,255,0.92);box-shadow:var(--shadow-sm);z-index:5;overflow:hidden"></div>
+ </div>
  </div>
  <div style="display:flex;flex-direction:column;gap:var(--space-card)">
- <div><h4 class="subsection-title" style="font-size:var(--font-md);margin-bottom:var(--gap-sm)">海外 / 港澳台 · 近12月<span class="chart-guide">%%GUIDE_A_geoAbroad%%</span></h4><div id="geoAbroad"></div></div>
+ <div><h4 class="subsection-title" style="font-size:var(--font-md);margin-bottom:var(--gap-sm)">海外 / 港澳台 · 近12月<span class="chart-guide">%%GUIDE_A_geoAbroad%%</span></h4><div id="geoAbroad" style="max-height:320px;overflow-y:auto"></div></div>
  <div><h4 class="subsection-title" style="font-size:var(--font-md);margin-bottom:var(--gap-sm)">Top 省份 · 近12月收入<span class="chart-guide">%%GUIDE_A_geoBar%%</span></h4><div id="geoTopProv"></div></div>
  </div>
  </div>
@@ -2278,14 +2281,23 @@ function renderGeoAbroad(){
 }
 function geoAbroadToggle(key){_geoAbExpanded=(_geoAbExpanded===key)?null:key;renderGeoAbroad();}
 window.geoAbroadToggle=geoAbroadToggle;
+// [三期] 数量列与海外富表对齐：件数缩写（≥100万按 M、≥1000 按 K，如 3.7M / 12.3K）
+function _geoQtyK(q){
+ if(q===undefined||q===null)return '--';
+ q=Number(q);
+ if(q>=1e6)return (q/1e6).toFixed(1)+'M';
+ if(q>=1000)return (q/1000).toFixed(1)+'K';
+ return q.toLocaleString();
+}
 function renderGeoTopProv(){
  var el=document.getElementById('geoTopProv');if(!el)return;
  if(typeof GEO_PROVINCES==='undefined'||!GEO_PROVINCES.length){el.innerHTML='<div style="color:var(--text-tertiary);text-align:center;padding:20px 0">暂无数据</div>';return;}
- var h='';
+ var COLS='display:grid;grid-template-columns:18px 1fr auto auto auto auto;gap:6px;align-items:center;';
+ var h='<div style="'+COLS+'font-size:var(--font-xs);color:var(--text-tertiary);padding:4px 8px;border-bottom:2px solid var(--border)"><span>#</span><span>省份</span><span style="text-align:right">数量</span><span style="text-align:right">收入(万)</span><span style="text-align:right">占比</span><span style="text-align:right">环比</span></div>';
  GEO_PROVINCES.slice(0,10).forEach(function(d,i){
   var key=String(d.n).replace(/'/g,"\\'");
   var mom=(d.mom===null||d.mom===undefined)?'<span style="color:var(--text-tertiary)">--</span>':'<span style="color:'+(d.mom>=0?'#EF4444':'#10B981')+'">'+(d.mom>=0?'+':'')+Number(d.mom).toFixed(1)+'%</span>';
-  h+='<div onclick="geoOpenDrawer(\''+key+'\')" title="点击查看明细" style="display:grid;grid-template-columns:20px 1fr auto auto auto;gap:6px;align-items:center;font-size:var(--font-sm);padding:5px 8px;border-bottom:1px solid var(--border);cursor:pointer;'+(i%2===1?'background:var(--table-stripe);':'')+'"><span style="color:var(--text-tertiary);font-size:var(--font-xs)">'+(i+1)+'</span><span style="font-weight:500">'+d.n+'</span><span style="text-align:right;font-variant-numeric:tabular-nums">'+Number(d.r).toLocaleString()+'万</span><span style="text-align:right;color:var(--text-tertiary)">'+Number(d.share).toFixed(1)+'%</span><span style="text-align:right;font-variant-numeric:tabular-nums">'+mom+'</span></div>';
+  h+='<div onclick="geoOpenDrawer(\''+key+'\')" title="点击查看明细" style="'+COLS+'font-size:var(--font-sm);padding:5px 8px;border-bottom:1px solid var(--border);cursor:pointer;'+(i%2===1?'background:var(--table-stripe);':'')+'"><span style="color:var(--text-tertiary);font-size:var(--font-xs)">'+(i+1)+'</span><span style="font-weight:500">'+d.n+'</span><span style="text-align:right;font-variant-numeric:tabular-nums">'+_geoQtyK(d.q)+'</span><span style="text-align:right;font-variant-numeric:tabular-nums">'+Number(d.r).toLocaleString()+'</span><span style="text-align:right;color:var(--text-tertiary)">'+Number(d.share).toFixed(1)+'%</span><span style="text-align:right;font-variant-numeric:tabular-nums">'+mom+'</span></div>';
  });
  el.innerHTML=h;
 }
@@ -2307,30 +2319,66 @@ function _geoLabelMin(){
  return Math.max(mx*0.08,1);   // 仅大省显名：收入≥最大值8%的区块才渲染省名标签，防挤
 }
 function _geoMapSetOption(c,mapName){
- c.setOption({tooltip:{confine:true,formatter:function(p){if(!p.data)return p.name+'<br/>无数据';var h='<b>'+p.name+'</b><br/>近12月收入: '+p.data.value.toLocaleString()+'万<br/>毛利: '+(p.data.p||0).toLocaleString()+'万 · 毛利率: '+(p.data.mg||0)+'%';if(p.data.share!==undefined)h+='<br/>占比: '+p.data.share+'%';return h;}},visualMap:{type:'piecewise',orient:'horizontal',left:'center',bottom:0,itemWidth:12,itemHeight:10,textStyle:{fontSize:TYPO.xs},pieces:_geoMapPieces()},series:[{type:'map',map:mapName,roam:false,label:{show:true,fontSize:9,color:'#64748B',formatter:function(p){if(p.name==='南海诸岛')return '';var v=(p.data&&typeof p.data.value==='number')?p.data.value:0;return v>=_geoLabelMin()?p.name:'';}},emphasis:{label:{show:true,fontSize:TYPO.base,color:'#1E293B'},itemStyle:{areaColor:'#FEF3C7'}},itemStyle:{borderColor:'#CBD5E1',borderWidth:0.5},data:_geoMapData()}]},true);
+ c.setOption({tooltip:{confine:true,formatter:function(p){if(!p.data)return p.name+'<br/>无数据';var h='<b>'+p.name+'</b><br/>近12月收入: '+p.data.value.toLocaleString()+'万<br/>毛利: '+(p.data.p||0).toLocaleString()+'万 · 毛利率: '+(p.data.mg||0)+'%';if(p.data.share!==undefined)h+='<br/>占比: '+p.data.share+'%';return h;}},visualMap:{type:'piecewise',orient:'vertical',left:'auto',right:6,top:'middle',itemWidth:12,itemHeight:10,itemGap:4,textStyle:{fontSize:TYPO.xs},pieces:_geoMapPieces()},series:[{type:'map',map:mapName,roam:false,aspectScale:mapName==='china'?1.0:0.75,label:{show:true,fontSize:9,color:'#64748B',formatter:function(p){var v=(p.data&&typeof p.data.value==='number')?p.data.value:0;return v>=_geoLabelMin()?p.name:'';}},emphasis:{label:{show:true,fontSize:TYPO.base,color:'#1E293B'},itemStyle:{areaColor:'#FEF3C7'}},itemStyle:{borderColor:'#CBD5E1',borderWidth:0.5},data:_geoMapData()}]},true);
  c.off('click');
  c.on('click',function(p){
   if(GEO_DRILL==='china'){
-   if(p.name==='广东省'&&echarts.getMap('guangdong')){GEO_DRILL='guangdong';_geoMapSetOption(c,'guangdong');document.getElementById('geoCrumb').innerText='全国 › 广东';document.getElementById('geoBack').style.display='';return;}
+   if(p.name==='广东省'&&echarts.getMap('guangdong')){GEO_DRILL='guangdong';_geoMapSetOption(c,'guangdong');_geoToggleInset(false);document.getElementById('geoCrumb').innerText='全国 › 广东';document.getElementById('geoBack').style.display='';return;}
    var short=String(p.name||'').replace(/(维吾尔自治区|回族自治区|壮族自治区|自治区|特别行政区|省|市)$/,'');
    if(short)geoOpenDrawer(short);
   }else if(p.data){geoOpenDrawer('广东|'+p.data._k);}
  });
 }
+// [三期] 南海诸岛缩略框：主图注册时剔除南海 feature 并将海南远沙岛礁移入小图（大陆聚焦），小图单独渲染
+var GEO_NH_OK=false;
+function _geoSplitChina(){
+ var feats=(GEO_CHINA_JSON.features)||[];
+ var GEO_NH_MIN_LAT=18.0;   // 海南本岛纬度≈18.2~20.2，低于此的岛礁（西沙/中沙/南沙）归入南海小图
+ var isNh=function(f){var pr=(f&&f.properties)||{};return pr.adcode==='100000_JD'||pr.name==='南海诸岛';};
+ var main=[],nh=[];
+ feats.forEach(function(f){
+  if(isNh(f)){nh.push(f);return;}
+  if(f.properties&&f.properties.name==='海南省'&&f.geometry&&f.geometry.type==='MultiPolygon'){
+   var keep=[],move=[];
+   f.geometry.coordinates.forEach(function(poly){
+    var maxLat=-90;
+    poly.forEach(function(ring){ring.forEach(function(p){if(p[1]>maxLat)maxLat=p[1];});});
+    (maxLat<GEO_NH_MIN_LAT?move:keep).push(poly);
+   });
+   if(keep.length)main.push({type:'Feature',properties:f.properties,geometry:{type:'MultiPolygon',coordinates:keep}});
+   if(move.length)nh.push({type:'Feature',properties:{name:'南海诸岛'},geometry:{type:'MultiPolygon',coordinates:move}});
+   return;
+  }
+  main.push(f);
+ });
+ GEO_NH_OK=nh.length>0;
+ echarts.registerMap('china',{type:'FeatureCollection',features:main});
+ if(GEO_NH_OK)echarts.registerMap('china_nh',{type:'FeatureCollection',features:nh});
+}
+function _geoToggleInset(show){
+ var dom=document.getElementById('geoNhInset');if(!dom)return;
+ if(!show||!GEO_NH_OK||typeof echarts==='undefined'){dom.style.display='none';return;}
+ dom.style.display='';
+ var c=TABS.charts.get('geoNhInset');
+ if(!c)c=TABS.charts.init('geoNhInset');
+ c.setOption({animation:false,tooltip:{show:false},series:[{type:'map',map:'china_nh',roam:false,label:{show:false},emphasis:{disabled:true,label:{show:false}},itemStyle:{borderColor:'#CBD5E1',borderWidth:0.4,areaColor:'#DBEAFE'}}]},true);
+}
 function buildGeoMap(){
  var dom=document.getElementById('geoMap');if(!dom)return;
  if(typeof echarts==='undefined'){dom.innerHTML='<div style="color:var(--text-tertiary);text-align:center;padding:60px 0">图表引擎未加载，无法渲染地图</div>';return;}
  if(typeof GEO_CHINA_JSON==='undefined'||!GEO_CHINA_JSON){dom.innerHTML='<div style="color:var(--text-tertiary);text-align:center;padding:60px 0">地图数据未随发布包提供（其余地域图表不受影响）</div>';return;}
- if(!echarts.getMap('china'))echarts.registerMap('china',GEO_CHINA_JSON);
+ if(!echarts.getMap('china'))_geoSplitChina();
  if(typeof GEO_GD_JSON!=='undefined'&&GEO_GD_JSON&&!echarts.getMap('guangdong'))echarts.registerMap('guangdong',GEO_GD_JSON);
  var c=initCh('geoMap');if(!c)return;
  GEO_DRILL='china';_geoMapSetOption(c,'china');
+ _geoToggleInset(true);
  document.getElementById('geoCrumb').innerText='全国';
  document.getElementById('geoBack').style.display='none';
 }
 function geoDrillBack(){
  var c=TABS.charts.get('geoMap');if(!c)return;
  GEO_DRILL='china';_geoMapSetOption(c,'china');
+ _geoToggleInset(true);
  document.getElementById('geoCrumb').innerText='全国';
  document.getElementById('geoBack').style.display='none';
 }
@@ -2339,63 +2387,82 @@ function geoDrillGd(){
  if(typeof GEO_CHINA_JSON==='undefined'||!GEO_CHINA_JSON)return;
  if(typeof GEO_GD_JSON==='undefined'||!GEO_GD_JSON)return;
  var dom=document.getElementById('geoMap');if(!dom)return;
- if(!echarts.getMap('china'))echarts.registerMap('china',GEO_CHINA_JSON);
+ if(!echarts.getMap('china'))_geoSplitChina();
  if(!echarts.getMap('guangdong'))echarts.registerMap('guangdong',GEO_GD_JSON);
  var c=TABS.charts.get('geoMap');if(!c)return;
  GEO_DRILL='guangdong';_geoMapSetOption(c,'guangdong');
+ _geoToggleInset(false);
  document.getElementById('geoCrumb').innerText='全国 › 广东';
  document.getElementById('geoBack').style.display='';
  TABS.drawer.close();
  dom.scrollIntoView({behavior:'smooth',block:'nearest'});
 }
 window.geoDrillGd=geoDrillGd;
+function _geoYoyCell(yoy){
+ if(yoy===null||yoy===undefined)return '<span style="color:var(--text-tertiary)">--</span>';
+ return '<span style="color:'+(yoy>=0?'#EF4444':'#10B981')+'">'+(yoy>=0?'+':'')+Number(yoy).toFixed(1)+'%</span>';
+}
+function _geoTop5CustTable(key){
+ var top5=(typeof GEO_TOP5!=='undefined')?(GEO_TOP5[key]||[]):[];
+ var h='<div class="bs" style="margin-top:10px"><h4><i class="fa-solid fa-users" style="color:var(--primary)"></i> Top5 客户（YTD）</h4>';
+ if(top5.length){
+  h+='<table class="data-table"><thead><tr><th>#</th><th>客户</th><th style="text-align:right">YTD收入(万)</th><th style="text-align:right">毛利率</th><th style="text-align:right">同比</th></tr></thead><tbody>';
+  top5.forEach(function(cc,i){h+='<tr><td>'+(i+1)+'</td><td>'+cc.n+'</td><td style="text-align:right">'+Number(cc.r).toLocaleString()+'</td><td style="text-align:right">'+cc.mg+'%</td><td style="text-align:right">'+_geoYoyCell(cc.yoy)+'</td></tr>';});
+  h+='</tbody></table>';
+ }else{
+  h+='<div style="color:var(--text-tertiary);font-size:var(--font-xs);padding:8px 0">暂无客户数据</div>';
+ }
+ h+='</div>';
+ return h;
+}
+function _geoTop5ProdTable(key){
+ var top5p=(typeof GEO_TOP5P!=='undefined')?(GEO_TOP5P[key]||[]):[];
+ var h='<div class="bs" style="margin-top:10px"><h4><i class="fa-solid fa-box" style="color:var(--primary)"></i> Top5 产品（YTD）</h4>';
+ if(top5p.length){
+  h+='<table class="data-table"><thead><tr><th>#</th><th>产品</th><th style="text-align:right">YTD收入(万)</th><th style="text-align:right">毛利率</th><th style="text-align:right">同比</th></tr></thead><tbody>';
+  top5p.forEach(function(pp,i){h+='<tr><td>'+(i+1)+'</td><td>'+pp.n+'</td><td style="text-align:right">'+Number(pp.r).toLocaleString()+'</td><td style="text-align:right">'+pp.mg+'%</td><td style="text-align:right">'+_geoYoyCell(pp.yoy)+'</td></tr>';});
+  h+='</tbody></table>';
+ }else{
+  h+='<div style="color:var(--text-tertiary);font-size:var(--font-xs);padding:8px 0">暂无产品数据</div>';
+ }
+ h+='</div>';
+ return h;
+}
 function geoOpenDrawer(key){
  if(typeof GEO_PROVINCES==='undefined')return;
- var title=key,kpiRow=[],trend=[],top5=[];
+ var title=key,kpiRow=[],trend=[],isProv=false;
  var prov=GEO_PROVINCES.find(function(d){return d.n===key;});
+ var city=null;
+ if(!prov&&key.indexOf('广东|')===0&&typeof GEO_GD_CITIES!=='undefined'){
+  city=GEO_GD_CITIES.find(function(d){return d.n===key.slice(3);})||null;
+ }
  if(prov){
-  title=prov.n;
+  isProv=true;title=prov.n;
   kpiRow=[{l:'近12月收入',v:prov.r.toLocaleString()+' 万'},{l:'近12月毛利',v:prov.p.toLocaleString()+' 万'},{l:'毛利率',v:prov.mg+'%'},{l:'占比',v:prov.share+'%'},{l:'客户数',v:String(prov.custs)}];
-  trend=prov.trend;top5=(typeof GEO_TOP5!=='undefined')?(GEO_TOP5[key]||[]):[];
+  trend=prov.trend;
+ }else if(city){
+  isProv=true;title=city.n;
+  kpiRow=[{l:'近12月收入',v:city.r.toLocaleString()+' 万'},{l:'近12月毛利',v:city.p.toLocaleString()+' 万'},{l:'毛利率',v:city.mg+'%'},{l:'占比',v:city.share+'%'},{l:'客户数',v:String(city.custs)}];
+  trend=city.trend;
  }else{
   var ab=(typeof GEO_ABROAD!=='undefined')?GEO_ABROAD.find(function(d){return d.k===key;}):null;
   if(!ab)return;
   title=ab.c?(ab.g+'·'+ab.c):ab.g;
   kpiRow=[{l:'近12月收入',v:ab.r.toLocaleString()+' 万'},{l:'近12月毛利',v:ab.p.toLocaleString()+' 万'},{l:'毛利率',v:ab.mg+'%'},{l:'占比',v:(ab.share!==undefined?ab.share+'%':'--')}];
-  trend=ab.trend;top5=(typeof GEO_TOP5!=='undefined')?(GEO_TOP5[key]||[]):[];
+  trend=ab.trend;
  }
-  var h='<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:12px">'+kpiRow.map(function(m){return '<div class="rg"><div class="rgl">'+m.l+'</div><div class="rgv" style="font-size:var(--font-md)">'+m.v+'</div></div>';}).join('')+'</div>';
-  if(prov&&key==='广东'){h+='<div style="margin:-4px 0 10px"><button class="btn btn-secondary btn-sm" onclick="geoDrillGd()"><i class="fa-solid fa-map"></i> 进入广东省内地图</button></div>';}
-  h+='<div class="bs"><h4><i class="fa-solid fa-chart-line" style="color:var(--primary)"></i> 近12月收入趋势（万元）</h4><div id="geoDrawerTrend" style="width:100%;height:220px"></div></div>';
- h+='<div class="bs" style="margin-top:10px"><h4><i class="fa-solid fa-users" style="color:var(--primary)"></i> Top5 客户（YTD）</h4>';
- if(top5.length){
-  h+='<table class="data-table"><thead><tr><th>#</th><th>客户</th><th style="text-align:right">YTD收入(万)</th><th style="text-align:right">毛利率</th></tr></thead><tbody>';
-  top5.forEach(function(cc,i){h+='<tr><td>'+(i+1)+'</td><td>'+cc.n+'</td><td style="text-align:right">'+cc.r.toLocaleString()+'</td><td style="text-align:right">'+cc.mg+'%</td></tr>';});
-  h+='</tbody></table>';
- }else{
-   h+='<div style="color:var(--text-tertiary);font-size:var(--font-xs);padding:8px 0">暂无客户数据</div>';
-  }
-  h+='</div>';
-  var top5p=(typeof GEO_TOP5P!=='undefined')?(GEO_TOP5P[key]||[]):[];
-  h+='<div class="bs" style="margin-top:10px"><h4><i class="fa-solid fa-box" style="color:var(--primary)"></i> Top5 产品（YTD）</h4>';
-  if(top5p.length){
-   h+='<table class="data-table"><thead><tr><th>#</th><th>产品</th><th style="text-align:right">YTD收入(万)</th><th style="text-align:right">毛利率</th><th style="text-align:right">同比</th></tr></thead><tbody>';
-   top5p.forEach(function(pp,i){
-    var yoy=(pp.yoy===null||pp.yoy===undefined)?'<span style="color:var(--text-tertiary)">--</span>':'<span style="color:'+(pp.yoy>=0?'#EF4444':'#10B981')+'">'+(pp.yoy>=0?'+':'')+Number(pp.yoy).toFixed(1)+'%</span>';
-    h+='<tr><td>'+(i+1)+'</td><td>'+pp.n+'</td><td style="text-align:right">'+Number(pp.r).toLocaleString()+'</td><td style="text-align:right">'+pp.mg+'%</td><td style="text-align:right">'+yoy+'</td></tr>';
-   });
-   h+='</tbody></table>';
-  }else{
-   h+='<div style="color:var(--text-tertiary);font-size:var(--font-xs);padding:8px 0">暂无产品数据</div>';
-  }
-  h+='</div>';
-  TABS.drawer.open({title:'地域详情 · '+title,contentHTML:h,width:660,onOpen:function(){
-  setTimeout(function(){
-   var dom=document.getElementById('geoDrawerTrend');if(!dom)return;
-   var c=TABS.charts.init('geoDrawerTrend');if(!c)return;
-   var months=(typeof GEO_MONTHS!=='undefined')?GEO_MONTHS:[];
-   c.setOption({tooltip:{confine:true,trigger:'axis'},grid:{left:55,right:20,top:25,bottom:28,containLabel:true},xAxis:{type:'category',data:months,axisLabel:{fontSize:TYPO.xs,rotate:45}},yAxis:{type:'value',name:'万元',axisLabel:{fontSize:TYPO.base}},series:[{name:'收入',type:'line',data:trend,smooth:true,symbol:'circle',symbolSize:5,lineStyle:{color:'#2563EB',width:2},areaStyle:{color:'rgba(37,99,235,0.08)'},itemStyle:{color:'#2563EB'}}]});
-  },120);
+ var h='<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:12px">'+kpiRow.map(function(m){return '<div class="rg"><div class="rgl">'+m.l+'</div><div class="rgv" style="font-size:var(--font-md)">'+m.v+'</div></div>';}).join('')+'</div>';
+ if(prov&&key==='广东'){h+='<div style="margin:-4px 0 10px"><button class="btn btn-secondary btn-sm" onclick="geoDrillGd()"><i class="fa-solid fa-map"></i> 进入广东省内地图</button></div>';}
+ h+='<div class="bs"><h4><i class="fa-solid fa-chart-line" style="color:var(--primary)"></i> 近12月收入趋势（万元）</h4><div id="geoDrawerTrend" style="width:100%;height:220px"></div></div>';
+ h+=_geoTop5CustTable(key);
+ h+=_geoTop5ProdTable(key);
+ TABS.drawer.open({title:'地域详情 · '+title,contentHTML:h,width:660,onOpen:function(){
+ setTimeout(function(){
+  var dom=document.getElementById('geoDrawerTrend');if(!dom)return;
+  var c=TABS.charts.init('geoDrawerTrend');if(!c)return;
+  var months=(typeof GEO_MONTHS!=='undefined')?GEO_MONTHS:[];
+  c.setOption({tooltip:{confine:true,trigger:'axis'},grid:{left:55,right:20,top:25,bottom:28,containLabel:true},xAxis:{type:'category',data:months,axisLabel:{fontSize:TYPO.xs,rotate:45}},yAxis:{type:'value',name:'万元',axisLabel:{fontSize:TYPO.base}},series:[{name:'收入',type:'line',data:trend,smooth:true,symbol:'circle',symbolSize:5,lineStyle:{color:'#2563EB',width:2},areaStyle:{color:'rgba(37,99,235,0.08)'},itemStyle:{color:'#2563EB'}}]});
+ },120);
  }});
 }
 function initGeo(){
