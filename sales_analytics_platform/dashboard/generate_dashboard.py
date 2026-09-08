@@ -1218,6 +1218,8 @@ _b_prod_cust = {}
 # 命中"客户类别"等列，行为必须零漂移；全部候选缺失时视图优雅置空（沿用原 None 语义）。
 _ag_ent_col = next((c for c in (DASHBOARD_COL_PRIORITY or {}).get(
     "agent_entity", ["代理商/直供名称", "客户"]) if c in rex.columns), None)
+# 面级口径条动态令牌（faces.yaml koujing 中的 %%TOKEN%% 由跑批实测值注入）
+_FACE_META_DYNAMIC = {"%%B_TIER_ANOMALY_ROWS%%": "0", "%%F_MOM_ANCHOR%%": "—"}
 if "销售模式" in rex.columns and _ag_ent_col:
     _ag_mode = rex["销售模式"]
     _ag_bucket = pd.Series(np.where(_ag_mode.eq("经销"), "jx",
@@ -1230,9 +1232,12 @@ if "销售模式" in rex.columns and _ag_ent_col:
                         "it": rex["_item"][_ag_ytdm],
                         "q": rex["_qty"][_ag_ytdm],
                         "ym": rex["_ym_full"][_ag_ytdm]})
-    # 空层级显式归「未分类」扇区（层级环禁用阈值合并后必须显式归类，不产生空键）
-    _ag_tier = {str(_k): (str(_v).strip() if str(_v).strip() not in ("", "nan", "None") else "未分类")
-                for _k, _v in zip(df["客户编号"], df["客户层级"])}
+    # [B-2 拍板] 客户层级理论只有 KA/AA/KM/MM 四类：层级值不在四类内的行=数据异常，
+    # 不计入层级环（pairs 的 t 只保留四类，异常/缺失归 ""），统计落 DQ 文件「客户层级异常值」小节。
+    _TIER_OK = ("KA", "AA", "KM", "MM")
+    _ag_tier_raw = {str(_k): ("" if str(_v).strip() in ("", "nan", "None") else str(_v).strip())
+                    for _k, _v in zip(df["客户编号"], df["客户层级"])}
+    _ag_tier = {_k: _v for _k, _v in _ag_tier_raw.items() if _v in _TIER_OK}
     _ag_pairs = {"jx": {}, "zx": {}, "other": {}}
     for (_b, _e), _g in _ry.groupby(["b", "e"]):
         if _b != "jx":
@@ -1295,6 +1300,17 @@ if "销售模式" in rex.columns and _ag_ent_col:
         _agent_view["trend"][_b][str(_e)] = [{"m": str(_x["ym"]), "r": round(float(_x["r"]) / 1e4, 2),
                                               "p": round(float(_x["p"]) / 1e4, 2),
                                               "q": round(float(_x["q"]) / 1e4, 2)} for _, _x in _am.iterrows()]
+    # [B-2] 层级异常统计：YTD 视窗内客户层级值不在 KA/AA/KM/MM 四类的交易行——
+    # 层级环不计入这些行，统计落 DQ 文件「客户层级异常值」小节，提示修复源数据
+    _ta_tv = _ry["c"].astype(str).map(_ag_tier_raw)
+    _ta = _ry[~_ta_tv.isin(_TIER_OK)]
+    _tier_anom_rows = int(len(_ta))
+    _tier_anom_rev = round(float(_ta["r"].sum()) / 1e4, 1)
+    _tier_anom_custs = int(_ta["c"].nunique())
+    _ta_by_val = (_ta.assign(tv=_ta_tv[_ta.index].map(lambda _x: _x if _x else "（空/客户主数据缺失）"))
+                        .groupby("tv").agg(rows=("r", "size"), rev=("r", "sum"), custs=("c", "nunique"))
+                        .reset_index().sort_values("rev", ascending=False))
+    _ta_by_cust = _ta.groupby("c")["r"].sum().reset_index().sort_values("r", ascending=False)
     # DQ 数据质量提示（决策轮4拍板：不进看板，落盘独立文件供源数据治理）
     _dq = pd.DataFrame({"m": _ag_mode, "e": _ag_ent, "r": rex["_rev"], "ym": rex["_ym_full"]})
     _ns = _dq[_dq["m"].notna() & ~_dq["m"].isin(["经销", "直销"])]
@@ -1331,6 +1347,7 @@ if "销售模式" in rex.columns and _ag_ent_col:
            f"- 空值：{len(_null)} 行 / {round(float(_null['r'].sum()) / 1e4, 1)} 万",
            f"- 经销但代理商名缺失：{len(_jxm)} 行 / {round(float(_jxm['r'].sum()) / 1e4, 1)} 万 / 涉及 {len(_jxm_months)} 个月份",
            f"- 混合实体（同一实体经销与直销并存）：{len(_mixed)} 家",
+           f"- 客户层级异常值（层级不在 KA/AA/KM/MM 四类）：{_tier_anom_rows} 行 / {_tier_anom_rev} 万 / 涉及 {_tier_anom_custs} 家（详见下文「客户层级异常值」小节）",
            f"- 问题集中月份（「其他」占比>5%）：" + ("；".join(f"{h['ym']}（{h['pct']}%，{h['rev']}万）" for h in _hot_months) if _hot_months else "无"), "",
            "## 经销但代理商名缺失", "",
            f"- 行数：{len(_jxm)}",
@@ -1343,8 +1360,23 @@ if "销售模式" in rex.columns and _ag_ent_col:
         _md.append(f"| …其余 {len(_nonstd) - 20} 个取值 | 从略 | 从略 |")
     _md += ["", "## 混合实体明细", "", "| 实体 | 经销(万) | 直销(万) |", "|---|---|---|"]
     _md += [f"| {m['a']} | {m['jx']} | {m['zx']} |" for m in _mixed] or []
+    _md += ["", "## 客户层级异常值", "",
+            "> 客户层级理论只有 KA/AA/KM/MM 四类；层级值不在四类内的交易行为数据异常，B面「终端客户层级构成」环不计入这些行，请修复源数据后重跑。",
+            "",
+            f"- 行数：{_tier_anom_rows}",
+            f"- 金额合计：{_tier_anom_rev} 万",
+            f"- 涉及客户：{_tier_anom_custs} 家", "",
+            "### 异常取值分布", "", "| 层级取值 | 行数 | 金额(万) | 客户数 |", "|---|---|---|---|"]
+    _md += [f"| {_r['tv']} | {int(_r['rows'])} | {round(float(_r['rev']) / 1e4, 1)} | {int(_r['custs'])} |"
+            for _, _r in _ta_by_val.iterrows()]
+    _md += ["", "### 涉及客户 Top30（按 YTD 金额）", "", "| 客户编号 | 客户名称 | 层级取值 | 金额(万) |", "|---|---|---|---|"]
+    _md += [f"| {_r['c']} | {cid_to_name.get(str(_r['c']), str(_r['c']))} | {_ag_tier_raw.get(str(_r['c']), '') or '（空/缺失）'} | {round(float(_r['r']) / 1e4, 1)} |"
+            for _, _r in _ta_by_cust.head(30).iterrows()]
+    if _tier_anom_custs > 30:
+        _md.append(f"| …其余 {_tier_anom_custs - 30} 家 | 从略 | 从略 | 从略 |")
     with open(_dq_path, "w", encoding="utf-8") as _f:
         _f.write("\n".join(_md) + "\n")
+    _FACE_META_DYNAMIC["%%B_TIER_ANOMALY_ROWS%%"] = str(_tier_anom_rows)
 
     # ── Top 产品模块数据段（v3，决策轮5定稿）：品种级 × 三层级，全内联新变量 ──
     # 键=产品品种（C面/B面t5同款）；cells=R12 月度稀疏单元 [月, 收入万, 毛利万, 销量万]；
@@ -2373,6 +2405,7 @@ if _face_visible("F"):
         "mom_anchor": (f"{_m_cur_ym} vs {_m_prev_ym}" if _m_prev_ym
                        else f"{_m_cur_ym}（窗口首月，无窗口内前月）"),
     }
+    _FACE_META_DYNAMIC["%%F_MOM_ANCHOR%%"] = f_overview["mom_anchor"]
     f_windows = {"cur": W_CUR, "prev_half": W_PREV_HALF, "prev_year": W_PREV_YEAR,
                  "mom_cur_ym": _m_cur_ym, "mom_prev_ym": _m_prev_ym}
 
@@ -3003,6 +3036,9 @@ def _build_face_meta_html(face_id, cfg):
             update_note = sec.get("update_note", "")
             if not any((definition, koujing, usage, update_note)):
                 continue
+            # 动态令牌注入（%%B_TIER_ANOMALY_ROWS%% / %%F_MOM_ANCHOR%% 等，见数据段）
+            for _tok, _val in _FACE_META_DYNAMIC.items():
+                koujing = koujing.replace(_tok, _val)
             parts.append('      <div class="face-meta-section">')
             if title:
                 parts.append(f'        <div class="face-meta-title">{title}</div>')

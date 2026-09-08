@@ -595,8 +595,7 @@ body{font-family:-apple-system,'Microsoft YaHei','Segoe UI',sans-serif;backgroun
  <div class="kc"><div class="icon-wrap"><i class="fa-solid fa-chart-line"></i></div><div class="label">毛利</div><div class="value" id="fOvProfit">--</div><div class="sub" id="fOvProfitDiff">--</div></div>
  <div class="kc"><div class="icon-wrap"><i class="fa-solid fa-percent"></i></div><div class="label">毛利率</div><div class="value" id="fOvMg">--</div><div class="sub" id="fOvMgDiff">--</div></div>
  <div class="kc"><div class="icon-wrap"><i class="fa-solid fa-users"></i></div><div class="label">客户数</div><div class="value" id="fOvCusts">--</div><div class="sub" id="fOvCustsDiff">--</div></div>
- </div>
- <div id="fOvAnchor" style="font-size:10px;color:var(--text-tertiary);padding:2px 8px"></div>
+  </div>
  </div>
  <div class="kpi-bar" style="grid-template-columns:repeat(6,1fr);margin-bottom:12px">
  <div class="kc"><div class="icon-wrap"><i class="fa-solid fa-coins"></i></div><div class="label">%%F_CUR_LABEL%%收入</div><div class="value" id="fH1Rev">--</div><div class="sub" id="fH1RevYoy">--</div></div>
@@ -2310,10 +2309,11 @@ if(!main.length)main=[{name:'无数据',value:1}];
 var mData=main.map(function(d){var o={name:d.name,value:d.value};if(d.itemStyle)o.itemStyle=d.itemStyle;if(d.selected)o.selected=d.selected;return o});
 var cData=small.map(function(d,i){return{name:d.name,value:d.value,itemStyle:{color:TINTS[Math.min(i,TINTS.length-1)]}}});
 var series=[{type:'pie',startAngle:hasSmall?(360-(smallSum/tot)*180):90,center:hasSmall?['32%','52%']:['50%','52%'],radius:['30%','52%'],data:mData,avoidLabelOverlap:true,selectedMode:'single',selectedOffset:16,label:{fontSize:TYPO.base,formatter:'{b} {d}%'},labelLine:{length:10,length2:8}}];
-if(hasSmall)series.push({type:'pie',center:['70%','52%'],radius:['20%','40%'],data:cData,avoidLabelOverlap:true,label:{fontSize:TYPO.sm,formatter:'{b} {d}%'},labelLine:{length:8,length2:6}});
-var opt={tooltip:{trigger:'item',confine:true,formatter:'{b}: {c}'+unit+' ({d}%)'},series:series};
+if(hasSmall)series.push({type:'pie',center:['70%','52%'],radius:['20%','40%'],data:cData,avoidLabelOverlap:true,label:{fontSize:TYPO.sm,formatter:function(p){return p.name+' '+(tot>0?(p.value/tot*100).toFixed(1):'0.0')+'%'}},labelLine:{length:8,length2:6}});
+// 右环=「其他」明细：占比按整体折算（成员值/总盘），与主环同基准，全图合计 100%
+var opt={tooltip:{trigger:'item',confine:true,formatter:function(p){return p.name+': '+p.value+unit+' ('+(tot>0?(p.value/tot*100).toFixed(1):'0.0')+'%)'}},series:series};
 if(hasSmall){
-opt.title=[{text:'总体构成',left:'24%',bottom:0,textStyle:{fontSize:TYPO.xs,color:'#6B7280',fontWeight:'normal'}},{text:'「其他」明细',left:'62%',bottom:0,textStyle:{fontSize:TYPO.xs,color:'#6B7280',fontWeight:'normal'}}];
+opt.title=[{text:'总体构成',left:'24%',bottom:0,textStyle:{fontSize:TYPO.xs,color:'#6B7280',fontWeight:'normal'}},{text:'「其他」明细（占比按整体折算）',left:'62%',bottom:0,textStyle:{fontSize:TYPO.xs,color:'#6B7280',fontWeight:'normal'}}];
 var w=el.clientWidth,h=el.clientHeight,m=Math.min(w,h)/2;
 var cx=0.32*w,cy=0.52*h,rO=0.52*m;
 var opct=smallSum/tot,off=16,rad=Math.PI/180;
@@ -2423,8 +2423,8 @@ if(!B_AGSEL){
 h+='<div class="bs"><h4><i class="fa-solid fa-chart-column" style="color:var(--primary)"></i> 渠道结构（月度收入，万元）</h4><div id="bAgStack" style="width:100%;height:240px"></div></div>';
 h+='<div class="bs"><h4><i class="fa-solid fa-users" style="color:var(--primary)"></i> 月活'+(isZx?'终端客户':'代理商')+'数</h4><div id="bAgActive" style="width:100%;height:200px"></div></div>';
 }else{
-h+='<div class="bs"><h4><i class="fa-solid fa-chart-pie" style="color:var(--primary)"></i> 终端客户层级构成<span class="chart-guide">YTD口径，全量四层级+未分类显式扇区，不做阈值合并；跨代理不求和</span></h4><div id="bAgTier" style="width:100%;height:230px"></div></div>';
-h+='<div class="bs"><h4><i class="fa-solid fa-chart-pie" style="color:var(--primary)"></i> 品类构成（近12月收入）<span class="chart-guide">右环=其他明细</span></h4><div id="bAgCat" style="width:100%;height:230px"></div></div>';
+h+='<div class="bs"><h4><i class="fa-solid fa-chart-pie" style="color:var(--primary)"></i> 终端客户层级构成<span class="chart-guide">YTD口径，仅KA/AA/KM/MM四层级（全量无阈值）；层级异常未计入，见面级口径条与数据问题文件；跨代理不求和</span></h4><div id="bAgTier" style="width:100%;height:230px"></div></div>';
+h+='<div class="bs"><h4><i class="fa-solid fa-chart-pie" style="color:var(--primary)"></i> 品类构成（近12月收入）<span class="chart-guide">右环=其他明细，占比按整体折算</span></h4><div id="bAgCat" style="width:100%;height:230px"></div></div>';
 h+='<div class="bs"><h4><i class="fa-solid fa-chart-line" style="color:var(--primary)"></i> 月度销量（万单位）</h4><div id="bAgQty" style="width:100%;height:210px"></div></div>';
 }
 det.innerHTML=h;
@@ -2434,7 +2434,7 @@ if(!B_AGSEL){
 var elS=document.getElementById('bAgStack');if(elS){var oS=echarts.getInstanceByDom(elS);if(oS)oS.dispose();var cS=TABS.chart.create(elS);if(cS){var jxT=(AG.btrend||{}).jx||[],zxT=(AG.btrend||{}).zx||[];var mset={};jxT.forEach(function(d){mset[d.m]=1});zxT.forEach(function(d){mset[d.m]=1});var mss=Object.keys(mset).sort();var jxMap={},zxMap={};jxT.forEach(function(d){jxMap[d.m]=d.r});zxT.forEach(function(d){zxMap[d.m]=d.r});cS.setOption({tooltip:{trigger:'axis',confine:true,axisPointer:{type:'shadow'},formatter:function(ps){var hh='<b>'+ps[0].axisValue+'</b><br/>';var s=0;ps.forEach(function(p){s+=p.value;hh+=p.marker+p.seriesName+': <b>'+p.value.toFixed(1)+'万</b><br/>'});hh+='合计: <b>'+s.toFixed(1)+'万</b>';return hh}},legend:{top:0,textStyle:{fontSize:TYPO.lg}},grid:{left:4,right:16,top:30,bottom:4,containLabel:true},xAxis:{type:'category',data:mss,axisLabel:{fontSize:TYPO.base}},yAxis:{type:'value',axisLabel:{fontSize:TYPO.base}},series:[{name:'经销',type:'bar',stack:'ch',barCategoryGap:'35%',barMaxWidth:56,label:{show:true,fontSize:TYPO.base,formatter:function(p){return p.value>0?Math.round(p.value):''}},data:mss.map(function(m){return jxMap[m]||0})},{name:'直销',type:'bar',stack:'ch',barMaxWidth:56,itemStyle:{color:'#F59E0B'},label:{show:true,position:'top',fontSize:TYPO.base,formatter:function(p){var t=(jxMap[mss[p.dataIndex]]||0)+(zxMap[mss[p.dataIndex]]||0);return t>0?Math.round(t):''}},data:mss.map(function(m){return zxMap[m]||0})}]})}}
 var elAv=document.getElementById('bAgActive');if(elAv){var oAv=echarts.getInstanceByDom(elAv);if(oAv)oAv.dispose();var cAv=TABS.chart.create(elAv);if(cAv){var act=(AG.active||{})[B_SUBMODE]||[];cAv.setOption({tooltip:{trigger:'axis',confine:true},grid:{left:4,right:16,top:14,bottom:4,containLabel:true},xAxis:{type:'category',data:act.map(function(d){return d.m}),axisLabel:{fontSize:TYPO.base}},yAxis:{type:'value',minInterval:1,axisLabel:{fontSize:TYPO.base}},series:[{name:'月活数',type:'line',smooth:true,areaStyle:{opacity:.12},data:act.map(function(d){return d.n})}]})}}
 }else{
-var elT=document.getElementById('bAgTier');if(elT){var oT=echarts.getInstanceByDom(elT);if(oT)oT.dispose();var cT=TABS.chart.create(elT);if(cT){var tc={};prs.forEach(function(p2){var k=(p2.t&&String(p2.t).trim())?String(p2.t).trim():'未分类';tc[k]=(tc[k]||0)+1});var tdata=Object.keys(tc).map(function(k){return{name:k,value:tc[k]}}).sort(function(a,b){return b.value-a.value});if(!tdata.length){cT.setOption({title:{text:'暂无层级数据',left:'center',top:'center',textStyle:{fontSize:TYPO.title,color:'#6B7280'}}})}else{cT.setOption(_bNestedPieOption(elT,tdata,0,' 家'))}}}
+var elT=document.getElementById('bAgTier');if(elT){var oT=echarts.getInstanceByDom(elT);if(oT)oT.dispose();var cT=TABS.chart.create(elT);if(cT){var tc={};var _okT=['KA','AA','KM','MM'];prs.forEach(function(p2){var k=String(p2.t||'').trim();if(_okT.indexOf(k)<0)return;tc[k]=(tc[k]||0)+1});var tdata=Object.keys(tc).map(function(k){return{name:k,value:tc[k]}}).sort(function(a,b){return b.value-a.value});if(!tdata.length){cT.setOption({title:{text:'暂无层级数据',left:'center',top:'center',textStyle:{fontSize:TYPO.title,color:'#6B7280'}}})}else{cT.setOption(_bNestedPieOption(elT,tdata,0,' 家'))}}}
 var elCt=document.getElementById('bAgCat');if(elCt){var oCt=echarts.getInstanceByDom(elCt);if(oCt)oCt.dispose();var cCt=TABS.chart.create(elCt);if(cCt){var cd=(AG.cat||{})[B_AGSEL]||{};var ents=Object.keys(cd).map(function(k){return{name:k,value:cd[k]}}).sort(function(a,b){return b.value-a.value});cCt.setOption(_bNestedPieOption(elCt,ents,0.02,'万'))}}
 var elQ=document.getElementById('bAgQty');if(elQ){var oQ=echarts.getInstanceByDom(elQ);if(oQ)oQ.dispose();var cQ=TABS.chart.create(elQ);if(cQ){cQ.setOption({tooltip:{trigger:'axis',confine:true},grid:{left:4,right:16,top:14,bottom:4,containLabel:true},xAxis:{type:'category',data:trend.map(function(d){return d.m}),axisLabel:{fontSize:TYPO.base}},yAxis:{type:'value',name:'万单位',axisLabel:{fontSize:TYPO.base}},series:[{name:'销量',type:'line',smooth:true,data:trend.map(function(d){return d.q||0}),lineStyle:{color:'#F59E0B',width:2},areaStyle:{color:'rgba(245,158,11,0.1)'},symbol:'circle',symbolSize:4}]})}}
 }},200)}
@@ -2726,9 +2726,8 @@ function buildF(){
   document.getElementById('fOvMg').innerHTML=fFmtPlain(o.mg,'<span style="font-size:14px;font-weight:400">%</span>');
   document.getElementById('fOvMgDiff').innerText='vs '+o.win_prev_half+' '+fFmt(o.mg_hoh,'pp')+' ｜ vs '+o.win_prev_year+' '+fFmt(o.mg_yoy,'pp');
   document.getElementById('fOvCusts').innerText=o.custs;
-  document.getElementById('fOvCustsDiff').innerText='vs '+o.win_prev_half+' '+fFmt(o.custs_hoh_pct,'%')+' ｜ vs '+o.win_prev_year+' '+fFmt(o.custs_yoy_pct,'%');
-  document.getElementById('fOvAnchor').innerText='月度环比锚：'+o.mom_anchor+'（窗口内末月 vs 前一月；对应下方部门表「ASP月环比」列与 KA客户表「月环比」列；窗口外无数据显示 —）';
- }
+   document.getElementById('fOvCustsDiff').innerText='vs '+o.win_prev_half+' '+fFmt(o.custs_hoh_pct,'%')+' ｜ vs '+o.win_prev_year+' '+fFmt(o.custs_yoy_pct,'%');
+  }
  document.getElementById('fH1Rev').innerHTML=k.rev.toLocaleString()+'<span style="font-size:14px;font-weight:400"> 万</span>';
  document.getElementById('fH1RevYoy').innerText='vs '+fWinLabel('prev_half','上一半年窗')+' '+fFmt(k.rev_hoh,'%')+' ｜ 同比 '+fFmt(k.rev_yoy,'%');
  document.getElementById('fH1Profit').innerHTML=k.profit.toLocaleString()+'<span style="font-size:14px;font-weight:400"> 万</span>';
@@ -2795,22 +2794,23 @@ function fBuildDeptTable(){
  document.getElementById('fDeptTable').innerHTML=h;
 }
 function fExpandDept(name){
-  if(F_DEPT_EXPANDED===name){F_DEPT_EXPANDED=null;fBuildDeptTable();try{fBuildDeptRadar()}catch(e){}return}
- F_DEPT_EXPANDED=name;
- var dept=F_DEPT_MARGINS.find(function(d){return d.name===name});if(!dept)return;
- var h=fDeptHead();
+   var _tbl=document.getElementById('fDeptTable');
+   if(F_DEPT_EXPANDED===name){F_DEPT_EXPANDED=null;if(_tbl)_tbl.style.height='';fBuildDeptTable();try{fBuildDeptRadar()}catch(e){}return}
+  F_DEPT_EXPANDED=name;
+  var dept=F_DEPT_MARGINS.find(function(d){return d.name===name});if(!dept)return;
+  // 展开前锁定表容器当前高度：成员明细只在容器内滚动，整卡（含标题）高度零变化
+  if(_tbl&&!_tbl.style.height)_tbl.style.height=_tbl.offsetHeight+'px';
+  var h=fDeptHead();
  F_DEPT_MARGINS.forEach(function(d,i){
   h+=fDeptRow(d,i,d.name===name);
   if(d.name===name){
-   h+='<div style="padding:6px 8px;background:var(--surface-subtle);border-top:2px solid var(--primary);border-bottom:1px solid var(--border)"><b style="font-size:11px;color:var(--primary)">'+name+' 成员明细</b> <span style="font-size:10px;color:var(--text-tertiary)">[点击行跳转E面]</span></div>';
-   h+='<div style="max-height:220px;overflow-y:auto">';
-   dept.individuals.forEach(function(ind,j){
+    h+='<div style="padding:6px 8px;background:var(--surface-subtle);border-top:2px solid var(--primary);border-bottom:1px solid var(--border)"><b style="font-size:11px;color:var(--primary)">'+name+' 成员明细</b> <span style="font-size:10px;color:var(--text-tertiary)">[点击行跳转E面]</span></div>';
+    dept.individuals.forEach(function(ind,j){
    var zebra=j%2===1?'background:var(--table-stripe);':'';
    h+='<div style="display:grid;grid-template-columns:1.5fr 0.8fr 0.6fr 0.7fr;gap:4px;font-size:11px;padding:4px 8px 4px 24px;border-bottom:1px solid var(--border);cursor:pointer;'+zebra+'" onclick="fGotoE(\''+ind.name.replace(/'/g,'\\x27')+'\')">';
-   h+='<span>'+ind.name+'</span><span class="num">'+ind.rev+'</span><span class="ctr">'+ind.mg+'%</span><span class="num">'+(ind.asp||0)+'</span></div>';
-   });
-   h+='</div>';
-   }
+    h+='<span>'+ind.name+'</span><span class="num">'+ind.rev+'</span><span class="ctr">'+ind.mg+'%</span><span class="num">'+(ind.asp||0)+'</span></div>';
+    });
+    }
  });
   document.getElementById('fDeptTable').innerHTML=h;
   try{fBuildDeptRadar()}catch(e){}
@@ -2909,7 +2909,8 @@ function fBuildDeptRadar(){
   var old=echarts.getInstanceByDom(dom);if(old)old.dispose();var chart=TABS.chart.create(dom);
   var indicators=[{name:'贡献',max:100},{name:'维系',max:100},{name:'拓展',max:100},{name:'定价',max:100},{name:'新客',max:100},{name:'激活',max:100},{name:'升级',max:100},{name:'优化',max:100},{name:'抗风险',max:100}];
   var fk=['contribution','retention','category_expand','pricing','new_dev','activation','upgrade','product_optimize','risk_resist'];
-  var colors=['#6B7280','#2563EB','#EF4444','#10B981','#F59E0B','#8B5CF6','#0EA5E9','#EC4899','#3B82F6'];
+  // 统一图表色板（template 头部 TABS.chart.COLORS 同款序列，不引入独立色板）
+  var colors=(TABS.chart&&TABS.chart.COLORS)?TABS.chart.COLORS:['#2563EB','#0EA5E9','#10B981','#F59E0B','#EF4444','#8B5CF6','#EC4899','#6B7280'];
   var series=[];
   var activeDepts=[];
   if(typeof D_DEPT_LIST!=='undefined'){D_DEPT_LIST.forEach(function(d){
@@ -2920,16 +2921,16 @@ function fBuildDeptRadar(){
   });
   if(activeDepts.length>0){
   var overall=fk.map(function(f){var vals=activeDepts.map(function(d){return d.forces[f]||50});return Math.round(vals.reduce(function(a,b){return a+b},0)/vals.length*10)/10});
-   series.push({name:'整体均值',value:overall,lineStyle:{color:'#6B7280',width:2.5,type:'dashed',opacity:0.9},itemStyle:{color:'#6B7280'},areaStyle:{opacity:0.08},z:2});
+   series.push({name:'整体均值',value:overall,lineStyle:{color:'#6B7280',width:2.5,type:'dashed',opacity:0.9},itemStyle:{color:'#6B7280'},z:2});
   }
   activeDepts.forEach(function(d,idx){
-   var clr=colors[(idx+1)%colors.length];
+   var clr=colors[idx%colors.length];
    // 联动高亮（方案b）：展开部门→粗线满色，其余淡化，治多系列叠绘发灰
    var hl=(F_DEPT_EXPANDED===d.name);
    series.push({name:d.name,value:fk.map(function(f){return d.forces[f]||50}),
     lineStyle:{color:clr,width:hl?3.5:1.5,opacity:hl?1:0.35},
     itemStyle:{color:clr,opacity:hl?1:0.35},
-    areaStyle:hl?{color:clr,opacity:0.12}:{opacity:0},
+    areaStyle:hl?{color:clr,opacity:0.08}:{opacity:0},
     symbol:hl?'circle':'none',symbolSize:hl?4:0,z:hl?3:1});
   });
   if(series.length===0){
@@ -2937,7 +2938,7 @@ function fBuildDeptRadar(){
    chart.setOption({title:{text:'暂无部门战力数据',left:'center',top:'center',textStyle:{fontSize:TYPO.title,color:'#6B7280'}},series:[]});
    return;
   }
-  chart.setOption({tooltip:{trigger:'item',confine:true},legend:{bottom:0,textStyle:{fontSize:TYPO.lg},type:'scroll'},radar:{indicator:indicators,radius:'52%',center:['50%','42%'],axisName:{fontSize:TYPO.base,color:'#475569'},splitArea:{areaStyle:{color:['#fff','var(--table-stripe)']}}},series:[{type:'radar',data:series}]});
+  chart.setOption({tooltip:{trigger:'item',confine:true},legend:{bottom:0,textStyle:{fontSize:TYPO.lg},type:'scroll'},radar:{indicator:indicators,radius:'52%',center:['50%','42%'],axisName:{fontSize:TYPO.base,color:'#475569'},splitArea:{show:false}},series:[{type:'radar',data:series}]});
   // 反向联动：点击雷达系列展开/收起对应部门
   chart.on('click',function(p){
    if(!p||!p.seriesName||p.seriesName==='整体均值')return;
