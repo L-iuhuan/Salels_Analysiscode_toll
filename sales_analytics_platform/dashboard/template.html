@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -2263,14 +2263,14 @@ return}
 var exp=B_AGENT_EXPANDED===d.a;
 var sela=B_AGSEL===d.a?' sel':'';
 h+='<div class="brow twol'+sela+zb+'" data-agent="'+String(d.a).replace(/"/g,'&quot;')+'" style="cursor:pointer" onclick="bSelAgent(\''+_agEsc(d.a)+'\')">';
-h+='<div class="l1" style="color:'+(exp?'var(--primary)':'var(--text-primary)')+'" title="'+_agEsc(d.a)+'"><i class="fa-solid '+(exp?'fa-chevron-down':'fa-chevron-right')+'" style="font-size:10px"></i> '+d.a+'</div><div class="l2">收入 '+Math.round(d.r).toLocaleString()+' · 毛利 '+Math.round(d.p).toLocaleString()+' · '+d.mg+'% · '+d.nc+' 客户 · '+d.np+' 产品</div></div>';
+h+='<div class="l1" style="color:'+(exp?'var(--primary)':'var(--text-primary)')+'" title="'+_agEsc(d.a)+'"><i class="fa-solid '+(exp?'fa-chevron-down':'fa-chevron-right')+'" style="font-size:10px"></i> '+d.a+'</div><div class="l2">收入 '+Math.round(d.r).toLocaleString()+' · 毛利 '+Math.round(d.p).toLocaleString()+' · '+d.mg+'% · '+d.nc+' 客户 · '+d.npd+' 产品</div></div>';
 if(exp){
 var prs=((AG.pairs||{})[B_SUBMODE]||{})[d.a]||[];
 h+='<div class="agcap" style="position:static">终端客户 · 次行依次为 收入(万) / 毛利(万) / 毛利率(%) / 层级 / 产品数</div>';
 prs.forEach(function(pc,j){
 var selp=B_PAIR_SEL===pc.id?' sel':'';
 h+='<div class="brow twol'+selp+(j%2===1?' zb':'')+'" style="cursor:pointer" onclick="bSelPair(\''+_agEsc(pc.id)+'\')">';
-h+='<div class="l1" style="padding-left:20px;color:var(--text-secondary)" title="'+pc.n+'">'+pc.n+'</div><div class="l2" style="padding-left:20px">收入 '+Math.round(pc.r).toLocaleString()+' · 毛利 '+Math.round(pc.p).toLocaleString()+' · '+pc.mg+'% · '+(pc.t||'-')+' · '+pc.np+' 产品</div></div>'});
+h+='<div class="l1" style="padding-left:20px;color:var(--text-secondary)" title="'+pc.n+'">'+pc.n+'</div><div class="l2" style="padding-left:20px">收入 '+Math.round(pc.r).toLocaleString()+' · 毛利 '+Math.round(pc.p).toLocaleString()+' · '+pc.mg+'% · '+(pc.t||'-')+' · '+pc.npd+' 产品</div></div>'});
 if(!prs.length)h+='<div style="padding:6px 24px;font-size:11px;color:var(--text-tertiary)">（YTD 窗口内无终端客户交易）</div>'}
 });
 var sc=el.scrollTop;el.innerHTML=h;el.scrollTop=sc;
