@@ -2880,7 +2880,7 @@ else:
     print("  [F面] 平时关闭（visible=false），跳过 H1 计算。半年度复盘期在 dashboard\\faces.yaml 改 visible=true")
 
 # ========== 9. 地域分布（发货地址→省市解析，按交易行聚合）==========
-# 解析已在取材后完成（见 _addr 段注释）；窗口：近12月（start_12m~latest）聚合 + YTD（KPI/Top5客户）；
+# 解析已在取材后完成（见 _addr 段注释）；窗口：近12月（start_12m~latest）聚合 + YTD（KPI/Top5客户/Top5产品）；
 # 月度趋势数组按 _REX_BY_YM 预分组复用（三列已在预分组前挂到 rex）。
 print("[9/9] 地域分布...")
 _t_seg0 = _timed("F面前置汇总", _t_seg0)
@@ -2920,15 +2920,19 @@ def _geo_top5(df_part) -> list:
 
 
 _ml12 = _geo_r12[(~_geo_r12["_abroad"]) & (_geo_r12["_region"] != "未识别")]
+_geo_prev_ym = str(pd.Period(latest, freq="M") - 1)   # 环比锚：最新月 vs 上一自然月
 geo_provinces = []
 for _name, _g in _ml12.groupby("_region"):
     _r = float(_g["_rev"].sum()); _p = float(_g["_profit"].sum())
+    _mcur = _geo_rm.get(_name, {}).get(latest, 0.0)
+    _mprv = _geo_rm.get(_name, {}).get(_geo_prev_ym, 0.0)
     geo_provinces.append({
         "n": _name, "map": _geo.short_to_full_province(_name, _geod),
         "r": round(_r / 1e4, 1), "p": round(_p / 1e4, 1),
         "mg": round(_p / _r * 100, 1) if _r > 0 else 0,
         "custs": int(_g["_cust"].nunique()),
         "share": round(_r / _total12 * 100, 2),
+        "mom": round((_mcur - _mprv) / _mprv * 100, 1) if _mprv > 0 else None,
         "trend": _geo_trend(_name),
     })
 geo_provinces.sort(key=lambda x: -x["r"])
@@ -2948,6 +2952,7 @@ for (_g, _c), _gg in _ab12.groupby(["_region", "_sub"]):
     _r = float(_gg["_rev"].sum()); _p = float(_gg["_profit"].sum())
     geo_abroad.append({"g": _g, "c": _c, "k": f"{_g}|{_c}",
                        "r": round(_r / 1e4, 1), "p": round(_p / 1e4, 1),
+                       "q": int(round(float(_gg["_qty"].sum()))),
                        "mg": round(_p / _r * 100, 1) if _r > 0 else 0,
                        "share": round(_r / _total12 * 100, 2),
                        "trend": _geo_trend_sub(f"{_g}|{_c}")})
@@ -2955,6 +2960,7 @@ _un12 = _geo_r12[_geo_r12["_region"] == "未识别"]
 _un_r = float(_un12["_rev"].sum()); _un_p = float(_un12["_profit"].sum())
 geo_abroad.append({"g": "未识别", "c": "", "k": "未识别",
                    "r": round(_un_r / 1e4, 1), "p": round(_un_p / 1e4, 1),
+                   "q": int(round(float(_un12["_qty"].sum()))),
                    "mg": round(_un_p / _un_r * 100, 1) if _un_r > 0 else 0,
                    "share": round(_un_r / _total12 * 100, 2),
                    "trend": _geo_trend("未识别")})
@@ -2967,6 +2973,25 @@ for _name, _g in _geo_ytd[(~_geo_ytd["_abroad"]) & (_geo_ytd["_region"] != "未�
     geo_top5[_name] = _geo_top5(_g)
 for (_g, _c), _gg in _geo_ytd[_geo_ytd["_abroad"]].groupby(["_region", "_sub"]):
     geo_top5[f"{_g}|{_c}"] = _geo_top5(_gg)
+
+# 弹层 Top5 产品（YTD 口径）：收入 + 毛利率 + 同比变化（对比上年同期 YTD，r25 复用零新增扫描）
+def _geo_top5p(df_part, df_prev) -> list:
+    _t = (df_part.groupby("_prod").agg(rv=("_rev", "sum"), pf=("_profit", "sum"))
+          .sort_values("rv", ascending=False).head(5))
+    _pv = df_prev.groupby("_prod")["_rev"].sum().to_dict() if len(df_prev) else {}
+    _out = []
+    for _n, _x in _t.iterrows():
+        _rv = float(_x["rv"]); _pr = float(_pv.get(_n, 0.0))
+        _out.append({"n": str(_n), "r": round(_rv / 1e4, 1),
+                     "mg": round(float(_x["pf"]) / _rv * 100, 1) if _rv > 0 else 0,
+                     "yoy": round((_rv - _pr) / _pr * 100, 1) if _pr > 0 else None})
+    return _out
+
+geo_top5p: dict[str, list] = {}
+for _name, _g in _geo_ytd[(~_geo_ytd["_abroad"]) & (_geo_ytd["_region"] != "未识别")].groupby("_region"):
+    geo_top5p[_name] = _geo_top5p(_g, r25[r25["_region"] == _name])
+for (_g, _c), _gg in _geo_ytd[_geo_ytd["_abroad"]].groupby(["_region", "_sub"]):
+    geo_top5p[f"{_g}|{_c}"] = _geo_top5p(_gg, r25[(r25["_region"] == _g) & (r25["_sub"] == _c)])
 
 # KPI 卡组（YTD 口径）：广东占比 / 海外+港澳台占比 / 未识别披露
 _gd_ytd = float(_geo_ytd[(~_geo_ytd["_abroad"]) & (_geo_ytd["_region"] == "广东")]["_rev"].sum())
@@ -3058,6 +3083,7 @@ js_data.append("var GEO_PROVINCES = "+json.dumps(geo_provinces,ensure_ascii=Fals
 js_data.append("var GEO_ABROAD = "+json.dumps(geo_abroad,ensure_ascii=False)+";")
 js_data.append("var GEO_GD_CITIES = "+json.dumps(geo_gd_cities,ensure_ascii=False)+";")
 js_data.append("var GEO_TOP5 = "+json.dumps(geo_top5,ensure_ascii=False)+";")
+js_data.append("var GEO_TOP5P = "+json.dumps(geo_top5p,ensure_ascii=False)+";")
 js_data.append("var GEO_KPIS = "+json.dumps(geo_kpis,ensure_ascii=False)+";")
 js_data.append("var GEO_CHINA_JSON = "+json.dumps(_geo_china,ensure_ascii=False,separators=(",",":"))+";")
 js_data.append("var GEO_GD_JSON = "+json.dumps(_geo_gd,ensure_ascii=False,separators=(",",":"))+";")
