@@ -1197,18 +1197,11 @@ cutoff_12m = start_12m
 cxp_12m_r = rex[(rex["_ym_full"]>=cutoff_12m)&(rex["_ym_full"]<=latest)]
 cid_12m_data = {}
 for cid, grp in cxp_12m_r.groupby("_cust"):
-    uniq_prods = grp["_prod"].nunique()
+    uniq_items = grp["_item"].nunique()   # 口径修复：品种(_item)去重——原 _prod 为产品线级(仅4-6个)，名实不符
     cat_rev = {}
     cat_agg = grp.groupby("_cat")["_rev"].sum().reset_index()
     for _,cr in cat_agg.iterrows(): cat_rev[str(cr["_cat"])]=round(float(cr["_rev"])/1e4,1)
-    cid_12m_data[cid]={"prods":uniq_prods,"cats":len(cat_rev),"cat_rev":cat_rev}
-
-# B面Top5产品
-prank = {}
-for cid, grp in cxp_12m_r.groupby("_cust"):
-    prod_rev = grp.groupby("_prod")["_rev"].sum().reset_index()
-    top = prod_rev.sort_values("_rev",ascending=False).head(5)
-    prank[cid]=[str(p) for p in top["_prod"].tolist()]
+    cid_12m_data[cid]={"prods":uniq_items,"cats":len(cat_rev),"cat_rev":cat_rev}
 
 # ── 代理商视图（按经销模式）数据段（iter/agent-face-explore；决策轮5口径：视图仅经销/直销两桶）──
 # 行级字面值分类：销售模式=="经销"→jx / =="直销"→zx / 其余一切（公司名填写、空值）→other。
@@ -1234,9 +1227,12 @@ if "销售模式" in rex.columns and _ag_ent_col:
     _ry = pd.DataFrame({"b": _ag_bucket[_ag_ytdm], "e": _ag_ent[_ag_ytdm],
                         "c": rex["_cust"][_ag_ytdm], "r": rex["_rev"][_ag_ytdm],
                         "p": rex["_profit"][_ag_ytdm], "prod": rex["_prod"][_ag_ytdm],
+                        "it": rex["_item"][_ag_ytdm],
                         "q": rex["_qty"][_ag_ytdm],
                         "ym": rex["_ym_full"][_ag_ytdm]})
-    _ag_tier = dict(zip(df["客户编号"].astype(str), df["客户层级"].astype(str)))
+    # 空层级显式归「未分类」扇区（层级环禁用阈值合并后必须显式归类，不产生空键）
+    _ag_tier = {str(_k): (str(_v).strip() if str(_v).strip() not in ("", "nan", "None") else "未分类")
+                for _k, _v in zip(df["客户编号"], df["客户层级"])}
     _ag_pairs = {"jx": {}, "zx": {}, "other": {}}
     for (_b, _e), _g in _ry.groupby(["b", "e"]):
         if _b != "jx":
@@ -1247,14 +1243,14 @@ if "销售模式" in rex.columns and _ag_ent_col:
         _agent_view[_b].append({
             "a": str(_e), "r": round(_r / 1e4, 1), "p": round(_p / 1e4, 1),
             "mg": round(_p / _r * 100, 1) if _r > 0 else 0,
-            "nc": int(_g["c"].nunique()), "np": int(_g["prod"].nunique())})
+            "nc": int(_g["c"].nunique()), "npd": int(_g["it"].nunique())})
         _prs = []
         for _c, _gc in _g.groupby("c"):
             _cr = float(_gc["r"].sum()); _cp = float(_gc["p"].sum())
             _prs.append({"id": str(_c), "n": cid_to_name.get(str(_c), str(_c)),
                          "r": round(_cr / 1e4, 1), "p": round(_cp / 1e4, 1),
                          "mg": round(_cp / _cr * 100, 1) if _cr > 0 else 0,
-                         "t": _ag_tier.get(str(_c), ""), "np": int(_gc["prod"].nunique())})
+                         "t": _ag_tier.get(str(_c), ""), "npd": int(_gc["it"].nunique())})
         _prs.sort(key=lambda x: -x["r"])
         _ag_pairs[_b][str(_e)] = _prs
     _zx = _ry[_ry["b"] == "zx"]
@@ -1262,7 +1258,7 @@ if "销售模式" in rex.columns and _ag_ent_col:
         {"id": str(_c), "n": cid_to_name.get(str(_c), str(_c)), "a": cid_to_name.get(str(_c), str(_c)),
          "r": round(float(_gc["r"].sum()) / 1e4, 1), "p": round(float(_gc["p"].sum()) / 1e4, 1),
          "mg": round(float(_gc["p"].sum()) / float(_gc["r"].sum()) * 100, 1) if float(_gc["r"].sum()) > 0 else 0,
-         "t": _ag_tier.get(str(_c), ""), "np": int(_gc["prod"].nunique())}
+         "t": _ag_tier.get(str(_c), ""), "npd": int(_gc["it"].nunique())}
         for _c, _gc in _zx.groupby("c")
         if str(_c) not in ("nan", "None", "", "未知客户")]  # 直销客户编号缺失不产 nan 行（M1，对齐 jx 侧哨兵）
     for _b in ("jx", "zx"):
@@ -1329,7 +1325,7 @@ if "销售模式" in rex.columns and _ag_ent_col:
     _dq_path = os.path.join(OUT_DIR, f"销售模式数据问题_{latest}.md")
     _md = [f"# 销售模式数据问题（数据月份 {latest}）", "",
            "> 跑批自动生成。汇总「销售模式」列未规范填写与经销行代理商名缺失情况；看板内不展示本提示。",
-           "> 所有交易未做剔除或归并；未规范填写的交易暂不进入「按销售模式」视图（在「按客户」视图中完整保留），修正源数据后归入对应分组、本文件内容自动收敛。", "",
+           "> 所有交易未做剔除或归并；未规范填写的交易暂不进入「按销售模式」视图（在「按终端客户」视图中完整保留），修正源数据后归入对应分组、本文件内容自动收敛。", "",
            "## 概览", "",
            f"- 非标准取值（填了公司名等）：{len(_nonstd)} 个，共 {len(_ns)} 行 / {round(float(_ns['r'].sum()) / 1e4, 1)} 万",
            f"- 空值：{len(_null)} 行 / {round(float(_null['r'].sum()) / 1e4, 1)} 万",
@@ -1550,7 +1546,7 @@ for _,row in all_sorted.iterrows():
         "mg":round(j(row.get("近12月毛利率",0)),1),"md":j(row.get("毛利率跌幅%",0)),
         "asp":round(j(row.get("ASP_加权",0)),2),"ad":round(j(row.get("ASP_跌幅%",0)),2),
         "lp":round(j(row.get("低价品种收入占比",0))*100,2),"hp":round(j(row.get("高价品种收入占比",0))*100,2),
-        "pc":cid_12m_data.get(name,{}).get("prods",0),"ap":cid_12m_data.get(name,{}).get("prods",0),
+        "pc":cid_12m_data.get(name,{}).get("prods",0),   # 品种数=R12×品种去重；ap(在采)与pc恒等系假口径，已删
         "cc":cid_12m_data.get(name,{}).get("cats",0),
         "ml":str(row.get("主导产品线","")),"mlp":round(j(row.get("主导产品线占比",0))*100,1),
         "mc":str(row.get("主导品类","")),"t3":round(j(row.get("品种集中度Top3",0))*100,1),
@@ -1561,7 +1557,7 @@ for _,row in all_sorted.iterrows():
         "pt":j(row.get("战略潜力分",0)),"ef":j(row.get("效率运营分",0)),
         "ld":ld,"iv":int(iv),"zp":j(row.get("零采购月占比",0)),"od":j(row.get("订单数",0)),
         "np":np_,"dv":dev,"cg":j(row.get("连续增长月数",0)),"cd":j(row.get("连续下滑月数",0)),
-        "t5":prank.get(name,[]),"du":str(row.get("双轴分类","")),
+        "du":str(row.get("双轴分类","")),
         "cat_rev":cid_12m_data.get(name,{}).get("cat_rev",{}),
         "ytd_rev":fin.get("ytd_rev",0),"ytd_profit":fin.get("ytd_profit",0),"ytd_mg":fin.get("ytd_mg",0),
         "prior_rev":fin.get("prior_rev",0),"prior_profit":fin.get("prior_profit",0),"prior_mg":fin.get("prior_mg",0),
