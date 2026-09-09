@@ -2178,7 +2178,7 @@ for cat_name in sorted(ytd_all["_cat"].dropna().unique()):
     p=float(cd["_profit"].sum())
     ka_d=cd[cd["_tier"].str.contains("KA",na=False)];ka_r=float(ka_d["_rev"].sum());ka_p=float(ka_d["_profit"].sum())
     aa_d=cd[cd["_tier"].str.contains("AA",na=False)&~cd["_tier"].str.contains("KA",na=False)];aa_r=float(aa_d["_rev"].sum());aa_p=float(aa_d["_profit"].sum())
-    cat_margins.append({"name":cat_name,"rev":round(r/1e4,1),"profit":round(p/1e4,1),"mg":round(p/r*100,1)if r>0 else 0,"ka_mg":round(ka_p/ka_r*100,1)if ka_r>0 else 0,"aa_mg":round(aa_p/aa_r*100,1)if aa_r>0 else 0})
+    cat_margins.append({"name":cat_name,"rev":round(r/1e4,1),"profit":round(p/1e4,1),"mg":round(p/r*100,1)if r>0 else 0,"ka_rev":round(ka_r/1e4,1),"ka_mg":round(ka_p/ka_r*100,1)if ka_r>0 else 0,"aa_rev":round(aa_r/1e4,1),"aa_mg":round(aa_p/aa_r*100,1)if aa_r>0 else 0})  # [修复] 补 ka_rev/aa_rev：此前缺失致品类页KA/AA筛选清空整表、收入列恒0
 cat_margins.sort(key=lambda x:-x["rev"])
 cat_margins=cat_margins[:20]
 
