@@ -80,7 +80,7 @@ faces:
       - term: ASP
         definition: 平均售价 = 收入 ÷ 发货数量
       - term: KA+AA
-        definition: 核心客户层级，KA 为战略大客户，AA 为重点客户
+        definition: 核心客户层级（来源：CRM客户类别映射）——KA：客户自身年营收>1亿元；AA：>5000万元；KM：>1000万元；MM：<1000万元
 
   R:
     id: R
@@ -209,7 +209,7 @@ faces:
       - term: 画像
         definition: 综合销量、增长、盈利等特征给 SKU 打上的生命周期标签
       - term: 帕累托分类
-        definition: 按收入贡献与毛利贡献将产品分为 stars / cash cows / question marks / dogs 等
+        definition: 按产品近12月收入贡献与毛利贡献划分（来源：settings_product.py）——重点产品线：近12月收入≥100万元；常规产品线：≥10万元；其余为长尾；利润累计分级：A≤70%、B≤90%、C≤99%、D为其余
       - term: 综合风险等级
         definition: 四因子加权评分（权重见产品明细口径）；等级划档：低55分及以下、中56至65、高66至68、极高68分以上；订货量与毛利率斜率同时恶化时直接判极高
 

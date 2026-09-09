@@ -3290,16 +3290,16 @@ def _build_face_meta_html(face_id, cfg):
         parts.append('    </div>')
     glossary = cfg.get("glossary", []) or []
     if glossary:
-        parts.append('    <div class="face-meta-sections">')
+        parts.append('    <div class="face-meta-sections face-meta-glossary">')
         parts.append('      <div class="face-meta-title">术语表</div>')
         for item in glossary:
             term = item.get("term", "")
             definition = item.get("definition", "")
             if not term:
                 continue
-            parts.append(f'      <div class="face-meta-row"><span>{term}：</span>{definition}</div>')
+            parts.append(f'      <div class="face-meta-row face-meta-term"><span>{term}：</span>{definition}</div>')
         parts.append('    </div>')
-        parts.append('  </div>')
+    parts.append('  </div>')
     parts.append('</div>')
     return "\n".join(parts)
 
