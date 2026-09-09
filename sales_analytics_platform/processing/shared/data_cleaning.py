@@ -26,8 +26,11 @@
   - 列映射字典 ERP_COL_MAP 在 config/settings.py 中定义
 """
 
+import datetime
 import json
 import os
+import re
+
 import pandas as pd
 import numpy as np
 
@@ -190,6 +193,49 @@ def find_snapshot_local_or_share(xlsx_path):
         except OSError:
             return None
     return None
+
+
+def _derive_period_from_path(xlsx_path: str) -> str:
+    """YYYYMM：优先文件名中的 'X月'，回退文件 mtime。"""
+    m = re.search(r"(\d{1,2})月", os.path.basename(xlsx_path))
+    if m:
+        month = int(m.group(1))
+        now = datetime.datetime.now()
+        year = now.year if month <= now.month else now.year - 1
+        return f"{year}{month:02d}"
+    st = os.stat(xlsx_path)
+    return datetime.datetime.fromtimestamp(st.st_mtime).strftime("%Y%m")
+
+
+def find_snapshot_by_mtime(xlsx_path: str, warehouse_root: str) -> tuple[str, dict] | None:
+    """按当月周期 + mtime 判定找快照（run_chain 快照优先决策）。
+
+    规则：
+    - 仅判定本地仓库（warehouse_root）；数据盘快照由 find_snapshot_local_or_share 负责。
+    - 若 warehouse_root/<YYYYMM>/erp_snapshot.parquet 存在，且其 mtime 严格大于
+      xlsx_path 的 mtime，视为快照仍新鲜，返回 (parquet_path, manifest)。
+    - 快照缺失或 mtime 不新于 Excel → None。
+    """
+    if not os.path.isfile(xlsx_path) or not os.path.isdir(warehouse_root):
+        return None
+    period = _derive_period_from_path(xlsx_path)
+    period_dir = os.path.join(warehouse_root, period)
+    pq_path = os.path.join(period_dir, "erp_snapshot.parquet")
+    mf_path = os.path.join(period_dir, "manifest.json")
+    if not os.path.isfile(pq_path):
+        return None
+    xlsx_mtime = os.path.getmtime(xlsx_path)
+    pq_mtime = os.path.getmtime(pq_path)
+    if pq_mtime <= xlsx_mtime:
+        return None
+    man = {}
+    if os.path.isfile(mf_path):
+        try:
+            with open(mf_path, "r", encoding="utf-8") as f:
+                man = json.load(f)
+        except (json.JSONDecodeError, OSError):
+            pass
+    return pq_path, man
 
 
 def read_excel_auto(*args, **kwargs):

@@ -155,8 +155,25 @@ def find_source_data(data_path: str = None) -> str:
     return ""
 
 
-def stage_silver(source_path: str) -> tuple:
+def _load_manifest_from_snapshot_dir(period_dir: str) -> dict:
+    """从快照目录读取 manifest.json，失败返回空 dict。"""
+    mf = os.path.join(period_dir, "manifest.json")
+    if os.path.isfile(mf):
+        try:
+            with open(mf, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except (json.JSONDecodeError, OSError):
+            pass
+    return {}
+
+
+def stage_silver(source_path: str, snapshot_path: str = None,
+                 no_snapshot: bool = False) -> tuple:
     """阶段：共享数据管道。
+
+    参数:
+        snapshot_path: 强制使用指定快照路径（本地 data_warehouse/<YYYYMM>/erp_snapshot.parquet）
+        no_snapshot:   True 时禁用任何快照查找/命中，强制直读 Excel（用于 mtime 过期回退 COM）
 
     返回:
         (success, raw_data, cust_info) — success为bool，raw_data/cust_info为DataFrame或None
@@ -192,15 +209,27 @@ def stage_silver(source_path: str) -> tuple:
     from shared.data_cleaning import find_snapshot_local_or_share
     from shared.snapshot_container import load_snapshot_frame  # r21：kbdat 容器内存解密直读
     # r22：快照查找二级回退——本地仓 miss 后查数据盘仓（D1\data_warehouse，快照分发新家）
-    _snap = find_snapshot_local_or_share(source_path)
-    if _snap is not None:
-        _pq_path, _man = _snap
+    _snap = None
+    if no_snapshot:
+        print(f"  [快照] 已禁用快照查找，强制读取: {source_path}")
+        raw = read_excel_auto(source_path, sheet_name=DATA_SHEET_NAME)
+    elif snapshot_path:
+        _pq_path = snapshot_path
+        _man = _load_manifest_from_snapshot_dir(os.path.dirname(_pq_path))
         print(f"  数据源: data_warehouse 快照（{os.path.basename(os.path.dirname(_pq_path))}/{os.path.basename(_pq_path)}，"
               f"源: {_man.get('source', {}).get('name', '')}）")
         raw = load_snapshot_frame(_pq_path)
+        _snap = (_pq_path, _man)
     else:
-        print(f"  读取: {source_path}")
-        raw = read_excel_auto(source_path, sheet_name=DATA_SHEET_NAME)
+        _snap = find_snapshot_local_or_share(source_path)
+        if _snap is not None:
+            _pq_path, _man = _snap
+            print(f"  数据源: data_warehouse 快照（{os.path.basename(os.path.dirname(_pq_path))}/{os.path.basename(_pq_path)}，"
+                  f"源: {_man.get('source', {}).get('name', '')}）")
+            raw = load_snapshot_frame(_pq_path)
+        else:
+            print(f"  读取: {source_path}")
+            raw = read_excel_auto(source_path, sheet_name=DATA_SHEET_NAME)
     _validator.validate_raw(raw)  # V1: 源数据验证
 
     raw = rename_erp_columns(raw)
@@ -298,7 +327,8 @@ def stage_product(source_path: str) -> bool:
     return bool(result)
 
 
-def stage_customer(source_path: str, raw_data: pd.DataFrame = None, cust_info: pd.DataFrame = None) -> bool:
+def stage_customer(source_path: str, raw_data: pd.DataFrame = None,
+                 cust_info_data: pd.DataFrame = None) -> bool:
     """阶段：客户销售分析。"""
     print(f"\n{'=' * 60}")
     print(f"阶段: customer — 客户销售分析")
@@ -310,7 +340,7 @@ def stage_customer(source_path: str, raw_data: pd.DataFrame = None, cust_info: p
         source_path=source_path,
         skip_silver=True,
         raw_data=raw_data,
-        cust_info_data=cust_info,
+        cust_info_data=cust_info_data,
     )
     return len(result) > 0
 
@@ -351,7 +381,8 @@ STAGES = [
 ]
 
 
-def _run_stage(func, source_path, cached_raw, cached_cust_info):
+def _run_stage(func, source_path, cached_raw, cached_cust_info,
+               snapshot_path: str = None, no_snapshot: bool = False):
     """按注册表统一执行单个 stage，返回 (success, cached_raw, cached_cust_info)。
 
     保持既有分派语义（行为不变）：
@@ -361,9 +392,10 @@ def _run_stage(func, source_path, cached_raw, cached_cust_info):
       - product / cross_ref : 只传 source_path
     """
     if func is stage_silver:
-        return func(source_path)  # (success, raw, cust_info)
+        return func(source_path, snapshot_path=snapshot_path,
+                    no_snapshot=no_snapshot)  # (success, raw, cust_info)
     if func is stage_customer:
-        return (func(source_path, raw_data=cached_raw, cust_info=cached_cust_info),
+        return (func(source_path, raw_data=cached_raw, cust_info_data=cached_cust_info),
                 cached_raw, cached_cust_info)
     if func is stage_kpi:
         return (func(source_path, raw_data=cached_raw),
@@ -452,6 +484,10 @@ def main():
     parser.add_argument("--data", type=str, default=None, help="源数据Excel文件路径")
     parser.add_argument("--stage", type=str, default=",".join(RUN_STAGES),
                         help=f"要执行的阶段（逗号分隔），可选: {','.join(RUN_STAGES)}")
+    parser.add_argument("--snapshot", type=str, default=None,
+                        help="强制使用指定快照路径（本地 data_warehouse/<YYYYMM>/erp_snapshot.parquet）")
+    parser.add_argument("--no-snapshot", action="store_true",
+                        help="禁用快照查找/命中，强制直读 Excel（用于 mtime 过期回退 COM）")
     parser.add_argument("--skip-product", action="store_true", help="跳过产品生命周期分析")
     parser.add_argument("--skip-customer", action="store_true", help="跳过客户分析")
     parser.add_argument("--force-silver", action="store_true", help="强制重算Silver层")
@@ -497,7 +533,8 @@ def main():
             continue
         func = stage_registry[stage]
         success, _cached_raw, _cached_cust_info = _run_stage(
-            func, source_path, _cached_raw, _cached_cust_info)
+            func, source_path, _cached_raw, _cached_cust_info,
+            snapshot_path=args.snapshot, no_snapshot=args.no_snapshot)
         if success:
             executed.append(stage)
         elif stage == "silver":

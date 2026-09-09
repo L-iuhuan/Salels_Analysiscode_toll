@@ -271,15 +271,25 @@ def main():
         sys.exit(1)
     print(f"  数据源: {raw_path}")
 
+    # ── r24：快照优先判定（mtime 对比）──
+    if DIR_PROC not in sys.path:
+        sys.path.insert(0, DIR_PROC)
+    from shared.data_cleaning import find_snapshot_by_mtime
+    _local_wh = os.path.join(PKG, "data_warehouse")
+    _snap_mtime = find_snapshot_by_mtime(raw_path, _local_wh)
+    if _snap_mtime is not None:
+        _snap_path, _snap_man = _snap_mtime
+        _snap_age = os.path.getmtime(_snap_path) - os.path.getmtime(raw_path)
+        print(f"[快照] 命中本地快照: {_snap_path} (mtime 新于 Excel {_snap_age:.0f}s)")
+    else:
+        print("[快照] 本地快照缺失或过期，跑批将走 COM 兼容通道并补写快照")
+
     # ── r24：数据身份 + 新鲜度（可见性第1+2层）── 放编排层：全模式必经（--skip-processing /
     # --dashboard-only 不跑 run_all，身份不能只在全量路径有）。best-effort 绝不阻断跑批。
     # 注意用 raw_path 原始 mtime——data/ 接入副本会被 utime 抬升，拿副本判新鲜度会漏报。
     try:
-        if DIR_PROC not in sys.path:
-            sys.path.insert(0, DIR_PROC)
         from shared.data_provenance import build_data_identity, check_freshness, report_data_identity
-        from shared.data_cleaning import (find_snapshot_local_or_share, data_share_dir,
-                                          is_encrypted_excel)
+        from shared.data_cleaning import find_snapshot_local_or_share, data_share_dir, is_encrypted_excel
         _snap_id = find_snapshot_local_or_share(raw_path)
         if _snap_id is not None:
             _p_id, _m_id = _snap_id
@@ -344,6 +354,10 @@ def main():
               "--data", raw_path, "--stage", cfg["stages"]]
         if args.force_silver:
             fe.append("--force-silver")
+        if _snap_mtime is not None:
+            fe.extend(["--snapshot", _snap_mtime[0]])
+        else:
+            fe.append("--no-snapshot")
         rc, _ = run_subprocess(fe, DIR_PROC, "步骤 1/2 · 数据处理 (processing/run_all.py)")
         if rc != 0:
             print(f"\n[错误] 数据处理失败(exit={rc})，已停止。请先看上面的报错。")
