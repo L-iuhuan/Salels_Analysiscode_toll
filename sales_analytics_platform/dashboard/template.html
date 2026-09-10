@@ -409,8 +409,10 @@ body{font-family:-apple-system,'Microsoft YaHei','Segoe UI',sans-serif;backgroun
 .face-risk .data-table .txt {
     white-space: normal;
     line-height: 1.45;
-    min-width: 140px;
-    max-width: 320px;
+    word-break: break-word;
+}
+.face-risk .cb .data-table + .data-table {
+    margin-top: var(--space-inner);
 }
 .face-risk .data-table .badge {
     display: inline-flex;

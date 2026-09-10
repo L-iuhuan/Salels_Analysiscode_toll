@@ -74,10 +74,11 @@ ROW_COLOR_BG = {"red": "var(--danger-bg)", "orange": "var(--warning-bg)",
 # ── R 面视觉优化：列类型识别 / 判定语义映射（渲染层自动，不改动 md）──
 _NUMERIC_HEADER_RE = re.compile(r"(金额|损失|收入|利润|变动|变化|成本|销量|万|%|毛利率|同比|环比)")
 _LONG_TEXT_HEADER_RE = re.compile(r"(现状|说明|判断|特征|标注|备注|建议|动作|上下文|事项|方向|判定|行动项)")
-_VERDICT_COLUMN_RE = re.compile(r"判定|变化|方向|判断")
+# 语义 chip 列：判定/变化/方向/判断/类型/状态
+_VERDICT_COLUMN_RE = re.compile(r"判定|变化|方向|判断|类型|状态")
 _VERDICT_COLORS = {
-    "red": {"恶化", "未落地", "降幅", "负毛利", "亏", "亏损", "下降", "下滑", "跌", "负", "紧急", "高", "严重"},
-    "orange": {"初步见效", "新增", "收窄", "关注", "未关闭", "待处理", "中"},
+    "red": {"恶化", "未落地", "降幅", "负毛利", "亏", "亏损", "下降", "下滑", "跌", "负", "紧急", "高", "严重", "待处理"},
+    "orange": {"初步见效", "新增", "收窄", "关注", "未关闭", "跟进中", "中"},
     "green": {"见效", "增幅", "对冲", "放量", "上升", "增长", "好转", "已关闭", "低", "轻微"},
 }
 
@@ -974,8 +975,7 @@ def build_draft(month):
 
 # ---------- 渲染 ----------
 
-_TAG_KIND_MAP = {"等级": {"高": "high", "中": "medium", "低": "low"},
-                 "状态": {"待处理": "high", "跟进中": "medium", "已关闭": "low"}}
+_TAG_KIND_MAP = {"等级": {"高": "high", "中": "medium", "低": "low"}}
 _CLS_TO_LEVEL = {"kpi-danger": "red", "kpi-warning": "orange", "kpi-success": "green", "": "none"}
 
 
@@ -1008,10 +1008,10 @@ def _badge(text, cls):
 
 
 def _render_table(part):
-    """表头驱动动态列渲染（P0-5/动态列）：列名/列数来自 md 表头；核心列（等级/状态）存在时维持
+    """表头驱动动态列渲染（P0-5/动态列）：列名/列数来自 md 表头；核心列（等级）存在时维持
     tag 色，缺失时降级普通列（调用方在口径条补提示文本）；数值列按列头语义右对齐（P2 增强）；
-    长文本列允许换行；判定/方向/变化列自动语义 chip 色彩编码；行级色=首列 emoji
-    （style.row_color）→ 淡色底整行。行短于表头容错补空。"""
+    长文本列允许换行；判定/变化/方向/判断/类型/状态列统一语义 chip（无匹配落 gray）；
+    行级色=首列 emoji（style.row_color）→ 淡色底整行。行短于表头容错补空。"""
     columns = part.get("columns") or []
     rows = part.get("rows") or []
     if not columns:
@@ -1053,14 +1053,9 @@ def _render_table(part):
                 tds.append(f"<td{cls}>{_tag(text, core_map)}</td>")
                 continue
 
-            # 判定/方向/变化列 → 语义 chip
-            vcls = ""
+            # 语义 chip 列（判定/变化/方向/判断/类型/状态）统一全覆盖，无匹配落 gray
             if i in verdict_cols:
-                vcls = _verdict_class(text)
-            # 含“新增/流失/见效/恶化”等关键词的语义列也做 chip
-            if not vcls and any(kw in str(text) for kw in ("新增", "流失", "收窄", "见效", "恶化", "未落地", "增幅", "降幅", "对冲", "放量")):
-                vcls = _verdict_class(text)
-            if vcls:
+                vcls = _verdict_class(text) or "gray"
                 tds.append(f"<td{cls}>{_badge(text, vcls)}</td>")
                 continue
 
@@ -1249,13 +1244,14 @@ def _build_r_parts(month):
     extras_top, extras_bottom = _extra_sections_html(md_text)
     derived, ints = _derive(risk_part, action_part)
 
-    # P0-5：核心列降级提示（渲染端列名特判在核心列缺失时降级普通列，口径条补提示文本）
+    # P0-5：核心列降级提示（追加到 caliber 供测试/显示；caliber_raw 保留原值用于控制块渲染）
     degrade_hints = []
     if risk_part.get("columns") and "等级" not in risk_part["columns"]:
         degrade_hints.append("「等级」核心列缺失：风险表等级着色与派生统计已降级为普通列。")
     if action_part.get("columns") and "状态" not in action_part["columns"]:
         degrade_hints.append("「状态」核心列缺失：行动清单状态着色与派生统计已降级为普通列。")
-    caliber = doc.get("caliber_raw", "")
+    caliber_raw = doc.get("caliber_raw", "")
+    caliber = caliber_raw
     if degrade_hints:
         caliber = (caliber + "\n" + "\n".join(degrade_hints)) if caliber else "\n".join(degrade_hints)
 
@@ -1300,7 +1296,7 @@ def _build_r_parts(month):
             "action_table": _render_table(action_part),
             "risk_title": risk_title, "action_title": action_title,
             "extras_top": extras_top, "extras_bottom": extras_bottom,
-            "caliber": caliber,
+            "caliber": caliber, "caliber_raw": caliber_raw,
             "notes_html": _notes_html(doc.get("notes_raw", "")),
             "stats": (len(risk_cells), n_high, n_mid, float(ints["loss_sum"]), len(act_cells))}
 
@@ -1318,6 +1314,11 @@ def build_r_face_inner_html(month):
         t = re.sub(r'（[^）]*）\s*$', '', t or '').strip()
         return t or fallback
 
+    caliber_html = ""
+    if (parts.get("caliber_raw") or "").strip():
+        caliber_html = ('<div class="cb"><h3>口径说明</h3><div class="caliber">'
+                        + _esc(parts["caliber"]) + '</div></div>')
+
     inner = (parts["kpi_bar"]
              + '<div class="cb"><h3>' + _esc(_clean_title(parts.get("risk_title"), "一、当月风险摘要")) + '</h3><div class="note">初稿由系统按规则生成，经人工审定后展示。</div>'
              + parts["risk_table"] + '</div>\n'
@@ -1326,8 +1327,7 @@ def build_r_face_inner_html(month):
              + parts["action_table"] + '</div>\n'
              + parts.get("extras_bottom", "")
              + parts.get("notes_html", "")
-             + '<div class="cb"><h3>口径说明</h3><div class="caliber">'
-             + _esc(parts["caliber"]) + '</div></div>')
+             + caliber_html)
     return f'<div class="face-risk">\n{inner}\n</div>'
 
 
