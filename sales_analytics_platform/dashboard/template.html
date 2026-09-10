@@ -4006,7 +4006,7 @@ function renderTable() {
  <td class="px-4 py-3 col-pareto"><span class="tag tag-sm" style="background:#f3f4f6;color:#374151">${row['帕累托分类']}</span></td>
  <td class="px-4 py-3"><span class="tag" style="background:${COLOR_MAP.portrait[row['当前画像']] || COLOR.gridLine}20;color:${COLOR_MAP.portrait[row['当前画像']] || '#6B7280'};border:1px solid ${COLOR_MAP.portrait[row['当前画像']] || COLOR.gridLineDark}80">${row['当前画像']}</span></td>
  <td class="px-4 py-3"><span class="tag tag-sm" style="background:${COLOR_MAP.summary[row['管理层摘要']] || COLOR.gridLine}20;color:${COLOR_MAP.summary[row['管理层摘要']] || '#6B7280'}">${row['管理层摘要']}</span></td>
- <td class="px-4 py-3 text-right font-mono text-gray-700">${formatNum(row['近12月销量'])}</td>
+  <td class="px-4 py-3 text-right font-mono text-gray-700">${fmtQty(row['近12月销量'])}</td>
  <td class="px-4 py-3 text-right font-mono ${getGrowthColor(row['近12月增长率%'])}">${formatPct(row['近12月增长率%'])}</td>
  <td class="px-4 py-3 text-right font-mono">${formatPct(row['近12月毛利率%'])}</td>
  <td class="px-4 py-3 text-right font-mono ${getSlopeColor(row['毛利率趋势斜率%/月'])}">${formatSlope(row['毛利率趋势斜率%/月'])}</td>
@@ -4028,6 +4028,7 @@ function changePage(dir) {
 }
 
 function formatNum(v) { if (!v && v !== 0) return '-'; return parseFloat(v).toLocaleString('zh-CN', {maximumFractionDigits:0}); }
+function fmtQty(v) { if (!v && v !== 0) return '-'; const n = parseFloat(v); return n >= 1e4 ? (n/1e4).toFixed(1) + ' 万颗' : n.toLocaleString('zh-CN', {maximumFractionDigits:0}) + ' 颗'; }
 function formatPct(v) { if (!v && v !== 0) return '-'; return parseFloat(v).toFixed(1) + '%'; }
 function formatSlope(v) { if (!v && v !== 0) return '-'; const n = parseFloat(v); return (n > 0 ? '+' : '') + n.toFixed(2); }
 function formatScore(v) { if (!v && v !== 0) return '-'; return parseFloat(v).toFixed(1); }
@@ -4088,8 +4089,8 @@ function openDetail(name) {
  </div>
 
  <div class="grid grid-cols-2 gap-4 text-sm">
- <div><span class="text-gray-500">近12月销量:</span> <span class="font-mono font-medium">${formatNum(row['近12月销量'])}</span></div>
- <div><span class="text-gray-500">前12月销量:</span> <span class="font-mono font-medium">${formatNum(row['前12月销量'])}</span></div>
+  <div><span class="text-gray-500">近12月销量:</span> <span class="font-mono font-medium">${fmtQty(row['近12月销量'])}</span></div>
+  <div><span class="text-gray-500">前12月销量:</span> <span class="font-mono font-medium">${fmtQty(row['前12月销量'])}</span></div>
  <div><span class="text-gray-500">增长率:</span> <span class="font-mono font-medium ${getGrowthColor(row['近12月增长率%'])}">${formatPct(row['近12月增长率%'])}</span></div>
  <div><span class="text-gray-500">营收增长率:</span> <span class="font-mono font-medium">${formatPct(row['营收增长率%'])}</span></div>
  <div><span class="text-gray-500">当月毛利率:</span> <span class="font-mono font-medium">${formatPct(row['当月毛利率%'])}</span></div>
@@ -4130,19 +4131,19 @@ function openDetail(name) {
  if (old) old.dispose();
  var chart = TABS.chart.create(chartDom);
   chart.setOption({
-  tooltip: { trigger: 'axis', confine: true },
-  legend: { data: ['销量', '毛利率'], bottom: 0, textStyle: { fontSize:TYPO.lg } },
+  tooltip: { trigger: 'axis', confine: true, formatter: function(ps) { var h = '<b>' + ps[0].axisValue + '</b><br/>'; ps.forEach(function(p) { if (p.seriesName.indexOf('销量') > -1) { var v = p.value; h += p.marker + p.seriesName + ': <b>' + (v >= 1e4 ? (v/1e4).toFixed(1) + ' 万颗' : Number(v).toLocaleString() + ' 颗') + '</b><br/>'; } else { h += p.marker + p.seriesName + ': <b>' + Number(p.value).toFixed(1) + '%</b><br/>'; } }); return h; } },
+  legend: { data: ['销量(颗)', '毛利率(%)'], bottom: 0, textStyle: { fontSize:TYPO.lg } },
   grid: { left: 55, right: 55, top: 25, bottom: 60, containLabel: true },
 
- xAxis: { type: 'category', data: Array.from({length:12}, (_,i) => `t-${12-i}`), axisLabel: { fontSize:TYPO.base, rotate: 30, interval: 0 } },
+ xAxis: { type: 'category', data: (hist.months ? hist.months.slice().reverse() : Array.from({length:12}, (_,i) => `t-${12-i}`)), axisLabel: { fontSize:TYPO.base, rotate: 30, interval: 0 } },
  yAxis: [
- { type: 'value', name: '销量', position: 'left', axisLabel: { fontSize:TYPO.base, formatter: v => v >= 10000 ? (v/10000).toFixed(0) + '万' : v } },
- { type: 'value', name: '毛利率%', position: 'right', axisLabel: { fontSize:TYPO.base, formatter: v => v.toFixed(1) + '%' } }
+ { type: 'value', name: '销量(颗)', position: 'left', axisLabel: { fontSize:TYPO.base, formatter: v => v >= 10000 ? (v/10000).toFixed(0) + '万颗' : v } },
+ { type: 'value', name: '毛利率(%)', position: 'right', axisLabel: { fontSize:TYPO.base, formatter: v => v.toFixed(1) + '%' } }
  ],
  dataZoom: [{ type: 'inside' }],
  series: [
- { name: '销量', type: 'line', data: hist.sales.slice().reverse(), smooth: true, symbol: 'circle', symbolSize: 6, lineStyle: { width: 2, color: '#2563EB' }, itemStyle: { color: '#2563EB' } },
- { name: '毛利率', type: 'line', yAxisIndex: 1, data: hist.gm.slice().reverse().map(v => v * 100), smooth: true, symbol: 'circle', symbolSize: 6, lineStyle: { width: 2, color: '#10B981' }, itemStyle: { color: '#10B981' } }
+ { name: '销量(颗)', type: 'line', data: hist.sales.slice().reverse(), smooth: true, symbol: 'circle', symbolSize: 6, lineStyle: { width: 2, color: '#2563EB' }, itemStyle: { color: '#2563EB' } },
+ { name: '毛利率(%)', type: 'line', yAxisIndex: 1, data: hist.gm.slice().reverse().map(v => v * 100), smooth: true, symbol: 'circle', symbolSize: 6, lineStyle: { width: 2, color: '#10B981' }, itemStyle: { color: '#10B981' } }
  ]
  });
  }

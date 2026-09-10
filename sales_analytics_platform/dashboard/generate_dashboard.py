@@ -504,8 +504,9 @@ def build_c_scatter(df):
         })
     return scatter
 
-def build_c_history(df):
-    """构建C面DATA.history：每产品12个月的时间序列。"""
+def build_c_history(df, data_month=None):
+    """构建C面DATA.history：每产品12个月的时间序列。
+    data_month 提供时附带真实月份标签 months（[t-1,...,t-12]，与 sales/gm 同序），供弹窗趋势图 X 轴显示真实年月。"""
     hist_cols = {"portrait": [], "gm": [], "sales": []}
     for col in df.columns:
         col_str = str(col).strip()
@@ -526,6 +527,19 @@ def build_c_history(df):
     portrait_cols = [c for _, c in hist_cols["portrait"][:12]]
     gm_cols = [c for _, c in hist_cols["gm"][:12]]
     sales_cols = [c for _, c in hist_cols["sales"][:12]]
+    # 真实月份标签：t-k = 数据月回退 (k-1) 个月（t-1=数据月），与 sales/gm 同序（t-1 在前）
+    month_labels = None
+    if data_month:
+        ds = re.sub(r"\D", "", str(data_month))[:6]
+        if len(ds) == 6 and 1 <= int(ds[4:6]) <= 12:
+            y0, m0 = int(ds[:4]), int(ds[4:6])
+            month_labels = []
+            for k in range(1, 13):
+                yy, mm = y0, m0 - (k - 1)
+                while mm <= 0:
+                    mm += 12
+                    yy -= 1
+                month_labels.append("%02d-%02d" % (yy % 100, mm))
     history = {}
     for _, row in df.iterrows():
         name = str(row.get("产品名称", ""))
@@ -544,7 +558,10 @@ def build_c_history(df):
         while len(portraits) < 12: portraits.append("")
         while len(sales) < 12: sales.append(0.0)
         while len(gm) < 12: gm.append(0.0)
-        history[name] = {"portraits": portraits[:12], "sales": sales[:12], "gm": gm[:12]}
+        entry = {"portraits": portraits[:12], "sales": sales[:12], "gm": gm[:12]}
+        if month_labels:
+            entry["months"] = month_labels
+        history[name] = entry
     return history
 
 def build_c_sankey(table, history):
@@ -634,7 +651,7 @@ def build_c_data(prod_df, hist_df=None, data_month=None, insuff_count=0):
     print("[C面] 构建DATA（统一数据源）...")
     table = build_c_table(prod_df)
     hist_src = hist_df if hist_df is not None else prod_df
-    history = build_c_history(hist_src)
+    history = build_c_history(hist_src, data_month)
     kpi = build_c_kpi(table)
     kpi["data_insufficient"] = int(insuff_count)
     charts = build_c_charts(table)
