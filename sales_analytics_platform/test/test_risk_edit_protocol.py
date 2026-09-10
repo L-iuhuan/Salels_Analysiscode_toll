@@ -96,6 +96,16 @@ def kpi_md(tmp_path):
     return str(p)
 
 
+@pytest.fixture(autouse=True)
+def _isolate_actions_json(tmp_path, monkeypatch):
+    """测试隔离（防污染）：渲染副作用「行动清单回写」不得写入生产 action_items.json。
+
+    背景：build_r_face_inner_html / _build_r_parts 会把 md 行动清单回写 ACTIONS_JSON；
+    本文件多个用例直接调用渲染，若不隔离会把夹具数据写进 dashboard/action_items.json。
+    """
+    monkeypatch.setattr(grf, "ACTIONS_JSON", str(tmp_path / "action_items.json"))
+
+
 def _norm(d):
     """归一化 mtime 字段后的深拷贝（往返不变式比对用）。"""
     c = copy.deepcopy(d)
