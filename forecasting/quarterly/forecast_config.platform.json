@@ -1,0 +1,31 @@
+{
+  "data_path": "E:/3-其他资料/数据分析/sales_analytics_platform/data_warehouse/202608/erp_snapshot.parquet",
+  "sheet_name": "24-26",
+  "output_dir": "E:/3-其他资料/数据分析/forecasting/quarterly/output/platform_screening_202608",
+  "field_map": {
+    "存货名称": "存货名称",
+    "型号_产品线（新）": "型号_产品线（新）",
+    "发货日期": "发货日期",
+    "发货数量": "发货数量",
+    "RMB 未税金额小计": "RMB 未税金额小计",
+    "成本": "总成本",
+    "利润": "利润",
+    "未税单价": "未税单价",
+    "单位成本": "单位成本",
+    "终端客户简称": "终端客户简称",
+    "ERP订单号": "ERP订单号",
+    "产品线": "产品线",
+    "产品系列": "产品系列",
+    "型号": "型号",
+    "存货编码": "存货编码",
+    "实际终端客户": "实际终端客户",
+    "终端名称": "终端名称",
+    "代理商/直供名称": "代理商/直供名称",
+    "终端客户名称_客户类别": "终端客户名称_客户类别"
+  },
+  "notes": {
+    "data_source": "平台 data_warehouse/202608/erp_snapshot.parquet（源=财务分析-8月（9.5) .xlsx，COM 解密转换，206900行×67列）",
+    "field_map": "左侧=脚本标准字段（不可改）；右侧=快照实际列名。仅『成本→总成本』一处改名，其余同名直通。",
+    "run": "python run_quarterly_forecast.py --config forecast_config.platform.json"
+  }
+}

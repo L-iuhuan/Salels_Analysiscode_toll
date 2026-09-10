@@ -38,7 +38,16 @@ try:
     from shared.data_cleaning import read_excel_auto
 except Exception:  # pragma: no cover - standalone fallback
     def read_excel_auto(path, sheet_name=0, usecols=None, **kwargs):
-        """Standalone fallback: prefer calamine for speed, handle callable usecols."""
+        """Standalone fallback: prefer calamine for speed, handle callable usecols.
+        [平台对接] 新增 parquet 分支：直读 data_warehouse 明文快照（DSE 加密 Excel 的 COM 转换版）。"""
+        if str(path).lower().endswith(".parquet"):
+            df = pd.read_parquet(path)
+            if callable(usecols):
+                keep = [c for c in df.columns if usecols(c)]
+                df = df[keep]
+            elif usecols is not None:
+                df = df[usecols]
+            return df
         try:
             import python_calamine
             _has_calamine = True
