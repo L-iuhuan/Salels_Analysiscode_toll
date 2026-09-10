@@ -160,7 +160,7 @@ PRODUCT_LIFECYCLE = {
 
     # ---- 历史画像追踪 ----
     "hist_portrait_enabled": 1,
-    "hist_portrait_points": "auto_12",
+    "hist_portrait_points": list(range(1, 21)),  # r28：1~20 截点（覆盖 2025-01~2026-08 全回测窗，D2 前置）
     "hist_portrait_min_months": 6,
     "hist_portrait_n_workers": 4,
 

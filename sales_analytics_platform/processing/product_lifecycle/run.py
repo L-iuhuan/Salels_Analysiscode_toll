@@ -519,7 +519,7 @@ def run_analysis(source_path, df=None):
     print("  产品快照表       - 所有产品完整诊断数据（含策略建议、数据质量标记）")
     print("  预警清单         - 筛选出的高风险/预警/衰退产品")
     print("  画像分布         - 各画像产品数统计")
-    print("  历史画像追踪     - 各产品12个时间点的画像变迁轨迹")
+    print(f"  历史画像追踪     - 各产品{len(hist_intervals)}个时间点的画像变迁轨迹")
     if data_insufficient:
         print("  数据不足产品清单 - 日历月龄过低无法分析的产品")
     # 客户RFM分群与产品关联分析已移至客户分析报告输出
