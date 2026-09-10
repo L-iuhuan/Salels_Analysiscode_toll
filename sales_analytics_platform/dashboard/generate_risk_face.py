@@ -1089,6 +1089,55 @@ def _notes_html(notes_raw):
     return '<div class="cb"><h3>备注</h3><div class="caliber">' + paras + "</div></div>\n"
 
 
+def _extra_sections_html(md_text):
+    """人工审定版扩展节渲染：按文档顺序渲染 KPI/备注/口径/风险摘要/行动清单 之外的节。
+    每节 = 标题 h3 + 段落 p + 节内全部表格（连续 | 行为一表，绕过 _table_part 单表限制）。
+    返回 (top_html, bottom_html)：以「行动清单」节为界，之前/之后的扩展节分列两侧。"""
+    SKIP_KW = ("KPI", "备注", "口径", "风险摘要", "行动清单")
+    lines = md_text.splitlines()
+    top, bottom = [], []
+    buf, title, passed_action = [], None, False
+
+    def _flush():
+        nonlocal buf, title
+        if title is None or not buf:
+            buf, title = [], None
+            return
+        paras = "".join(f"<p>{_esc(ln.strip())}</p>" for ln in buf
+                        if ln.strip() and not ln.strip().startswith("|"))
+        tbls, run = [], []
+        for ln in buf + [""]:
+            if ln.strip().startswith("|"):
+                run.append(ln)
+            elif run:
+                part = _table_part(run)
+                if part.get("columns"):
+                    tbls.append(_render_table(part))
+                run = []
+        if paras or tbls:
+            html = (f'<div class="cb"><h3>{_esc(title)}</h3>'
+                    + (f'<div class="caliber">{paras}</div>' if paras else "")
+                    + "".join(tbls) + "</div>\n")
+            (bottom if passed_action else top).append(html)
+        buf, title = [], None
+
+    for ln in lines:
+        if ln.startswith("## "):
+            _flush()
+            t = ln[3:].strip()
+            if "行动清单" in t:
+                passed_action = True
+                title = None
+            elif any(k in t for k in SKIP_KW):
+                title = None
+            else:
+                title = t
+        elif title is not None:
+            buf.append(ln)
+    _flush()
+    return "".join(top), "".join(bottom)
+
+
 def _build_r_parts(month):
     """解析总体文档并构建 R 面各区块（测试页与正式看板并入共用；编辑协议与渲染同一解析器）。
     返回 dict: ok / err / kpi_bar / risk_table / action_table / caliber / notes_html / stats。
@@ -1097,9 +1146,14 @@ def _build_r_parts(month):
     if not os.path.exists(md_path):
         return {"ok": False, "err": md_path}
     with open(md_path, encoding="utf-8") as f:
-        doc = _parse_doc(f.read())
+        md_text = f.read()
+    doc = _parse_doc(md_text)
     risk_part = _find_table(doc, "风险摘要")
     action_part = _find_table(doc, "行动清单")
+    # 人工审定版支持：块标题取 md 实际节标题（剥关键词后缀），引擎初稿月回退默认标题
+    risk_title = next((t for t in doc["tables"] if "风险摘要" in t), "一、当月风险摘要")
+    action_title = next((t for t in doc["tables"] if "行动清单" in t), "二、行动清单")
+    extras_top, extras_bottom = _extra_sections_html(md_text)
     derived, ints = _derive(risk_part, action_part)
 
     # P0-5：核心列降级提示（渲染端列名特判在核心列缺失时降级普通列，口径条补提示文本）
@@ -1151,6 +1205,8 @@ def _build_r_parts(month):
     return {"ok": True, "kpi_bar": _kpi_bar_html(_kpi_cards_for(doc)),
             "risk_table": _render_table(risk_part),
             "action_table": _render_table(action_part),
+            "risk_title": risk_title, "action_title": action_title,
+            "extras_top": extras_top, "extras_bottom": extras_bottom,
             "caliber": caliber,
             "notes_html": _notes_html(doc.get("notes_raw", "")),
             "stats": (len(risk_cells), n_high, n_mid, float(ints["loss_sum"]), len(act_cells))}
@@ -1164,13 +1220,19 @@ def build_r_face_inner_html(month):
         return ('<div class="cb"><h3>风险与行动</h3><div class="note">本月总体文档未生成：'
                 '请先在明文窗口跑批后运行 <code>python dashboard\\generate_risk_face.py</code> '
                 '生成并审定总体文档（缺失：' + _esc(parts["err"]) + '）</div></div>')
+    def _clean_title(t, fallback):
+        t = re.sub(r'（[^）]*）\s*$', '', t or '').strip()
+        return t or fallback
+
     return (parts["kpi_bar"]
-            + '<div class="cb"><h3>一、当月风险摘要</h3><div class="note">初稿由系统按规则生成，经人工审定后展示。</div>'
+            + '<div class="cb"><h3>' + _esc(_clean_title(parts.get("risk_title"), "一、当月风险摘要")) + '</h3><div class="note">初稿由系统按规则生成，经人工审定后展示。</div>'
             + parts["risk_table"] + '</div>\n'
-            + '<div class="cb"><h3>二、行动清单</h3><div class="note">状态：待处理 / 跟进中 / 已关闭。未关闭事项跨月自动结转。</div>'
+            + parts.get("extras_top", "")
+            + '<div class="cb"><h3>' + _esc(_clean_title(parts.get("action_title"), "二、行动清单")) + '</h3><div class="note">状态：待处理 / 跟进中 / 已关闭。未关闭事项跨月自动结转。</div>'
             + parts["action_table"] + '</div>\n'
+            + parts.get("extras_bottom", "")
             + parts.get("notes_html", "")
-            + '<div class="cb"><h3>三、口径说明</h3><div class="caliber">'
+            + '<div class="cb"><h3>口径说明</h3><div class="caliber">'
             + _esc(parts["caliber"]) + '</div></div>')
 
 
