@@ -983,6 +983,11 @@ def run_profiling(df, latest_month, thr, name_col, date_col, qty_col, rev_col, p
         prod_month = df.groupby([name_col, "_月"]).agg(**_agg_kwargs).reset_index()
         prod_month["_avg_price"] = prod_month["rev_pos"] / prod_month["qty_sum"].replace(0, float("nan"))
 
+    # PIT 防泄漏（r28）：历史截点复用全量预聚合（run.py 传入 prod_month）时按截点截断——
+    # 否则"近12月"窗口（_月 > latest_month-12 无上界）会把截点之后的月份一并计入，
+    # 造成历史画像序列的未来数据泄漏（实测：t-12 的"近12月销量"= 截点前12月起至数据末端全段）。
+    prod_month = prod_month[prod_month["_月"] <= latest_month]
+
     products = sorted(prod_month[name_col].unique())
     min_history_months = int(thr.get("min_history_months", 6))
     min_volume = float(thr.get("min_volume", 100))
