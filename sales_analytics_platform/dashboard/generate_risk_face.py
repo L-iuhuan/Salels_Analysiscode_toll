@@ -71,6 +71,16 @@ LEGEND = {"red": "紧急", "orange": "关注", "green": "好转", "gray": "备�
 ROW_COLOR_BG = {"red": "var(--danger-bg)", "orange": "var(--warning-bg)",
                 "green": "var(--success-bg)", "gray": "var(--surface-subtle)"}
 
+# ── R 面视觉优化：列类型识别 / 判定语义映射（渲染层自动，不改动 md）──
+_NUMERIC_HEADER_RE = re.compile(r"(金额|损失|收入|利润|变动|变化|成本|销量|万|%|毛利率|同比|环比)")
+_LONG_TEXT_HEADER_RE = re.compile(r"(现状|说明|判断|特征|标注|备注|建议|动作|上下文|事项|方向|判定|行动项)")
+_VERDICT_COLUMN_RE = re.compile(r"判定|变化|方向|判断")
+_VERDICT_COLORS = {
+    "red": {"恶化", "未落地", "降幅", "负毛利", "亏", "亏损", "下降", "下滑", "跌", "负", "紧急", "高", "严重"},
+    "orange": {"初步见效", "新增", "收窄", "关注", "未关闭", "待处理", "中"},
+    "green": {"见效", "增幅", "对冲", "放量", "上升", "增长", "好转", "已关闭", "低", "轻微"},
+}
+
 
 def risk_md_path(month):
     """总体文档 risk_action_<month>.md 路径：新位置 output/dashboard 优先，旧 dashboard/ 回退读取。"""
@@ -974,15 +984,53 @@ def _tag(text, kind_map, prefix="tag"):
     return f'<span class="{prefix} {prefix}-{cls}">{_esc(text)}</span>'
 
 
+def _numeric_column(header):
+    """列头是否应作为数值列右对齐（含金额/收入/百分比/万等关键词）。"""
+    return bool(_NUMERIC_HEADER_RE.search(header))
+
+
+def _long_text_column(header):
+    """列头是否为长文本语义列，允许换行与最小宽度。"""
+    return bool(_LONG_TEXT_HEADER_RE.search(header))
+
+
+def _verdict_class(text):
+    """根据单元格文本语义返回 badge 颜色类（red/orange/green），无匹配返回 ''。"""
+    t = str(text)
+    for color, keywords in _VERDICT_COLORS.items():
+        if any(kw in t for kw in keywords):
+            return color
+    return ""
+
+
+def _badge(text, cls):
+    return f'<span class="badge badge-{cls}">{_esc(text)}</span>'
+
+
 def _render_table(part):
     """表头驱动动态列渲染（P0-5/动态列）：列名/列数来自 md 表头；核心列（等级/状态）存在时维持
-    tag 色，缺失时降级普通列（调用方在口径条补提示文本）；数值格按值正则右对齐（P2，
-    ^-?[\d,.]+%?万?$）；行级色=首列 emoji（style.row_color）→ 淡色底整行。行短于表头容错补空。"""
+    tag 色，缺失时降级普通列（调用方在口径条补提示文本）；数值列按列头语义右对齐（P2 增强）；
+    长文本列允许换行；判定/方向/变化列自动语义 chip 色彩编码；行级色=首列 emoji
+    （style.row_color）→ 淡色底整行。行短于表头容错补空。"""
     columns = part.get("columns") or []
     rows = part.get("rows") or []
     if not columns:
         return ""
-    th = "".join(f"<th>{_esc(h)}</th>" for h in columns)
+    num_cols = {i for i, h in enumerate(columns) if _numeric_column(h)}
+    txt_cols = {i for i, h in enumerate(columns) if _long_text_column(h)}
+    verdict_cols = {i for i, h in enumerate(columns) if _VERDICT_COLUMN_RE.search(h)}
+
+    th_parts = []
+    for i, h in enumerate(columns):
+        cls = []
+        if i in num_cols:
+            cls.append("num")
+        if i in txt_cols:
+            cls.append("txt")
+        cls_attr = f' class="{" ".join(cls)}"' if cls else ""
+        th_parts.append(f"<th{cls_attr}>{_esc(h)}</th>")
+    th = "".join(th_parts)
+
     trs = []
     for row in rows:
         cells = row.get("cells") or []
@@ -993,13 +1041,31 @@ def _render_table(part):
             if i >= len(columns):
                 break
             text = cell.get("text", "")
-            cls = ' class="num"' if VALUE_ALIGN_RE.match(text) else ""
+            cls_list = []
+            if i in num_cols or VALUE_ALIGN_RE.match(text):
+                cls_list.append("num")
+            if i in txt_cols:
+                cls_list.append("txt")
+            cls = ' class="' + " ".join(cls_list) + '"' if cls_list else ""
+
             core_map = _TAG_KIND_MAP.get(columns[i])
             if core_map is not None:
-                tds.append(f"<td>{_tag(text, core_map)}</td>")
-            else:
-                cell_prefix = COLOR_TO_EMOJI.get(cell.get("color", "none"), "")
-                tds.append(f"<td{cls}>{cell_prefix}{_esc(text)}</td>")
+                tds.append(f"<td{cls}>{_tag(text, core_map)}</td>")
+                continue
+
+            # 判定/方向/变化列 → 语义 chip
+            vcls = ""
+            if i in verdict_cols:
+                vcls = _verdict_class(text)
+            # 含“新增/流失/见效/恶化”等关键词的语义列也做 chip
+            if not vcls and any(kw in str(text) for kw in ("新增", "流失", "收窄", "见效", "恶化", "未落地", "增幅", "降幅", "对冲", "放量")):
+                vcls = _verdict_class(text)
+            if vcls:
+                tds.append(f"<td{cls}>{_badge(text, vcls)}</td>")
+                continue
+
+            cell_prefix = COLOR_TO_EMOJI.get(cell.get("color", "none"), "")
+            tds.append(f"<td{cls}>{cell_prefix}{_esc(text)}</td>")
         while len(tds) < len(columns):
             tds.append("<td></td>")
         trs.append("<tr" + row_style + ">" + "".join(tds) + "</tr>")
@@ -1087,11 +1153,22 @@ def _notes_html(notes_raw):
     if not paras:
         return ""
     return '<div class="cb"><h3>备注</h3><div class="caliber">' + paras + "</div></div>\n"
+_SECTION_BADGE_RE = re.compile(r"[①②③④⑤⑥⑦⑧⑨⑩]")
+
+
+def _section_badge(title):
+    """从节标题提取 ①②③... 序号作为徽标；无序号返回空串。"""
+    m = _SECTION_BADGE_RE.search(title or "")
+    if not m:
+        return ""
+    return f'<span class="section-badge">{m.group(0)}</span>'
 
 
 def _extra_sections_html(md_text):
     """人工审定版扩展节渲染：按文档顺序渲染 KPI/备注/口径/风险摘要/行动清单 之外的节。
-    每节 = 标题 h3 + 段落 p + 节内全部表格（连续 | 行为一表，绕过 _table_part 单表限制）。
+
+    每节 = 标题 h3（带序号徽标）+ 段落 p（首段 lead / 口径 note）+ 节内全部表格
+    （连续 | 行为一表，绕过 _table_part 单表限制）。标题含「引擎雷达/附表」→ appendix 弱层级。
     返回 (top_html, bottom_html)：以「行动清单」节为界，之前/之后的扩展节分列两侧。"""
     SKIP_KW = ("KPI", "备注", "口径", "风险摘要", "行动清单")
     lines = md_text.splitlines()
@@ -1103,8 +1180,20 @@ def _extra_sections_html(md_text):
         if title is None or not buf:
             buf, title = [], None
             return
-        paras = "".join(f"<p>{_esc(ln.strip())}</p>" for ln in buf
-                        if ln.strip() and not ln.strip().startswith("|"))
+        para_lines = [ln.strip() for ln in buf
+                      if ln.strip() and not ln.strip().startswith("|")]
+        paras_parts = []
+        for idx, s in enumerate(para_lines):
+            cls = ""
+            if idx == 0:
+                cls = "risk-lead"
+            elif s.startswith("（口径：") or s.startswith("(口径："):
+                cls = "risk-note"
+            if cls:
+                paras_parts.append(f'<p class="{cls}">{_esc(s)}</p>')
+            else:
+                paras_parts.append(f"<p>{_esc(s)}</p>")
+        paras = "".join(paras_parts)
         tbls, run = [], []
         for ln in buf + [""]:
             if ln.strip().startswith("|"):
@@ -1115,7 +1204,10 @@ def _extra_sections_html(md_text):
                     tbls.append(_render_table(part))
                 run = []
         if paras or tbls:
-            html = (f'<div class="cb"><h3>{_esc(title)}</h3>'
+            is_appendix = any(k in title for k in ("引擎雷达", "附表"))
+            div_cls = "cb appendix" if is_appendix else "cb"
+            badge = _section_badge(title)
+            html = (f'<div class="{div_cls}"><h3>{badge}{_esc(title)}</h3>'
                     + (f'<div class="caliber">{paras}</div>' if paras else "")
                     + "".join(tbls) + "</div>\n")
             (bottom if passed_action else top).append(html)
@@ -1136,6 +1228,7 @@ def _extra_sections_html(md_text):
             buf.append(ln)
     _flush()
     return "".join(top), "".join(bottom)
+
 
 
 def _build_r_parts(month):
@@ -1214,26 +1307,28 @@ def _build_r_parts(month):
 
 def build_r_face_inner_html(month):
     """供 generate_dashboard.py 并入正式看板（W4）：返回 R 面内容 HTML（不含页面框架，
-    样式复用 template.html 的 kpi-bar/kc/cb/data-table 组件）。签名不变（公共 API 边界）。"""
+    样式复用 template.html 的 kpi-bar/kc/cb/data-table 组件）。签名不变（公共 API 边界）。
+    全部内容包在 .face-risk 根容器内，保证新增样式只作用于 R 面。"""
     parts = _build_r_parts(month)
     if not parts["ok"]:
-        return ('<div class="cb"><h3>风险与行动</h3><div class="note">本月总体文档未生成：'
+        return ('<div class="face-risk"><div class="cb"><h3>风险与行动</h3><div class="note">本月总体文档未生成：'
                 '请先在明文窗口跑批后运行 <code>python dashboard\\generate_risk_face.py</code> '
-                '生成并审定总体文档（缺失：' + _esc(parts["err"]) + '）</div></div>')
+                '生成并审定总体文档（缺失：' + _esc(parts["err"]) + '）</div></div></div>')
     def _clean_title(t, fallback):
         t = re.sub(r'（[^）]*）\s*$', '', t or '').strip()
         return t or fallback
 
-    return (parts["kpi_bar"]
-            + '<div class="cb"><h3>' + _esc(_clean_title(parts.get("risk_title"), "一、当月风险摘要")) + '</h3><div class="note">初稿由系统按规则生成，经人工审定后展示。</div>'
-            + parts["risk_table"] + '</div>\n'
-            + parts.get("extras_top", "")
-            + '<div class="cb"><h3>' + _esc(_clean_title(parts.get("action_title"), "二、行动清单")) + '</h3><div class="note">状态：待处理 / 跟进中 / 已关闭。未关闭事项跨月自动结转。</div>'
-            + parts["action_table"] + '</div>\n'
-            + parts.get("extras_bottom", "")
-            + parts.get("notes_html", "")
-            + '<div class="cb"><h3>口径说明</h3><div class="caliber">'
-            + _esc(parts["caliber"]) + '</div></div>')
+    inner = (parts["kpi_bar"]
+             + '<div class="cb"><h3>' + _esc(_clean_title(parts.get("risk_title"), "一、当月风险摘要")) + '</h3><div class="note">初稿由系统按规则生成，经人工审定后展示。</div>'
+             + parts["risk_table"] + '</div>\n'
+             + parts.get("extras_top", "")
+             + '<div class="cb"><h3>' + _esc(_clean_title(parts.get("action_title"), "二、行动清单")) + '</h3><div class="note">状态：待处理 / 跟进中 / 已关闭。未关闭事项跨月自动结转。</div>'
+             + parts["action_table"] + '</div>\n'
+             + parts.get("extras_bottom", "")
+             + parts.get("notes_html", "")
+             + '<div class="cb"><h3>口径说明</h3><div class="caliber">'
+             + _esc(parts["caliber"]) + '</div></div>')
+    return f'<div class="face-risk">\n{inner}\n</div>'
 
 
 def render(month):
