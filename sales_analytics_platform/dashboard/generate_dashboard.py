@@ -599,7 +599,8 @@ def build_c_monthly_from_silver(data_month):
         pm = dict(zip(sub["_m"], sub["p"]))
         ms, mg = [], []
         for mth in reversed(months_asc):  # t-1 .. t-12（与 history.sales 同序）
-            ms.append(int(round(float(qm.get(mth, 0.0)))))
+            _q = qm.get(mth)
+            ms.append(int(round(float(_q))) if _q is not None and pd.notna(_q) else None)  # [断线修复] 缺月=None，前端 connectNulls 自动连接
             rev = float(rm.get(mth, 0.0))
             mg.append(round(float(pm.get(mth, 0.0)) / rev, 4) if rev > 0 else None)
         out[str(name)] = {"monthly_sales": ms, "monthly_gm": mg}

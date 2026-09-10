@@ -4142,8 +4142,8 @@ function openDetail(name) {
  ],
  dataZoom: [{ type: 'inside' }],
  series: [
- { name: '销量(颗)', type: 'line', data: (hist.monthly_sales ? hist.monthly_sales.slice().reverse() : hist.sales.slice().reverse()), smooth: true, symbol: 'circle', symbolSize: 6, lineStyle: { width: 2, color: '#2563EB' }, itemStyle: { color: '#2563EB' } },
- { name: '毛利率(%)', type: 'line', yAxisIndex: 1, data: (hist.monthly_gm ? hist.monthly_gm.slice().reverse().map(v => v == null ? null : v * 100) : hist.gm.slice().reverse().map(v => v * 100)), smooth: true, symbol: 'circle', symbolSize: 6, lineStyle: { width: 2, color: '#10B981' }, itemStyle: { color: '#10B981' } }
+ { name: '销量(颗)', type: 'line', connectNulls: true, data: (hist.monthly_sales ? hist.monthly_sales.slice().reverse() : hist.sales.slice().reverse()), smooth: true, symbol: 'circle', symbolSize: 6, lineStyle: { width: 2, color: '#2563EB' }, itemStyle: { color: '#2563EB' } },
+ { name: '毛利率(%)', type: 'line', yAxisIndex: 1, connectNulls: true, data: (hist.monthly_gm ? hist.monthly_gm.slice().reverse().map(v => v == null ? null : v * 100) : hist.gm.slice().reverse().map(v => v * 100)), smooth: true, symbol: 'circle', symbolSize: 6, lineStyle: { width: 2, color: '#10B981' }, itemStyle: { color: '#10B981' } }
  ]
  });
  }
