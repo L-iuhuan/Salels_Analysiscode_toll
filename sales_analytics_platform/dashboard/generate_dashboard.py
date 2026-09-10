@@ -564,6 +564,48 @@ def build_c_history(df, data_month=None):
         history[name] = entry
     return history
 
+def build_c_monthly_from_silver(data_month):
+    """[数据口径修复] 从 silver 明文行计算产品×月真实月度销量/毛利率（近12月窗口，对齐 data_month）。
+    背景：gold 历史的 近12月销量_t-N / 近12月毛利率%_t-N 是滚动12月合计/汇总口径（report.py 口径文档明示），
+    弹窗趋势图需要的是单月值。返回 {产品名称: {"monthly_sales": [t-1..t-12], "monthly_gm": [..]}}
+    （与 history.sales 同序：t-1 在前；gm 为小数、无收入月为 None）；读不到 silver 返回 {}。"""
+    sp = os.path.join(PROJECT, "output", "silver", "silver_cleaned_rows.parquet")
+    if not data_month or not os.path.exists(sp):
+        return {}
+    ds = re.sub(r"\D", "", str(data_month))[:6]
+    if len(ds) != 6 or not 1 <= int(ds[4:6]) <= 12:
+        return {}
+    y0, m0 = int(ds[:4]), int(ds[4:6])
+    months_asc = []  # t-12 .. t-1 升序
+    for k in range(12, 0, -1):
+        yy, mm = y0, m0 - (k - 1)
+        while mm <= 0:
+            mm += 12
+            yy -= 1
+        months_asc.append("%04d-%02d" % (yy, mm))
+    try:
+        df = pd.read_parquet(sp, columns=["产品品种", "发货日期", "数量", "出货总金额", "利润"])
+    except Exception as _e:
+        print(f"  [C面][警告] silver 月度序列读取失败: {_e}")
+        return {}
+    df = df.copy()
+    df["_m"] = df["发货日期"].astype(str).str[:7]
+    win = df[df["_m"].isin(months_asc)]
+    g = win.groupby(["产品品种", "_m"]).agg(q=("数量", "sum"), r=("出货总金额", "sum"), p=("利润", "sum")).reset_index()
+    out = {}
+    for name, sub in g.groupby("产品品种"):
+        qm = dict(zip(sub["_m"], sub["q"]))
+        rm = dict(zip(sub["_m"], sub["r"]))
+        pm = dict(zip(sub["_m"], sub["p"]))
+        ms, mg = [], []
+        for mth in reversed(months_asc):  # t-1 .. t-12（与 history.sales 同序）
+            ms.append(int(round(float(qm.get(mth, 0.0)))))
+            rev = float(rm.get(mth, 0.0))
+            mg.append(round(float(pm.get(mth, 0.0)) / rev, 4) if rev > 0 else None)
+        out[str(name)] = {"monthly_sales": ms, "monthly_gm": mg}
+    return out
+
+
 def build_c_sankey(table, history):
     """构建C面DATA.sankey：画像季度迁移桑基图。"""
     quarter_modes = {}
@@ -652,6 +694,14 @@ def build_c_data(prod_df, hist_df=None, data_month=None, insuff_count=0):
     table = build_c_table(prod_df)
     hist_src = hist_df if hist_df is not None else prod_df
     history = build_c_history(hist_src, data_month)
+    # [数据口径修复] 注入真实月度序列（gold 历史为滚动12月合计口径，弹窗趋势图需单月值）
+    monthly_map = build_c_monthly_from_silver(data_month)
+    if monthly_map:
+        for _n, _md in monthly_map.items():
+            if _n in history:
+                history[_n]["monthly_sales"] = _md["monthly_sales"]
+                history[_n]["monthly_gm"] = _md["monthly_gm"]
+        print(f"  monthly 月度序列注入: {sum(1 for v in history.values() if 'monthly_sales' in v)}/{len(history)} 产品")
     kpi = build_c_kpi(table)
     kpi["data_insufficient"] = int(insuff_count)
     charts = build_c_charts(table)

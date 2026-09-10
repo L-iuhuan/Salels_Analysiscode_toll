@@ -4131,7 +4131,7 @@ function openDetail(name) {
  if (old) old.dispose();
  var chart = TABS.chart.create(chartDom);
   chart.setOption({
-  tooltip: { trigger: 'axis', confine: true, formatter: function(ps) { var h = '<b>' + ps[0].axisValue + '</b><br/>'; ps.forEach(function(p) { if (p.seriesName.indexOf('销量') > -1) { var v = p.value; h += p.marker + p.seriesName + ': <b>' + (v >= 1e4 ? (v/1e4).toFixed(1) + ' 万颗' : Number(v).toLocaleString() + ' 颗') + '</b><br/>'; } else { h += p.marker + p.seriesName + ': <b>' + Number(p.value).toFixed(1) + '%</b><br/>'; } }); return h; } },
+  tooltip: { trigger: 'axis', confine: true, formatter: function(ps) { var h = '<b>' + ps[0].axisValue + '</b><br/>'; ps.forEach(function(p) { if (p.value == null) { h += p.marker + p.seriesName + ': —<br/>'; return; } if (p.seriesName.indexOf('销量') > -1) { var v = p.value; h += p.marker + p.seriesName + ': <b>' + (v >= 1e4 ? (v/1e4).toFixed(1) + ' 万颗' : Number(v).toLocaleString() + ' 颗') + '</b><br/>'; } else { h += p.marker + p.seriesName + ': <b>' + Number(p.value).toFixed(1) + '%</b><br/>'; } }); return h; } },
   legend: { data: ['销量(颗)', '毛利率(%)'], bottom: 0, textStyle: { fontSize:TYPO.lg } },
   grid: { left: 55, right: 55, top: 25, bottom: 60, containLabel: true },
 
@@ -4142,8 +4142,8 @@ function openDetail(name) {
  ],
  dataZoom: [{ type: 'inside' }],
  series: [
- { name: '销量(颗)', type: 'line', data: hist.sales.slice().reverse(), smooth: true, symbol: 'circle', symbolSize: 6, lineStyle: { width: 2, color: '#2563EB' }, itemStyle: { color: '#2563EB' } },
- { name: '毛利率(%)', type: 'line', yAxisIndex: 1, data: hist.gm.slice().reverse().map(v => v * 100), smooth: true, symbol: 'circle', symbolSize: 6, lineStyle: { width: 2, color: '#10B981' }, itemStyle: { color: '#10B981' } }
+ { name: '销量(颗)', type: 'line', data: (hist.monthly_sales ? hist.monthly_sales.slice().reverse() : hist.sales.slice().reverse()), smooth: true, symbol: 'circle', symbolSize: 6, lineStyle: { width: 2, color: '#2563EB' }, itemStyle: { color: '#2563EB' } },
+ { name: '毛利率(%)', type: 'line', yAxisIndex: 1, data: (hist.monthly_gm ? hist.monthly_gm.slice().reverse().map(v => v == null ? null : v * 100) : hist.gm.slice().reverse().map(v => v * 100)), smooth: true, symbol: 'circle', symbolSize: 6, lineStyle: { width: 2, color: '#10B981' }, itemStyle: { color: '#10B981' } }
  ]
  });
  }
