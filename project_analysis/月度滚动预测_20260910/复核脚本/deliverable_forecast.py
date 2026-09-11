@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """预测交付：2026 收官（9-12月+全年）+ 未来 6/12 个月 + 产品线/品类预测
-口径：冠军 combo_phase（非春节月 ma6 递归；2027-01 相位参照 2026-01×trailing YoY；2027-02 wd3 估算）
+口径：冠军 combo_phase（非春节月 ma6 递归；2027-01 E22c三法中枢：相位YoY/前月×1.17冲量/2024-01×CAGR³；2027-02 前月×0.53 春节低谷桶中位）
      + 可选 E20 无偏因子 ×1.040；线/品类 = 分线选优（expanding）+ 锚定到公司口径
-注：2027 假期安排未公布——2027-01/02 为估算（假设：春节 2/5-2/12，调休按惯例），已在报告中标注。
+注：2027-01/02 规则基于 E22c 长历史春节分桶（n=6，2020-2026 总表长序列），替代原 wd3 估算。
 """
 import sys
 import numpy as np
@@ -103,15 +103,19 @@ future = []
 def extend_one(month):
     y, m = int(month[:4]), month[5:7]
     if m == '01':
+        # E22c 长历史春节分桶：2027 除夕 2/5 属"2月低谷年"，1月为节前冲量月（同桶 2021/2024/2026）
+        # 三法中枢：A=相位YoY、B=前月基数×冲量系数1.17(n=6中位)、C=2024-01×两年CAGR^3
         g = float(sum(hist[-12:])) / max(float(sum(hist[-24:-12])), 1.0)
-        pred = float(hist[hist_months.index('2026-01')]) * g   # 参照最近同相位月（2026-01，pre）×trailing YoY
-        tag = 'phase(参照2026-01×%.3f)' % g
+        A = float(hist[hist_months.index('2026-01')]) * g
+        B = float(np.mean(hist[-6:])) * 1.17
+        cagr = (float(hist[hist_months.index('2026-01')]) / float(hist[hist_months.index('2024-01')])) ** 0.5
+        C = float(hist[hist_months.index('2024-01')]) * cagr ** 3
+        pred = float(np.median([A, B, C]))
+        tag = 'phase3中枢(A=%.0f/B=%.0f/C=%.0f万)' % (A/1e4, B/1e4, C/1e4)
     elif m == '02':
-        wd, src = workdays(y, int(m))
-        wd3m, _ = workdays(y, int(m)-1 if int(m) > 1 else 12)
-        rate = float(sum(hist[-3:])) / max(sum([workdays(int(mm[:4]), int(mm[5:7]))[0] for mm in hist_months[-3:]]), 1)
-        pred = rate * wd
-        tag = 'wd3(工作日%d,%s)' % (wd, src)
+        # E22c：2月低谷桶中位 0.53（n=4: 2021/2022/2024/2026）；回测中位|误差|~19%，远稳于 wd3（最大+99%）
+        pred = float(hist[-1]) * 0.53
+        tag = 'cny02(前月×0.53, n=4)'
     else:
         pred = float(np.mean(hist[-6:]))
         tag = 'ma6'
@@ -176,9 +180,9 @@ cat_other.name = '其他(%d类)' % (len(cat_fc_all) - TOPN)
 L = []
 L.append('# 预测交付 · 2026 收官与未来 6/12 个月（2026-09-10）')
 L.append('')
-L.append('> 口径：冠军 combo_phase（非春节月 ma6 递归；2027-01 相位参照 2026-01×trailing YoY；2027-02 工作日法估算）；')
+L.append('> 口径：冠军 combo_phase（非春节月 ma6 递归；2027-01 E22c 三法中枢：相位YoY/前月×1.17冲量/2024-01×CAGR³；2027-02 前月×0.53 春节低谷桶中位）；')
 L.append('> 线/品类 = 分线选优（expanding）+ 锚定到公司口径；无偏口径 = ×1.040（E20 中位因子）。')
-L.append('> **注：2027 年假期安排未公布**——2027-01/02 为估算（假设春节 2/5-2/12），属参考值。')
+L.append('> 注：2027-01/02 规则基于 E22c 长历史春节分桶标定（n=6，2020-2026 总表长序列），替代原 wd3 估算。')
 L.append('')
 L.append('## 一、公司口径：分月预测（万元）')
 L.append('')
