@@ -1,0 +1,381 @@
+# 归档文档索引（ARCHIVE_DOC_INDEX）
+
+> 生成于 2026-09-16。归档区 = 搁置的方案库（非死代码）：曾完成的工作，后因专注看板流水线而搁置。
+> **用法**：按主题区块扫卡片 → 锁定 2-3 篇 → 精读原文。卡片格式：`路径 ｜ 规模 ｜ 开篇摘要`。
+> 共 343 篇文档。做预测任务先查「预测方法与实验」「因子工程与调优」两块。
+
+## 预测方法与实验（28 篇）
+
+- `_archive_source/semiconductor_analysis/测试方案_多维度分层预测校准_v1.3.md` ｜ 102KB/2224行 ｜ 多维度分层预测校准——递进式测试方案 v1.3（保留式修订版，含v1.4补丁）
+- `_archive_source/工作文件/semiconductor_analysis/测试方案_多维度分层预测校准_v1.3.md` ｜ 85KB/2051行 ｜ 多维度分层预测校准——递进式测试方案 v1.3（保留式修订版）
+- `_archive_source/semiconductor_analysis/测试方案_多维度分层预测校准_v1.0.md` ｜ 75KB/1930行 ｜ 多维度分层预测校准——递进式测试方案 v1.2
+- `_archive_source/工作文件/eda_results.txt` ｜ 33KB/749行 ｜ ======================================================================
+- `_archive_source/project_branches/quarterly_forecast/产品线季度预测实施方案.md` ｜ 24KB/823行 ｜ 产品线季度分析与预测实施方案
+- `_archive_source/semiconductor_analysis/quarterly_forecast_package/产品线季度预测实施方案.md` ｜ 24KB/823行 ｜ 产品线季度分析与预测实施方案
+- `_archive_source/工作文件/semiconductor_analysis/quarterly_forecast_package/产品线季度预测实施方案.md` ｜ 24KB/823行 ｜ 产品线季度分析与预测实施方案
+- `_archive_source/semiconductor_analysis/output/unified_forecast/预测系统技术报告.md` ｜ 19KB/410行 ｜ 半导体销售多维预测系统 — 技术报告
+- `_archive_source/project_branches/quarterly_forecast/使用说明.md` ｜ 18KB/810行 ｜ 产品线季度预测工具使用说明
+- `_archive_source/semiconductor_analysis/quarterly_forecast_package/使用说明.md` ｜ 18KB/810行 ｜ 产品线季度预测工具使用说明
+- `_archive_source/工作文件/semiconductor_analysis/quarterly_forecast_package/使用说明.md` ｜ 18KB/810行 ｜ 产品线季度预测工具使用说明
+- `_archive_source/project_branches/main_pipeline/docs/预测方法说明.md` ｜ 9KB/302行 ｜ 产品线季度预测方法说明
+- `_archive_source/semiconductor_analysis/docs/预测方法说明.md` ｜ 9KB/302行 ｜ 产品线季度预测方法说明
+- `_archive_source/工作文件/semiconductor_analysis/docs/预测方法说明.md` ｜ 9KB/302行 ｜ 产品线季度预测方法说明
+- `_archive_source/project_branches/quarterly_forecast/README.txt` ｜ 3KB/69行 ｜ ============================================================
+- `_archive_source/semiconductor_analysis/quarterly_forecast_package/README.txt` ｜ 3KB/69行 ｜ ============================================================
+- `_archive_source/工作文件/semiconductor_analysis/quarterly_forecast_package/README.txt` ｜ 3KB/69行 ｜ ============================================================
+- `_archive_source/project_branches/quarterly_forecast/客户维度预测实施方案.md` ｜ 2KB/58行 ｜ 客户维度季度预测实施方案
+- `_archive_source/semiconductor_analysis/quarterly_forecast_package/客户维度预测实施方案.md` ｜ 2KB/58行 ｜ 客户维度季度预测实施方案
+- `_archive_source/工作文件/semiconductor_analysis/quarterly_forecast_package/客户维度预测实施方案.md` ｜ 2KB/58行 ｜ 客户维度季度预测实施方案
+- `_archive_source/project_branches/quarterly_forecast/README.md` ｜ 1KB/33行 ｜ 季度预测包(产品线 + 客户双维度)
+- `_archive_source/project_branches/unified_forecast/README.md` ｜ 1KB/30行 ｜ 统一预测系统(多版本存档)
+- `_archive_source/project_branches/eda_forecast/README.md` ｜ 1KB/32行 ｜ EDA 与出货预测实验
+- `_archive_source/project_branches/eda_forecast/data_说明.txt` ｜ 0KB/2行 ｜ 输入数据未复制(>50MB): E:\3-其他资料\数据分析\工作文件\财务分析-5月（6.3）(1).xlsx (216.2MB)
+- `_archive_source/project_branches/quarterly_forecast/data_说明.txt` ｜ 0KB/2行 ｜ 输入:原始出货明细 Excel(未复制,>50MB)。
+- `_archive_source/project_branches/eda_forecast/requirements.txt` ｜ 0KB/7行 ｜ 自动生成:基于分支内脚本的 import 静态推导
+- `_archive_source/project_branches/unified_forecast/requirements.txt` ｜ 0KB/6行 ｜ 自动生成:基于分支内脚本的 import 静态推导
+- `_archive_source/project_branches/quarterly_forecast/requirements.txt` ｜ 0KB/5行 ｜ 自动生成:基于分支内脚本的 import 静态推导
+
+## 实验日志与设计（47 篇）
+
+- `_archive_source/semiconductor_analysis/experiment_log/14_exp_1.3_lifecycle_calibration/exp_1.3_log.md` ｜ 28KB/709行 ｜ 实验 1.3 日志：产品生命周期因子初次校准——解释层与PIT代理层拆分
+- `_archive_source/semiconductor_analysis/experiment_log/00_master/master_log.md` ｜ 25KB/537行 ｜ 多维度分层预测校准 — 实验主日志
+- `_archive_source/semiconductor_analysis/experiment_log/14_exp_1.3_lifecycle_calibration/exp_1.3_design.md` ｜ 20KB/496行 ｜ 实验 1.3 设计方案：产品生命周期因子初次校准——解释层与PIT代理层拆分
+- `_archive_source/semiconductor_analysis/experiment_log/13_exp_1.2_window_optimization/exp_1.2_log.md` ｜ 13KB/360行 ｜ 实验 1.2 日志：移动平均窗口自适应优化
+- `_archive_source/semiconductor_analysis/experiment_log/experiment_log_extra_quantile_prediction/exp_1.2_log.md` ｜ 10KB/224行 ｜ 实验 1.2 日志：区间预测（Quantile Forecasting）
+- `_archive_source/semiconductor_analysis/experiment_log/11_exp_1.1_intermittent_demand/exp_1.1_log.md` ｜ 7KB/181行 ｜ 实验 1.1 日志：间歇性需求方法评估
+- `_archive_source/semiconductor_analysis/experiment_log/00_master/field_mapping_documentation.md` ｜ 7KB/211行 ｜ 字段梳理文档 - Phase 1实验修正
+- `_archive_source/semiconductor_analysis/experiment_log/experiment_log_extra_quantile_prediction/exp_1.2_design.md` ｜ 6KB/202行 ｜ 实验 1.2 设计方案：区间预测（Quantile Forecasting）
+- `_archive_source/semiconductor_analysis/experiment_log/07_exp_0.3_lifecycle_alignment/exp_0.3_log.md` ｜ 5KB/116行 ｜ 实验 0.3: 产品生命周期数据提取与对齐
+- `_archive_source/工作文件/semiconductor_analysis/experiment_log/phase_0_baseline/exp_0.3_lifecycle_alignment/exp_0.3_log.md` ｜ 5KB/116行 ｜ 实验 0.3: 产品生命周期数据提取与对齐
+- `_archive_source/semiconductor_analysis/experiment_log/10_exp_0.0.7_corrected_hierarchy_eligibility/exp_0.0.7_log.md` ｜ 5KB/119行 ｜ 实验 0.0.7: 字段修正版层级准入
+- `_archive_source/semiconductor_analysis/experiment_log/00_master/session_20260612_phase0_validation.md` ｜ 5KB/166行 ｜ 会话总结: Phase 0深度验证与v1.4补丁
+- `_archive_source/semiconductor_analysis/experiment_log/08_exp_0.0.6_hierarchy_eligibility/exp_0.0.6_log.md` ｜ 4KB/139行 ｜ 实验 0.0.6: 层级准入诊断
+- `_archive_source/semiconductor_analysis/experiment_log/00_master/session_20260612_exp1.0.md` ｜ 4KB/141行 ｜ 会话记录: 实验1.0 层级与时间粒度对比
+- `_archive_source/semiconductor_analysis/experiment_log/09_exp_1.0_hierarchy_granularity/exp_1.0_log.md` ｜ 4KB/103行 ｜ 实验 1.0: 预测层级与时间粒度对比（字段修正版，严格v1.4口径）
+- `_archive_source/semiconductor_analysis/experiment_log/01_exp_0.0_trivial_baselines/exp_0.0_log.md` ｜ 4KB/95行 ｜ 实验 0.0: 平凡基线建立
+- `_archive_source/工作文件/semiconductor_analysis/experiment_log/phase_0_baseline/exp_0.0_trivial_baselines/exp_0.0_log.md` ｜ 4KB/95行 ｜ 实验 0.0: 平凡基线建立
+- `_archive_source/semiconductor_analysis/experiment_log/00_master/README.md` ｜ 4KB/107行 ｜ 实验日志目录结构
+- `_archive_source/semiconductor_analysis/experiment_log/02_exp_0.0.5_coverage_diagnosis/exp_0.0.5_log.md` ｜ 4KB/98行 ｜ 实验 0.0.5: 产品线覆盖与字段一致性诊断
+- `_archive_source/工作文件/semiconductor_analysis/experiment_log/phase_0_baseline/exp_0.0.5_coverage_diagnosis/exp_0.0.5_log.md` ｜ 4KB/98行 ｜ 实验 0.0.5: 产品线覆盖与字段一致性诊断
+- `_archive_source/semiconductor_analysis/experiment_log/06_exp_0.2.5_full_rerun/exp_0.2.5_log.md` ｜ 4KB/107行 ｜ 实验 0.2.5: 完整基线全量复跑验证
+- `_archive_source/semiconductor_analysis/experiment_log/04_exp_0.1.5_method_filter/exp_0.1.5_log.md` ｜ 4KB/106行 ｜ 实验 0.1.5: 方法预筛选
+- `_archive_source/工作文件/semiconductor_analysis/experiment_log/phase_0_baseline/exp_0.1.5_method_filter/exp_0.1.5_log.md` ｜ 4KB/106行 ｜ 实验 0.1.5: 方法预筛选
+- `_archive_source/semiconductor_analysis/experiment_log/05_exp_0.2_baseline_lock/exp_0.2_log.md` ｜ 4KB/98行 ｜ 实验 0.2: 基线回测锁定
+- `_archive_source/工作文件/semiconductor_analysis/experiment_log/phase_0_baseline/exp_0.2_baseline_lock/exp_0.2_log.md` ｜ 4KB/98行 ｜ 实验 0.2: 基线回测锁定
+- `_archive_source/semiconductor_analysis/experiment_log/00_master/field_spec_locked_20260612.md` ｜ 3KB/80行 ｜ 字段口径锁定说明（2026-06-12）
+- `_archive_source/semiconductor_analysis/experiment_log/00_master/phase_0_gate.md` ｜ 3KB/89行 ｜ Phase 0 决策门 (Gate 0)
+- `_archive_source/工作文件/semiconductor_analysis/experiment_log/phase_0_baseline/phase_0_gate.md` ｜ 3KB/89行 ｜ Phase 0 决策门 (Gate 0)
+- `_archive_source/semiconductor_analysis/experiment_log/00_master/phase1_correction_progress.md` ｜ 3KB/115行 ｜ Phase 1 修正进度报告
+- `_archive_source/工作文件/semiconductor_analysis/experiment_log/master_log.md` ｜ 3KB/78行 ｜ 多维度分层预测校准 — 实验主日志
+- `_archive_source/semiconductor_analysis/experiment_log/26_phase4_final/output/phase4_final_report.md` ｜ 2KB/70行 ｜ Phase 4: 最终验收报告
+- `_archive_source/semiconductor_analysis/experiment_log/00_master/session_20260612_corrected_rerun.md` ｜ 2KB/81行 ｜ 会话记录: 字段修正、旧结果作废与0.2/1.0重跑
+- `_archive_source/semiconductor_analysis/experiment_log/05_exp_0.2_baseline_lock/exp_0.2_corrected_customer_log.md` ｜ 2KB/61行 ｜ 实验 0.2 修正版: 客户/SKU字段口径修正后基线重跑
+- `_archive_source/semiconductor_analysis/experiment_log/03_exp_0.1_env_setup/exp_0.1_log.md` ｜ 2KB/65行 ｜ 实验 0.1: 环境安装与数据版本锁定
+- `_archive_source/工作文件/semiconductor_analysis/experiment_log/phase_0_baseline/exp_0.1_env_setup/exp_0.1_log.md` ｜ 2KB/65行 ｜ 实验 0.1: 环境安装与数据版本锁定
+- `_archive_source/semiconductor_analysis/experiment_log/24_phase2_final_validation/output/phase2_final_validation_report.md` ｜ 2KB/42行 ｜ Phase 2 最终验证: 层级调和是否有效
+- `_archive_source/semiconductor_analysis/experiment_log/25_phase3_ensemble/output/phase3_report.md` ｜ 2KB/44行 ｜ Phase 3: 组合优化与动态选择
+- `_archive_source/semiconductor_analysis/experiment_log/00_master/session_20260612_foundation_lock_and_007.md` ｜ 2KB/70行 ｜ 会话记录: 字段口径锁定与0.0.7层级准入重算
+- `_archive_source/semiconductor_analysis/experiment_log/23_phase2_redesign/output/phase2_redesign_report.md` ｜ 2KB/36行 ｜ Phase 2 重新设计: 分层调和实验
+- `_archive_source/semiconductor_analysis/experiment_log/00_master/session_20260612_field_calibration.md` ｜ 1KB/39行 ｜ 会话记录: 字段校准与实验暂停
+- `_archive_source/工作文件/semiconductor_analysis/experiment_log/README.md` ｜ 1KB/44行 ｜ > 多维度分层预测校准测试 — 全链路实验记录
+- `_archive_source/semiconductor_analysis/experiment_log/20_exp_2.1_hierarchical_reconciliation/phase2_progress_report.md` ｜ 1KB/58行 ｜ Phase 2 进度报告
+- `_archive_source/semiconductor_analysis/experiment_log/21_exp_2.2_hierarchical_all_plines/output/experiment_2.2_report.md` ｜ 1KB/34行 ｜ 实验2.2: 分层调和——全产品线扩展
+- `_archive_source/semiconductor_analysis/experiment_log/22_exp_2.3_pit_factor_deepening/output/experiment_2.3_report.md` ｜ 0KB/24行 ｜ 实验2.3: 产品生命周期PIT代理因子深化
+- `_archive_source/semiconductor_analysis/experiment_log/20_exp_2.1_hierarchical_reconciliation/output/experiment_2.1_report.md` ｜ 0KB/23行 ｜ 实验2.1: 分层调和——单产品线验证
+- `_archive_source/semiconductor_analysis/experiment_log/00_master/output/phase1_correction_report.md` ｜ 0KB/19行 ｜ Phase 1 修正完成报告
+- `_archive_source/semiconductor_analysis/experiment_log/15_exp_1.4_new_product_layering/output/experiment_1.4_report.md` ｜ 0KB/16行 ｜ 实验1.4: 新品/老品分层预测初探
+
+## 因子工程与调优（6 篇）
+
+- `_archive_source/project_branches/main_pipeline/docs/因子自动调优方案.md` ｜ 22KB/648行 ｜ 风险衰退模型 — 因子自动调优方案（已上线 v4.0）
+- `_archive_source/semiconductor_analysis/docs/因子自动调优方案.md` ｜ 22KB/648行 ｜ 风险衰退模型 — 因子自动调优方案（已上线 v4.0）
+- `_archive_source/工作文件/semiconductor_analysis/docs/因子自动调优方案.md` ｜ 22KB/648行 ｜ 风险衰退模型 — 因子自动调优方案（已上线 v4.0）
+- `_archive_source/semiconductor_analysis/test_output/v3.1_calibration_master_report.md` ｜ 10KB/336行 ｜ v3.1 评分卡上线前校准 — 多方案实测报告
+- `_archive_source/工作文件/semiconductor_analysis/test_output/v3.1_calibration_master_report.md` ｜ 10KB/336行 ｜ v3.1 评分卡上线前校准 — 多方案实测报告
+- `_archive_source/semiconductor_analysis/production_threshold_recalibration.md` ｜ 6KB/154行 ｜ 生产引擎阈值重校准报告
+
+## 客户与品类分析（14 篇）
+
+- `_archive_source/客户销售情况分析/session-ses_1da5.md` ｜ 762KB/13283行 ｜ 客户维度销售明细分析
+- `_archive_source/客户销售情况分析/融合方案.md` ｜ 164KB/3970行 ｜ 融合方案：客户-产品-库存联动决策系统
+- `_archive_source/客户销售情况分析/客户量化评估方案.md` ｜ 51KB/1304行 ｜ 客户量化评估方案 v1.0
+- `_archive_source/客户销售情况分析/客户销售数据分析方案.md` ｜ 45KB/917行 ｜ 客户销售数据分析方案文档
+- `_archive_source/project_branches/main_pipeline/docs/客户分析系统.md` ｜ 45KB/1040行 ｜ 客户分析系统 — 功能文档（v4.5）
+- `_archive_source/工作文件/semiconductor_analysis/docs/客户分析系统.md` ｜ 45KB/1040行 ｜ 客户分析系统 — 功能文档（v4.5）
+- `_archive_source/semiconductor_analysis/docs/客户分析系统.md` ｜ 38KB/926行 ｜ 客户分析系统 — 功能文档
+- `_archive_source/客户销售情况分析/融合方案_评审版.md` ｜ 20KB/483行 ｜ 融合方案：客户-产品-库存联动决策系统
+- `_archive_source/客户销售情况分析/方案1.md` ｜ 14KB/364行 ｜ 进销存联动·客户-代理商-产品增长、风控与库存优化系统 项目方案
+- `_archive_source/project_branches/main_pipeline/docs/修改记录_20260612_客户分析映射修复.md` ｜ 13KB/395行 ｜ 客户分析映射修复 — 修改记录
+- `_archive_source/工作文件/semiconductor_analysis/docs/修改记录_20260612_客户分析映射修复.md` ｜ 13KB/395行 ｜ 客户分析映射修复 — 修改记录
+- `_archive_source/semiconductor_analysis_before/docs/客户分析系统.md` ｜ 13KB/427行 ｜ 客户分析系统 — 已实现功能文档
+- `_archive_source/客户销售情况分析/调整方案评估分析.md` ｜ 11KB/175行 ｜ 调整方案评估分析
+- `_archive_source/客户销售情况分析/实施路线详案.md` ｜ 7KB/196行 ｜ 客户销售数据分析系统 — 实施路线详案
+
+## 产品生命周期（19 篇）
+
+- `_archive_source/产品生命周期评估/backup/session-ses_1eee.md` ｜ 331KB/7324行 ｜ 产品生命周期评估代码审查
+- `_archive_source/project_branches/product_lifecycle_legacy_v28/产品生命周期量化评估方案_v2.9/产品生命周期量化评估方案_v2.9.md` ｜ 56KB/1065行 ｜ 📐 产品生命周期量化评估方案 v2.9
+- `_archive_source/产品生命周期评估/产品生命周期量化评估方案_v2.9/产品生命周期量化评估方案_v2.9.md` ｜ 56KB/1065行 ｜ 📐 产品生命周期量化评估方案 v2.9
+- `_archive_source/project_branches/product_lifecycle_legacy_v28/产品生命周期量化评估方案_v2.8.md` ｜ 46KB/976行 ｜ 📐 产品生命周期量化评估方案 v2.8
+- `_archive_source/产品生命周期评估/产品生命周期量化评估方案_v2.8.md` ｜ 46KB/976行 ｜ 📐 产品生命周期量化评估方案 v2.8
+- `_archive_source/产品生命周期评估/backup/产品生命周期量化评估方案_v2.6.md` ｜ 45KB/975行 ｜ 📐 产品生命周期量化评估方案 v2.8
+- `_archive_source/产品生命周期评估/backup/产品生命周期量化评估方案_v2.6_20260510.md` ｜ 45KB/975行 ｜ 📐 产品生命周期量化评估方案 v2.8
+- `_archive_source/project_branches/product_lifecycle_legacy_v28/产品生命周期量化评估方案_v2.9/风险模型改造方案.md` ｜ 18KB/371行 ｜ 风险模型改造方案 v2.8→v2.9
+- `_archive_source/产品生命周期评估/产品生命周期量化评估方案_v2.9/风险模型改造方案.md` ｜ 18KB/371行 ｜ 风险模型改造方案 v2.8→v2.9
+- `_archive_source/project_branches/main_pipeline/docs/产品生命周期系统.md` ｜ 7KB/276行 ｜ class: "theme-dusk"
+- `_archive_source/semiconductor_analysis/docs/产品生命周期系统.md` ｜ 7KB/276行 ｜ class: "theme-dusk"
+- `_archive_source/工作文件/semiconductor_analysis/docs/产品生命周期系统.md` ｜ 7KB/276行 ｜ class: "theme-dusk"
+- `_archive_source/semiconductor_analysis_before/docs/产品生命周期系统.md` ｜ 6KB/252行 ｜ 产品生命周期系统 — 已实现功能文档
+- `_archive_source/project_branches/product_lifecycle_legacy_v28/backup_code/README.txt` ｜ 6KB/134行 ｜ 📐 产品生命周期分析工具 — 使用说明
+- `_archive_source/产品生命周期评估/backup/README.txt` ｜ 6KB/134行 ｜ 📐 产品生命周期分析工具 — 使用说明
+- `_archive_source/产品生命周期评估/backup/春节调整说明.md` ｜ 2KB/73行 ｜ v2.7.1 春节调整功能说明
+- `_archive_source/project_branches/product_lifecycle_legacy_v28/README.md` ｜ 1KB/32行 ｜ 产品生命周期评估 v2.8(已淘汰,存档)
+- `_archive_source/project_branches/product_lifecycle_legacy_v28/data_说明.txt` ｜ 0KB/3行 ｜ 输入: 所有的出货明细5.9.xlsx(137MB,未复制)
+- `_archive_source/project_branches/product_lifecycle_legacy_v28/requirements.txt` ｜ 0KB/12行 ｜ 自动生成:基于分支内脚本的 import 静态推导
+
+## 风险与异动预警（24 篇）
+
+- `_archive_source/project_branches/recession_risk_opt/recession_risk_opt/archive/logs/process_log.md` ｜ 32KB/472行 ｜ [2026-05-25 11:26:13] ================================================
+- `_archive_source/semiconductor_analysis/recession_risk_opt/archive/logs/process_log.md` ｜ 32KB/472行 ｜ [2026-05-25 11:26:13] ================================================
+- `_archive_source/工作文件/semiconductor_analysis/recession_risk_opt/archive/logs/process_log.md` ｜ 32KB/472行 ｜ [2026-05-25 11:26:13] ================================================
+- `_archive_source/project_branches/recession_risk_opt/recession_risk_opt/skills/data-science-general.md` ｜ 15KB/290行 ｜ 通用数据科学分析技能 — DS³ 框架
+- `_archive_source/semiconductor_analysis/recession_risk_opt/skills/data-science-general.md` ｜ 15KB/290行 ｜ 通用数据科学分析技能 — DS³ 框架
+- `_archive_source/工作文件/semiconductor_analysis/recession_risk_opt/skills/data-science-general.md` ｜ 15KB/290行 ｜ 通用数据科学分析技能 — DS³ 框架
+- `_archive_source/project_branches/recession_risk_opt/recession_risk_opt/process_log.md` ｜ 8KB/117行 ｜ [2026-05-25 15:03:33] ================================================
+- `_archive_source/semiconductor_analysis/recession_risk_opt/process_log.md` ｜ 8KB/117行 ｜ [2026-05-25 15:03:33] ================================================
+- `_archive_source/工作文件/semiconductor_analysis/recession_risk_opt/process_log.md` ｜ 8KB/117行 ｜ [2026-05-25 15:03:33] ================================================
+- `_archive_source/project_branches/recession_risk_opt/recession_risk_opt/reports/final_report.md` ｜ 6KB/142行 ｜ 产品衰退风险模型优化 — 最终分析报告
+- `_archive_source/semiconductor_analysis/recession_risk_opt/reports/final_report.md` ｜ 6KB/142行 ｜ 产品衰退风险模型优化 — 最终分析报告
+- `_archive_source/工作文件/semiconductor_analysis/recession_risk_opt/reports/final_report.md` ｜ 6KB/142行 ｜ 产品衰退风险模型优化 — 最终分析报告
+- `_archive_source/project_branches/recession_risk_opt/recession_risk_opt/backtest_results/衰退风险模型测试报告_v20260526.md` ｜ 5KB/129行 ｜ 衰退风险评分模型测试报告
+- `_archive_source/semiconductor_analysis/recession_risk_opt/backtest_results/衰退风险模型测试报告_v20260526.md` ｜ 5KB/129行 ｜ 衰退风险评分模型测试报告
+- `_archive_source/工作文件/semiconductor_analysis/recession_risk_opt/backtest_results/衰退风险模型测试报告_v20260526.md` ｜ 5KB/129行 ｜ 衰退风险评分模型测试报告
+- `_archive_source/semiconductor_analysis/recession_risk_opt/output/phaseA_check_cross_validation.md` ｜ 3KB/102行 ｜ Phase A-Check: Severity × Nine-grid Portrait
+- `_archive_source/工作文件/semiconductor_analysis/recession_risk_opt/output/phaseA_check_cross_validation.md` ｜ 3KB/102行 ｜ Phase A-Check: Severity × Nine-grid Portrait
+- `_archive_source/semiconductor_analysis/recession_risk_opt/output/phaseB1a_severity_regression.md` ｜ 3KB/86行 ｜ Phase B1a: v5 RF Severity Regression Results
+- `_archive_source/工作文件/semiconductor_analysis/recession_risk_opt/output/phaseB1a_severity_regression.md` ｜ 3KB/86行 ｜ Phase B1a: v5 RF Severity Regression Results
+- `_archive_source/project_branches/recession_risk_opt/recession_risk_opt/output/phaseB1a_severity_regression.md` ｜ 3KB/86行 ｜ Phase B1a: v5 RF Severity Regression Results
+- `_archive_source/semiconductor_analysis/recession_risk_opt/output/phaseA_severity_distribution.md` ｜ 2KB/85行 ｜ Phase A: Severity Label Distribution Report
+- `_archive_source/工作文件/semiconductor_analysis/recession_risk_opt/output/phaseA_severity_distribution.md` ｜ 2KB/85行 ｜ Phase A: Severity Label Distribution Report
+- `_archive_source/project_branches/recession_risk_opt/README.md` ｜ 2KB/41行 ｜ 衰退风险优化(客户/产品衰退预警)
+- `_archive_source/project_branches/recession_risk_opt/requirements.txt` ｜ 0KB/9行 ｜ 自动生成:基于分支内脚本的 import 静态推导
+
+## 数据管道与看板工程（77 篇）
+
+- `_archive_source/project_branches/main_pipeline/docs/开发人员维护手册.md` ｜ 44KB/1102行 ｜ 半导体销售数据分析系统 — 开发人员维护手册
+- `_archive_source/semiconductor_analysis/docs/开发人员维护手册.md` ｜ 44KB/1102行 ｜ 半导体销售数据分析系统 — 开发人员维护手册
+- `_archive_source/工作文件/semiconductor_analysis/docs/开发人员维护手册.md` ｜ 44KB/1102行 ｜ 半导体销售数据分析系统 — 开发人员维护手册
+- `_archive_source/project_branches/main_pipeline/docs/重构方案_v3.0.md` ｜ 42KB/1098行 ｜ 半导体分析系统 — 重构方案 v3.0
+- `_archive_source/semiconductor_analysis/docs/重构方案_v3.0.md` ｜ 42KB/1098行 ｜ 半导体分析系统 — 重构方案 v3.0
+- `_archive_source/工作文件/semiconductor_analysis/docs/重构方案_v3.0.md` ｜ 42KB/1098行 ｜ 半导体分析系统 — 重构方案 v3.0
+- `_archive_source/project_branches/main_pipeline/docs/变更记录_v4.0_6策略体系.md` ｜ 33KB/689行 ｜ 变更记录 — 客户分析系统完整演进 (v4.0 → v4.8)
+- `_archive_source/工作文件/semiconductor_analysis/docs/变更记录_v4.0_6策略体系.md` ｜ 33KB/689行 ｜ 变更记录 — 客户分析系统完整演进 (v4.0 → v4.8)
+- `_archive_source/project_branches/main_pipeline/docs/review_deep_dive.md` ｜ 32KB/909行 ｜ 客户分析系统 — 深度代码审查、可视化与性能报告
+- `_archive_source/project_branches/main_pipeline/docs/数据质量白皮书.md` ｜ 30KB/628行 ｜ 半导体销售数据分析系统 — 数据质量白皮书
+- `_archive_source/工作文件/semiconductor_analysis/docs/数据质量白皮书.md` ｜ 30KB/628行 ｜ 半导体销售数据分析系统 — 数据质量白皮书
+- `_archive_source/semiconductor_analysis/docs/数据质量白皮书.md` ｜ 26KB/568行 ｜ 半导体销售数据分析系统 — 数据质量白皮书
+- `_archive_source/project_branches/main_pipeline/docs/问题清单/第9轮_重构优先级矩阵.md` ｜ 25KB/581行 ｜ 第9轮：重构优先级矩阵 — 全维度综合评估
+- `_archive_source/semiconductor_analysis/docs/问题清单/第9轮_重构优先级矩阵.md` ｜ 25KB/581行 ｜ 第9轮：重构优先级矩阵 — 全维度综合评估
+- `_archive_source/工作文件/semiconductor_analysis/docs/问题清单/第9轮_重构优先级矩阵.md` ｜ 25KB/581行 ｜ 第9轮：重构优先级矩阵 — 全维度综合评估
+- `_archive_source/project_branches/main_pipeline/docs/项目审查总报告.md` ｜ 24KB/500行 ｜ 半导体行业销售数据分析系统 —— 项目审查总报告
+- `_archive_source/project_branches/main_pipeline/docs/PIPELINE_NODE_MAP_参考.md` ｜ 22KB/611行 ｜ Pipeline Node Map — Data Lineage & Row Count Traceability
+- `_archive_source/semiconductor_analysis/PIPELINE_NODE_MAP.md` ｜ 22KB/611行 ｜ Pipeline Node Map — Data Lineage & Row Count Traceability
+- `_archive_source/project_branches/main_pipeline/docs/fallback_logic.md` ｜ 21KB/628行 ｜ 客户分析系统 — 回退逻辑完整文档
+- `_archive_source/project_branches/main_pipeline/docs/问题清单/第7轮_端到端血缘诊断报告.md` ｜ 19KB/291行 ｜ 第7轮诊断：端到端血缘视角 — Data Lineage & Calibration Drift
+- `_archive_source/semiconductor_analysis/docs/问题清单/第7轮_端到端血缘诊断报告.md` ｜ 19KB/291行 ｜ 第7轮诊断：端到端血缘视角 — Data Lineage & Calibration Drift
+- `_archive_source/工作文件/semiconductor_analysis/docs/问题清单/第7轮_端到端血缘诊断报告.md` ｜ 19KB/291行 ｜ 第7轮诊断：端到端血缘视角 — Data Lineage & Calibration Drift
+- `_archive_source/project_branches/main_pipeline/docs/验证测试集.md` ｜ 16KB/324行 ｜ 半导体销售数据分析系统 — 验证测试集
+- `_archive_source/project_branches/main_pipeline/docs/问题清单/第6轮_配置友好性诊断报告.md` ｜ 14KB/308行 ｜ 第6轮诊断：配置友好性视角 — "业务同事小明"的第一次使用体验
+- `_archive_source/project_branches/main_pipeline/docs/review_alignment.md` ｜ 13KB/278行 ｜ 客户分析系统 — 全面审查与对齐报告
+- `_archive_source/project_branches/main_pipeline/docs/问题清单/第10轮_解耦与架构诊断报告.md` ｜ 13KB/269行 ｜ 第10轮诊断：解耦与架构视角 — 重构优先级与最终总结
+- `_archive_source/semiconductor_analysis/docs/问题清单/第10轮_解耦与架构诊断报告.md` ｜ 13KB/269行 ｜ 第10轮诊断：解耦与架构视角 — 重构优先级与最终总结
+- `_archive_source/工作文件/semiconductor_analysis/docs/问题清单/第10轮_解耦与架构诊断报告.md` ｜ 13KB/269行 ｜ 第10轮诊断：解耦与架构视角 — 重构优先级与最终总结
+- `_archive_source/project_branches/main_pipeline/docs/test_report.md` ｜ 12KB/220行 ｜ 客户分析系统 — 全面审查测试报告
+- `_archive_source/project_branches/main_pipeline/docs/P0修复方案.md` ｜ 11KB/303行 ｜ P0 级问题修复方案（终版）
+- `_archive_source/project_branches/main_pipeline/docs/问题清单/第2轮_逻辑一致性诊断报告.md` ｜ 11KB/143行 ｜ 第2轮：逻辑一致性视角 — 诊断报告
+- `_archive_source/project_branches/main_pipeline/docs/参数配置.md` ｜ 11KB/338行 ｜ 统一参数配置表
+- `_archive_source/project_branches/main_pipeline/docs/问题清单/第8轮_性能与可扩展性诊断报告.md` ｜ 11KB/222行 ｜ 第8轮诊断：性能与可扩展性视角 — 瓶颈定位与优化建议
+- `_archive_source/project_branches/main_pipeline/docs/问题清单/第9轮_可扩展性诊断报告.md` ｜ 11KB/204行 ｜ 第9轮诊断：可扩展性视角 — 适应性、耦合度与扩展成本
+- `_archive_source/project_branches/main_pipeline/docs/问题清单/第5轮_业务回退诊断报告.md` ｜ 10KB/172行 ｜ 第5轮诊断：业务回退视角 — Fallback Strategy Audit
+- `_archive_source/看板流水线/README.md` ｜ 9KB/195行 ｜ 看板流水线 · 使用说明书（小白版）
+- `_archive_source/project_branches/main_pipeline/docs/问题清单/第3轮_边界极限诊断报告.md` ｜ 9KB/175行 ｜ 第3轮：边界极限诊断报告
+- `_archive_source/project_branches/main_pipeline/docs/问题清单/第1轮_数据完整性诊断报告.md` ｜ 8KB/151行 ｜ 第1轮：数据完整性视角 — 诊断报告
+- `_archive_source/project_branches/main_pipeline/docs/问题清单/第4轮_统计异常诊断报告.md` ｜ 8KB/231行 ｜ 第4轮：统计异常诊断报告
+- `_archive_source/project_branches/main_pipeline/CLAUDE.md` ｜ 8KB/150行 ｜ CLAUDE.md
+- `_archive_source/project_branches/main_pipeline/docs/非技术人员使用手册.md` ｜ 7KB/184行 ｜ 半导体分析系统 — 非技术人员使用手册
+- `_archive_source/project_branches/main_pipeline/docs/问题清单/问题全景图_去重合并版.md` ｜ 7KB/118行 ｜ 问题全景图 — 去重合并版
+- `_archive_source/project_branches/dashboard_chain/data/部门-人员-职务对应.md` ｜ 6KB/177行 ｜ 部门-人员-职务对应
+- `_archive_source/project_branches/main_pipeline/data/部门-人员-职务对应.md` ｜ 6KB/177行 ｜ 部门-人员-职务对应
+- `_archive_source/看板流水线/data/部门-人员-职务对应.md` ｜ 6KB/177行 ｜ 部门-人员-职务对应
+- `_archive_source/project_branches/main_pipeline/docs/AGENTS_参考.md` ｜ 6KB/94行 ｜ AGENTS.md
+- `_archive_source/project_branches/dashboard_chain/docs/diffs_S1S2/diff_packaging.txt` ｜ 5KB/123行 ｜ ﻿diff --git "a/D:\\Files\\projects\\\345\267\245\344\275\234\346\226\2
+- `_archive_source/看板流水线/docs/diffs_S1S2/diff_packaging.txt` ｜ 5KB/123行 ｜ ﻿diff --git "a/D:\\Files\\projects\\\345\267\245\344\275\234\346\226\2
+- `_archive_source/工作文件/semiconductor_analysis/dashboard/SESSION_SUMMARY.md` ｜ 5KB/153行 ｜ Dashboard 开发会话总结
+- `_archive_source/project_branches/dashboard_chain/docs/S1S2优化核对报告_20260726.md` ｜ 5KB/83行 ｜ S1+S2 优化核对报告
+- `_archive_source/看板流水线/docs/S1S2优化核对报告_20260726.md` ｜ 5KB/83行 ｜ S1+S2 优化核对报告
+- `_archive_source/project_branches/dashboard_chain/docs/效率评估报告_20260726.md` ｜ 5KB/86行 ｜ 看板流水线 · 运行效率评估报告
+- `_archive_source/看板流水线/docs/效率评估报告_20260726.md` ｜ 5KB/86行 ｜ 看板流水线 · 运行效率评估报告
+- `_archive_source/project_branches/dashboard_chain/docs/diffs_S1S2/diff_s1s2.txt` ｜ 4KB/78行 ｜ ﻿diff --git "a/C:\\Users\\17986\\AppData\\Local\\Temp\\opencode\\gener
+- `_archive_source/看板流水线/docs/diffs_S1S2/diff_s1s2.txt` ｜ 4KB/78行 ｜ ﻿diff --git "a/C:\\Users\\17986\\AppData\\Local\\Temp\\opencode\\gener
+- `_archive_source/project_branches/main_pipeline/docs/规划功能.md` ｜ 4KB/139行 ｜ class: "theme-rose"
+- `_archive_source/project_branches/main_pipeline/docs/旧版README_参考.md` ｜ 3KB/102行 ｜ 半导体行业销售数据分析系统
+- `_archive_source/project_branches/main_pipeline/docs/修复对比报告_P0.md` ｜ 3KB/86行 ｜ P0 修复对比报告
+- `_archive_source/project_branches/main_pipeline/一键运行说明.md` ｜ 3KB/87行 ｜ 🎮 一键运行说明
+- `_archive_source/工作文件/semiconductor_analysis/dashboard/data/columns_list.txt` ｜ 3KB/96行 ｜ [0] 发货日期
+- `_archive_source/工作文件/semiconductor_analysis/dashboard/audit_output.txt` ｜ 2KB/76行 ｜ === generate_dashboard.py 数据源审计 ===
+- `_archive_source/project_branches/main_pipeline/README.md` ｜ 2KB/45行 ｜ 主流水线(半导体销售分析)
+- `_archive_source/project_branches/main_pipeline/docs/superpowers/specs/2026-05-24-p2b-pipeline-design.md` ｜ 2KB/70行 ｜ P2-B: Dependency Injection Pipeline Class
+- `_archive_source/semiconductor_analysis/docs/superpowers/specs/2026-05-24-p2b-pipeline-design.md` ｜ 2KB/70行 ｜ P2-B: Dependency Injection Pipeline Class
+- `_archive_source/工作文件/semiconductor_analysis/docs/superpowers/specs/2026-05-24-p2b-pipeline-design.md` ｜ 2KB/70行 ｜ P2-B: Dependency Injection Pipeline Class
+- `_archive_source/project_branches/dashboard_chain/README.md` ｜ 1KB/35行 ｜ 看板流水线(便携包)
+- `_archive_source/project_branches/main_pipeline/docs/superpowers/specs/2026-05-24-p2a-validator-design.md` ｜ 1KB/45行 ｜ P2-A: Data Validation Layer (SimpleValidator)
+- `_archive_source/project_branches/dashboard_chain/docs/diffs_S1S2/diff_settings.txt` ｜ 1KB/19行 ｜ ﻿diff --git "a/D:\\Files\\projects\\\345\267\245\344\275\234\346\226\2
+- `_archive_source/看板流水线/docs/diffs_S1S2/diff_settings.txt` ｜ 1KB/19行 ｜ ﻿diff --git "a/D:\\Files\\projects\\\345\267\245\344\275\234\346\226\2
+- `_archive_source/project_branches/dashboard_chain/docs/diffs_S1S2/diff_pricing.txt` ｜ 1KB/16行 ｜ ﻿diff --git "a/D:\\Files\\projects\\\345\267\245\344\275\234\346\226\2
+- `_archive_source/看板流水线/docs/diffs_S1S2/diff_pricing.txt` ｜ 1KB/16行 ｜ ﻿diff --git "a/D:\\Files\\projects\\\345\267\245\344\275\234\346\226\2
+- `_archive_source/工作文件/semiconductor_analysis/dashboard/col_output.txt` ｜ 0KB/37行 ｜ Sheet[0] '简称检查报告' -> 6 cols
+- `_archive_source/project_branches/main_pipeline/data/README_数据说明.txt` ｜ 0KB/4行 ｜ 将任一月份的 财务分析-N月.xlsx 放入本目录即可运行(程序自动取第一个 .xlsx,或用 --data 指定)。
+- `_archive_source/project_branches/dashboard_chain/requirements.txt` ｜ 0KB/12行 ｜ 看板流水线运行依赖
+- `_archive_source/看板流水线/requirements.txt` ｜ 0KB/12行 ｜ 看板流水线运行依赖
+- `_archive_source/project_branches/main_pipeline/requirements.txt` ｜ 0KB/9行 ｜ pandas>=2.0.0
+- `_archive_source/project_branches/main_pipeline/docs/docs/fallback_logic.md` ｜ 0KB/2行 ｜ fallback_logic
+
+## 说明与测试治理（64 篇）
+
+- `_archive_source/semiconductor_analysis/docs/review_deep_dive.md` ｜ 32KB/909行 ｜ 客户分析系统 — 深度代码审查、可视化与性能报告
+- `_archive_source/工作文件/semiconductor_analysis/docs/review_deep_dive.md` ｜ 32KB/909行 ｜ 客户分析系统 — 深度代码审查、可视化与性能报告
+- `_archive_source/semiconductor_analysis/docs/项目审查总报告.md` ｜ 24KB/500行 ｜ 半导体行业销售数据分析系统 —— 项目审查总报告
+- `_archive_source/工作文件/semiconductor_analysis/docs/项目审查总报告.md` ｜ 24KB/500行 ｜ 半导体行业销售数据分析系统 —— 项目审查总报告
+- `_archive_source/semiconductor_analysis/docs/验证测试集.md` ｜ 16KB/324行 ｜ 半导体销售数据分析系统 — 验证测试集
+- `_archive_source/工作文件/semiconductor_analysis/docs/验证测试集.md` ｜ 16KB/324行 ｜ 半导体销售数据分析系统 — 验证测试集
+- `_archive_source/semiconductor_analysis/docs/问题清单/第6轮_配置友好性诊断报告.md` ｜ 14KB/308行 ｜ 第6轮诊断：配置友好性视角 — "业务同事小明"的第一次使用体验
+- `_archive_source/工作文件/semiconductor_analysis/docs/问题清单/第6轮_配置友好性诊断报告.md` ｜ 14KB/308行 ｜ 第6轮诊断：配置友好性视角 — "业务同事小明"的第一次使用体验
+- `_archive_source/semiconductor_analysis_before/output/test_diag/BATCH_A_TEST_REPORT.md` ｜ 13KB/411行 ｜ Batch A 测试评估报告
+- `_archive_source/semiconductor_analysis/docs/review_alignment.md` ｜ 13KB/278行 ｜ 客户分析系统 — 全面审查与对齐报告
+- `_archive_source/工作文件/semiconductor_analysis/docs/review_alignment.md` ｜ 13KB/278行 ｜ 客户分析系统 — 全面审查与对齐报告
+- `_archive_source/semiconductor_analysis/docs/test_report.md` ｜ 12KB/220行 ｜ 客户分析系统 — 全面审查测试报告
+- `_archive_source/工作文件/semiconductor_analysis/docs/test_report.md` ｜ 12KB/220行 ｜ 客户分析系统 — 全面审查测试报告
+- `_archive_source/semiconductor_analysis/docs/问题清单/第2轮_逻辑一致性诊断报告.md` ｜ 11KB/143行 ｜ 第2轮：逻辑一致性视角 — 诊断报告
+- `_archive_source/工作文件/semiconductor_analysis/docs/问题清单/第2轮_逻辑一致性诊断报告.md` ｜ 11KB/143行 ｜ 第2轮：逻辑一致性视角 — 诊断报告
+- `_archive_source/semiconductor_analysis/docs/问题清单/第8轮_性能与可扩展性诊断报告.md` ｜ 11KB/222行 ｜ 第8轮诊断：性能与可扩展性视角 — 瓶颈定位与优化建议
+- `_archive_source/工作文件/semiconductor_analysis/docs/问题清单/第8轮_性能与可扩展性诊断报告.md` ｜ 11KB/222行 ｜ 第8轮诊断：性能与可扩展性视角 — 瓶颈定位与优化建议
+- `_archive_source/semiconductor_analysis/docs/问题清单/第9轮_可扩展性诊断报告.md` ｜ 11KB/204行 ｜ 第9轮诊断：可扩展性视角 — 适应性、耦合度与扩展成本
+- `_archive_source/工作文件/semiconductor_analysis/docs/问题清单/第9轮_可扩展性诊断报告.md` ｜ 11KB/204行 ｜ 第9轮诊断：可扩展性视角 — 适应性、耦合度与扩展成本
+- `_archive_source/semiconductor_analysis/docs/问题清单/第5轮_业务回退诊断报告.md` ｜ 10KB/172行 ｜ 第5轮诊断：业务回退视角 — Fallback Strategy Audit
+- `_archive_source/工作文件/semiconductor_analysis/docs/问题清单/第5轮_业务回退诊断报告.md` ｜ 10KB/172行 ｜ 第5轮诊断：业务回退视角 — Fallback Strategy Audit
+- `_archive_source/semiconductor_analysis/docs/问题清单/第3轮_边界极限诊断报告.md` ｜ 9KB/175行 ｜ 第3轮：边界极限诊断报告
+- `_archive_source/工作文件/semiconductor_analysis/docs/问题清单/第3轮_边界极限诊断报告.md` ｜ 9KB/175行 ｜ 第3轮：边界极限诊断报告
+- `_archive_source/semiconductor_analysis/docs/问题清单/第1轮_数据完整性诊断报告.md` ｜ 8KB/151行 ｜ 第1轮：数据完整性视角 — 诊断报告
+- `_archive_source/工作文件/semiconductor_analysis/docs/问题清单/第1轮_数据完整性诊断报告.md` ｜ 8KB/151行 ｜ 第1轮：数据完整性视角 — 诊断报告
+- `_archive_source/semiconductor_analysis/docs/问题清单/第4轮_统计异常诊断报告.md` ｜ 8KB/231行 ｜ 第4轮：统计异常诊断报告
+- `_archive_source/工作文件/semiconductor_analysis/docs/问题清单/第4轮_统计异常诊断报告.md` ｜ 8KB/231行 ｜ 第4轮：统计异常诊断报告
+- `_archive_source/semiconductor_analysis/docs/问题清单/问题全景图_去重合并版.md` ｜ 7KB/118行 ｜ 问题全景图 — 去重合并版
+- `_archive_source/工作文件/semiconductor_analysis/docs/问题清单/问题全景图_去重合并版.md` ｜ 7KB/118行 ｜ 问题全景图 — 去重合并版
+- `_archive_source/semiconductor_analysis/test_output/phase4_report.md` ｜ 7KB/208行 ｜ Phase 4: 案例回检报告
+- `_archive_source/semiconductor_analysis/test_output/phase4_report_v2.md` ｜ 7KB/208行 ｜ Phase 4: 案例回检报告
+- `_archive_source/工作文件/semiconductor_analysis/test_output/phase4_report.md` ｜ 7KB/208行 ｜ Phase 4: 案例回检报告
+- `_archive_source/工作文件/semiconductor_analysis/test_output/phase4_report_v2.md` ｜ 7KB/208行 ｜ Phase 4: 案例回检报告
+- `_archive_source/semiconductor_analysis/test_output/phase0_data_report.md` ｜ 6KB/163行 ｜ Phase 0 数据质量报告
+- `_archive_source/工作文件/semiconductor_analysis/test_output/phase0_data_report.md` ｜ 6KB/163行 ｜ Phase 0 数据质量报告
+- `_archive_source/工作文件/semiconductor_analysis/test_out.txt` ｜ 5KB/108行 ｜ raw->clean rows: 190652
+- `_archive_source/semiconductor_analysis/test_output/phase3_report.md` ｜ 5KB/112行 ｜ Phase 3: 四模型组合对比报告
+- `_archive_source/semiconductor_analysis/test_output/phase3_report_v2.md` ｜ 5KB/112行 ｜ Phase 3: 四模型组合对比报告
+- `_archive_source/工作文件/semiconductor_analysis/test_output/phase3_report.md` ｜ 5KB/112行 ｜ Phase 3: 四模型组合对比报告
+- `_archive_source/工作文件/semiconductor_analysis/test_output/phase3_report_v2.md` ｜ 5KB/112行 ｜ Phase 3: 四模型组合对比报告
+- `_archive_source/semiconductor_analysis/test_output/phase5_report.md` ｜ 5KB/119行 ｜ Phase 5: 业务行动基线报告
+- `_archive_source/工作文件/semiconductor_analysis/test_output/phase5_report.md` ｜ 5KB/119行 ｜ Phase 5: 业务行动基线报告
+- `_archive_source/semiconductor_analysis/README.md` ｜ 3KB/102行 ｜ 半导体行业销售数据分析系统
+- `_archive_source/semiconductor_analysis_before/README.md` ｜ 3KB/102行 ｜ 半导体行业销售数据分析系统
+- `_archive_source/semiconductor_analysis/test_output/v3.1_final_report.md` ｜ 3KB/97行 ｜ v3.1 Final Model Effectiveness Report
+- `_archive_source/工作文件/semiconductor_analysis/test_output/v3.1_final_report.md` ｜ 3KB/97行 ｜ v3.1 Final Model Effectiveness Report
+- `_archive_source/工作文件/semiconductor_analysis/一键运行说明.md` ｜ 3KB/87行 ｜ 🎮 一键运行说明
+- `qa_tool_old/README.md` ｜ 3KB/53行 ｜ qa_tool — 个人本地数据问答工具
+- `_deprecated/README.md` ｜ 3KB/30行 ｜ _deprecated — 废弃文件封存区
+- `_archive_source/semiconductor_analysis/test_output/phase1_report.md` ｜ 3KB/71行 ｜ Phase 1 客户维度单因子测试报告
+- `_archive_source/工作文件/semiconductor_analysis/test_output/phase1_report.md` ｜ 3KB/71行 ｜ Phase 1 客户维度单因子测试报告
+- `_archive_source/semiconductor_analysis/test_output/v3.1_final_model.md` ｜ 2KB/79行 ｜ v3.1 Final Model Definition
+- `_archive_source/工作文件/semiconductor_analysis/test_output/v3.1_final_model.md` ｜ 2KB/79行 ｜ v3.1 Final Model Definition
+- `_archive_source/project_branches/deep_dive_h1_report/README.md` ｜ 1KB/37行 ｜ 2026H1 销售深度分析报告群
+- `_archive_source/project_branches/_orphans/README.md` ｜ 1KB/30行 ｜ 孤儿收容区(待人工判断)
+- `_archive_source/semiconductor_analysis/test_output/phase2_report.md` ｜ 1KB/40行 ｜ Phase 2 F1 毛利率趋势因子修复报告
+- `_archive_source/semiconductor_analysis/test_output/phase2_report_v2.md` ｜ 1KB/40行 ｜ Phase 2 F1 毛利率趋势因子修复报告
+- `_archive_source/工作文件/semiconductor_analysis/test_output/phase2_report.md` ｜ 1KB/40行 ｜ Phase 2 F1 毛利率趋势因子修复报告
+- `_archive_source/工作文件/semiconductor_analysis/test_output/phase2_report_v2.md` ｜ 1KB/40行 ｜ Phase 2 F1 毛利率趋势因子修复报告
+- `_archive_source/工作文件/semiconductor_analysis/diag_out.txt` ｜ 1KB/15行 ｜ A. 2026全年级(含H2,未过滤): 行数=42938 收入=43080.6万 利润=14832.5万 毛利率=34.4297%
+- `qa_tool_old/semantics/README.md` ｜ 0KB/19行 ｜ qa_tool/semantics/ 目录说明
+- `qa_tool_old/library/README.md` ｜ 0KB/14行 ｜ qa_tool/library/ 目录说明
+- `_archive_source/semiconductor_analysis/.pytest_cache/README.md` ｜ 0KB/8行 ｜ pytest cache directory #
+- `_archive_source/semiconductor_analysis_before/.pytest_cache/README.md` ｜ 0KB/8行 ｜ pytest cache directory #
+
+## 会话记录与备份（2 篇）
+
+- `_archive_source/semiconductor_analysis/docs/修复对比报告_P0.md` ｜ 3KB/86行 ｜ P0 修复对比报告
+- `_archive_source/工作文件/semiconductor_analysis/docs/修复对比报告_P0.md` ｜ 3KB/86行 ｜ P0 修复对比报告
+
+## 项目散文档（62 篇）
+
+- `_archive_source/工作文件/semiconductor_analysis/deep_sales_products.md` ｜ 227KB/2750行 ｜ 党沛哲(H1收入1413.1万, 毛利率30.3%)
+- `_archive_source/semiconductor_analysis/v5_model_white_paper.md` ｜ 34KB/816行 ｜ v5 衰退严重度模型 — 技术白皮书
+- `qa_tool_old/_probe/schema_dump.txt` ｜ 31KB/1069行 ｜ schema 契约 dump（自动生成 2026-09-11）
+- `_archive_source/工作文件/semiconductor_analysis/deep_action.md` ｜ 30KB/468行 ｜ ======================================================================
+- `_archive_source/semiconductor_analysis/docs/fallback_logic.md` ｜ 21KB/628行 ｜ 客户分析系统 — 回退逻辑完整文档
+- `_archive_source/工作文件/semiconductor_analysis/docs/fallback_logic.md` ｜ 21KB/628行 ｜ 客户分析系统 — 回退逻辑完整文档
+- `_archive_source/工作文件/semiconductor_analysis/deep_all.md` ｜ 19KB/367行 ｜ ======================================================================
+- `_archive_source/semiconductor_analysis/业务手册_v3.1_含原理.md` ｜ 14KB/322行 ｜ 产品衰退风险预警模型 v4.0 — 业务操作手册
+- `_archive_source/工作文件/semiconductor_analysis/output/report/2026H1_财务分析报告_宣讲版.md` ｜ 12KB/282行 ｜ 2026H1 业务财务分析报告（宣讲版·30分钟）
+- `_archive_source/semiconductor_analysis/STATUS.md` ｜ 12KB/182行 ｜ > 单一真相源：所有功能实现状态只在此维护。
+- `_archive_source/semiconductor_analysis/docs/P0修复方案.md` ｜ 11KB/303行 ｜ P0 级问题修复方案（终版）
+- `_archive_source/工作文件/semiconductor_analysis/docs/P0修复方案.md` ｜ 11KB/303行 ｜ P0 级问题修复方案（终版）
+- `_archive_source/工作文件/semiconductor_analysis/docs/参数配置.md` ｜ 11KB/338行 ｜ 统一参数配置表
+- `_archive_source/工作文件/semiconductor_analysis/peek_out.txt` ｜ 11KB/58行 ｜ sheets: ['简称检查报告', '简称映射表', '总表', 'Sheet3', 'Sheet1', 'Sheet2', 'Sheet
+- `_archive_source/semiconductor_analysis/代码审计报告_v3.1.md` ｜ 11KB/257行 ｜ v3.1 代码对齐审计报告
+- `_archive_source/semiconductor_analysis_before/output/comparison_report.txt` ｜ 9KB/213行 ｜ Reference columns: 61
+- `_archive_source/semiconductor_analysis/docs/参数配置.md` ｜ 8KB/337行 ｜ 统一参数配置表
+- `_archive_source/semiconductor_analysis_before/STATUS.md` ｜ 8KB/135行 ｜ > 单一真相源：所有功能实现状态只在此维护。
+- `_archive_source/工作文件/semiconductor_analysis/CLAUDE.md` ｜ 8KB/150行 ｜ CLAUDE.md
+- `_archive_source/semiconductor_analysis_before/docs/参数配置.md` ｜ 7KB/315行 ｜ 统一参数配置表
+- `_archive_source/semiconductor_analysis/docs/非技术人员使用手册.md` ｜ 7KB/184行 ｜ 半导体分析系统 — 非技术人员使用手册
+- `_archive_source/工作文件/semiconductor_analysis/docs/非技术人员使用手册.md` ｜ 7KB/184行 ｜ 半导体分析系统 — 非技术人员使用手册
+- `_archive_source/工作文件/semiconductor_analysis/data/部门-人员-职务对应.md` ｜ 6KB/177行 ｜ 部门-人员-职务对应
+- `_archive_source/semiconductor_analysis/AGENTS.md` ｜ 6KB/94行 ｜ AGENTS.md
+- `_archive_source/工作文件/semiconductor_analysis/res_part3.md` ｜ 6KB/116行 ｜ 七、大客户四类归因(KA/AA客户,2026H1 vs 2025H1)
+- `_archive_source/semiconductor_analysis/research_materials_index.md` ｜ 5KB/146行 ｜ 半导体销售多维度分层预测——资料索引
+- `_archive_source/semiconductor_analysis/CLAUDE.md` ｜ 5KB/106行 ｜ CLAUDE.md
+- `_archive_source/工作文件/semiconductor_analysis/res_part4.md` ｜ 5KB/101行 ｜ 在职销售(2026H1有记录): 25人
+- `_archive_source/工作文件/semiconductor_analysis/deep_zxkx.md` ｜ 4KB/74行 ｜ == 1. 5半年度整体收入/利润/毛利率 ==
+- `_archive_source/semiconductor_analysis/docs/规划功能.md` ｜ 4KB/139行 ｜ class: "theme-rose"
+- `_archive_source/工作文件/semiconductor_analysis/docs/规划功能.md` ｜ 4KB/139行 ｜ class: "theme-rose"
+- `_archive_source/工作文件/semiconductor_analysis/res_asp.md` ｜ 4KB/66行 ｜ 附件5/6 重算(ASP=含赠送加权;提价空间用付费ASP vs 中位,剔除促销干扰)
+- `_archive_source/semiconductor_analysis_before/docs/规划功能.md` ｜ 3KB/134行 ｜ > 所有已在方案中设计但当前未实现的规划功能。
+- `_archive_source/工作文件/semiconductor_analysis/res_part2.md` ｜ 3KB/74行 ｜ 三、新品分析(按行是否新品标记)
+- `_archive_source/工作文件/semiconductor_analysis/audit.md` ｜ 3KB/62行 ｜ ============================================================
+- `_archive_source/工作文件/semiconductor_analysis/err4.txt` ｜ 3KB/16行 ｜ STDOUT:
+- `_archive_source/工作文件/semiconductor_analysis/res_part1.md` ｜ 2KB/61行 ｜ == 销售岗位人员(在册) == 54
+- `_archive_source/工作文件/semiconductor_analysis/ka_list.md` ｜ 2KB/47行 ｜ KA/AA 客户数(按简称): 40 (KA 18, AA 22)
+- `_archive_source/工作文件/semiconductor_analysis/deep_action_err.txt` ｜ 2KB/15行 ｜ STDOUT:
+- `_archive_source/工作文件/semiconductor_analysis/asp_check.md` ｜ 2KB/42行 ｜ 2026H1 总行数(含负/零): 42938
+- `_archive_source/工作文件/semiconductor_analysis/res_fix.md` ｜ 2KB/41行 ｜ 附件5/6 修正:理论上限 vs 可执行
+- `_archive_source/semiconductor_analysis_before/output/comparison_report_v2.txt` ｜ 2KB/73行 ｜ ﻿OK: 产品名称
+- `_archive_source/工作文件/semiconductor_analysis/audit_pline.md` ｜ 1KB/35行 ｜ == 列对比:产品线(旧) vs 型号_产品线(新) ==
+- `_archive_source/semiconductor_analysis/output/optimization/optimization_report.md` ｜ 1KB/79行 ｜ 风险衰退模型 v4.0 — 自动调优报告
+- `_archive_source/工作文件/semiconductor_analysis/output/optimization/optimization_report.md` ｜ 1KB/79行 ｜ 风险衰退模型 v4.0 — 自动调优报告
+- `_archive_source/semiconductor_analysis/docs/superpowers/specs/2026-05-24-p2a-validator-design.md` ｜ 1KB/45行 ｜ P2-A: Data Validation Layer (SimpleValidator)
+- `_archive_source/工作文件/semiconductor_analysis/docs/superpowers/specs/2026-05-24-p2a-validator-design.md` ｜ 1KB/45行 ｜ P2-A: Data Validation Layer (SimpleValidator)
+- `_archive_source/工作文件/semiconductor_analysis/audit_err.txt` ｜ 1KB/8行 ｜ C:\Users\45091\Desktop\�����ļ�\semiconductor_analysis\audit.py:39: Fut
+- `_archive_source/工作文件/colnames.txt` ｜ 1KB/67行 ｜ 0: 发货日期
+- `_archive_source/工作文件/semiconductor_analysis/verify_out.txt` ｜ 1KB/33行 ｜ ==== 2026H1 (剔除0品类) 三种口径对比 ====
+- `_archive_source/工作文件/semiconductor_analysis/res_bridge2.md` ｜ 0KB/21行 ｜ 本期(全量含退货) 收入43080.6万 利润14832.5万 毛利率34.43%
+- `_archive_source/工作文件/semiconductor_analysis/res_bridge.md` ｜ 0KB/17行 ｜ 本期(qty>0,含赠品) 收入43332.6万 利润14920.0万 毛利率34.43%
+- `_archive_source/工作文件/semiconductor_analysis/err3.txt` ｜ 0KB/9行 ｜ STDOUT:
+- `_archive_source/工作文件/semiconductor_analysis/deep_err.txt` ｜ 0KB/8行 ｜ STDOUT:
+- `_archive_source/semiconductor_analysis/requirements.txt` ｜ 0KB/9行 ｜ pandas>=2.0.0
+- `qa_tool_old/requirements.txt` ｜ 0KB/8行 ｜ duckdb==1.5.5
+- `_archive_source/project_branches/deep_dive_h1_report/requirements.txt` ｜ 0KB/6行 ｜ 自动生成:基于分支内脚本的 import 静态推导
+- `_archive_source/工作文件/semiconductor_analysis/err.txt` ｜ 0KB/5行 ｜ STDOUT:
+- `_archive_source/semiconductor_analysis/docs/docs/fallback_logic.md` ｜ 0KB/2行 ｜ fallback_logic
+- `_archive_source/工作文件/semiconductor_analysis/docs/docs/fallback_logic.md` ｜ 0KB/2行 ｜ fallback_logic
+- `_archive_source/工作文件/semiconductor_analysis/sp_err.txt` ｜ 0KB/1行 ｜ —
+- `_archive_source/工作文件/semiconductor_analysis/zxkx_err.txt` ｜ 0KB/1行 ｜ —
+
+---
+*维护：归档新增文档后重跑 `复核脚本无 → 临时脚本 build_archive_index.py（graphify-out 生成器）`；主题规则在脚本 classify() 中。*

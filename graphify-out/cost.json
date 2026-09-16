@@ -1,0 +1,13 @@
+{
+  "runs": [
+    {
+      "date": "2026-09-16T07:19:02.250767+00:00",
+      "input_tokens": 910446,
+      "output_tokens": 111116,
+      "files": 1903,
+      "note": "semantic tokens via subagents not reported; only chunk-12 reported 30k/3k"
+    }
+  ],
+  "total_input_tokens": 910446,
+  "total_output_tokens": 111116
+}
