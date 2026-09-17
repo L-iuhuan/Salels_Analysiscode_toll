@@ -104,7 +104,7 @@ tr.dim .num{color:var(--text-muted) !important}
 tr.rowlink{cursor:pointer}
 tr.rowlink:hover{background:var(--table-hover)}
 /* 证据条 */
-.ev-bar{display:flex;gap:22px;flex-wrap:wrap;align-items:center}
+.ev-bar{display:flex;gap:28px;flex-wrap:wrap;align-items:center}
 .ev-item{display:flex;align-items:baseline;gap:6px}
 .ev-item .v{font-size:18px;font-weight:700;font-variant-numeric:tabular-nums}
 .ev-item .l{font-size:var(--font-xs);color:var(--text-tertiary)}
@@ -169,10 +169,10 @@ H.append('</div></div>')
 # face-meta 口径条（浮层）
 H.append(face_meta())
 
-# L1 主图
+# L1 主图（窗口芯片移入标题下工具行，避免与 .st 右上注释重叠）
 H.append('<div class="cb" style="position:relative"><h3><i class="fa-solid fa-chart-line" style="color:var(--primary)"></i> 80 个月历史 + 12 个月预测（万元）%s'
          '<span class="st">蓝实线=实际 · 橙虚线=基准 · 浅蓝带=八成区间 · 黄带=春节月</span></h3>'
-         '<div class="btn-toggle-group" style="position:absolute;top:var(--gap-md);right:var(--gap-md);margin:0">'
+         '<div class="btn-toggle-group">'
          '<button class="btn-toggle active" data-win="fy" onclick="setWin(this)">全年</button>'
          '<button class="btn-toggle" data-win="m6" onclick="setWin(this)">6 个月</button>'
          '<button class="btn-toggle" data-win="m12" onclick="setWin(this)">12 个月</button></div>'
@@ -256,7 +256,7 @@ const SUB='#64748B',BDR='#e2e8f0',TXT='#0F172A';
 const baseOpt={textStyle:{fontFamily:"-apple-system,'Microsoft YaHei',sans-serif",color:SUB},
 tooltip:{trigger:'axis',backgroundColor:'rgba(255,255,255,0.97)',borderColor:BDR,borderWidth:1,
 textStyle:{color:TXT,fontSize:12},extraCssText:'box-shadow:0 4px 12px rgba(15,23,42,0.08);border-radius:8px;'},
-grid:{left:64,right:24,top:44,bottom:56}};
+grid:{left:64,right:24,top:44,bottom:64}};
 const charts=[];
 function mk(id,opt){const c=echarts.init(document.getElementById(id));c.setOption(opt);charts.push(c);return c;}
 
@@ -266,8 +266,8 @@ const cnyMark={silent:true,itemStyle:{color:'rgba(245,158,11,0.10)'},data:[
 const winIdx={fy:[D.histMonths.length,D.histMonths.length+3],m6:[D.histMonths.length,D.histMonths.length+5],m12:[D.histMonths.length,D.histMonths.length+11]};
 
 // L1 主图（置信带 stack 写法）
-const cHist=mk('cHist',{...baseOpt,legend:{data:['实际','基准预测','无偏口径'],top:4},
-dataZoom:[{type:'slider',start:68,end:100,height:18,bottom:8},{type:'inside'}],
+const cHist=mk('cHist',{...baseOpt,legend:{data:['实际','基准预测','无偏口径'],top:4,left:8,itemGap:14,textStyle:{fontSize:11}},
+dataZoom:[{type:'slider',start:68,end:100,height:16,bottom:6},{type:'inside'}],
 xAxis:{type:'category',data:X,axisLabel:{color:SUB,interval:8}},
 yAxis:{type:'value',axisLabel:{color:SUB},splitLine:{lineStyle:{color:BDR}}},
 series:[
@@ -275,8 +275,8 @@ series:[
 {name:'八成区间',type:'line',data:D.bandRng,stack:'band',areaStyle:{color:'rgba(37,99,235,0.08)'},lineStyle:{opacity:0},symbol:'none',silent:true},
 {name:'实际',type:'line',data:[...D.histVal,...Array(D.months.length).fill(null)],showSymbol:false,lineStyle:{width:2,color:C3},itemStyle:{color:C3}},
 {name:'基准预测',type:'line',data:[...Array(D.histMonths.length-1).fill(null),D.histVal[D.histVal.length-1],...D.base],lineStyle:{width:2,type:'dashed',color:C2},itemStyle:{color:C2},symbol:'circle',symbolSize:5,
- markLine:{silent:true,symbol:'none',lineStyle:{color:C5,type:'dashed'},label:{formatter:'数据截止',color:SUB,fontSize:10},data:[{xAxis:D.histMonths[D.histMonths.length-1]}]},
- markArea:cnyMark},
+ markLine:{silent:true,symbol:'none',lineStyle:{color:C5,type:'dashed'},label:{formatter:'数据截止',color:SUB,fontSize:9,position:'insideEndTop'},data:[{xAxis:D.histMonths[D.histMonths.length-1]}]},
+ markArea:{silent:true,itemStyle:{color:'rgba(245,158,11,0.08)'},label:{show:true,position:'insideBottom',fontSize:9,color:'#B45309',formatter:'春节'},data:[[{xAxis:'2026-02'},{xAxis:'2026-02'}],[{xAxis:'2027-02'},{xAxis:'2027-02'}]]}},
 {name:'无偏口径',type:'line',data:[...Array(D.histMonths.length-1).fill(null),Math.round(D.histVal[D.histVal.length-1]*1.04),...D.unbiased],lineStyle:{width:1.5,type:'dotted',color:'#93C5FD'},itemStyle:{color:'#93C5FD'},symbol:'none'}]});
 
 let curWin='fy';
@@ -292,17 +292,16 @@ function setWin(btn){
  document.querySelectorAll('.num-item')[map[curWin]].classList.add('chip-on-num');
 }
 
-// L2 产品线多线图
+// L2 产品线多线图（单系列连续线，图例默认换行不截断；历史/预测分界靠主图承担）
 const lineSeries=[];
 D.linesTop.forEach((l,i)=>{
  const col=PALETTE[i%PALETTE.length];
- lineSeries.push({name:l.n,type:'line',data:[...l.hist,...Array(D.months.length).fill(null)],showSymbol:false,
+ const cont=[...l.hist, l.hist[l.hist.length-1], ...l.fut]; // 历史+桥接点+预测连续
+ lineSeries.push({name:l.n,type:'line',data:cont,showSymbol:false,
   lineStyle:{width:1.8,color:col},itemStyle:{color:col}});
- lineSeries.push({name:l.n+'_f',type:'line',data:[...Array(D.histMonths.length-1).fill(null),l.hist[l.hist.length-1],...l.fut],
-  showSymbol:false,lineStyle:{width:1.5,type:'dashed',color:col},itemStyle:{color:col},linkedTo:':previous'});
 });
-mk('cLines',{...baseOpt,legend:{type:'scroll',top:4,textStyle:{fontSize:11}},
-dataZoom:[{type:'slider',start:60,end:100,height:16,bottom:8},{type:'inside'}],
+const cLines=mk('cLines',{...baseOpt,legend:{top:4,left:8,itemGap:12,textStyle:{fontSize:11}},
+dataZoom:[{type:'slider',start:60,end:100,height:16,bottom:6},{type:'inside'}],
 xAxis:{type:'category',data:X,axisLabel:{color:SUB,interval:8}},
 yAxis:{type:'value',axisLabel:{color:SUB},splitLine:{lineStyle:{color:BDR}}},
 series:lineSeries});
@@ -332,12 +331,10 @@ document.getElementById('lineBody').innerHTML=tb;
 document.querySelectorAll('.rowlink').forEach(tr=>{
  tr.addEventListener('click',()=>{
   const name=tr.getAttribute('data-line');
-  const sel={};D.linesTop.forEach(l=>{sel[l.n]=l.n===name;sel[l.n+'_f']=l.n===name;});
   const c=charts.find(c=>c.getDom().id==='cLines');
-  c.dispatchAction({type:'legendAllSelect'});c.dispatchAction({type:'legendUnSelect'}); // 简化：先全选
-  c.dispatchAction({type:'legendSelect',name:name});
-  c.dispatchAction({type:'legendSelect',name:name+'_f'});
-  c.scrollIntoView({behavior:'smooth',block:'center'});
+  if(!c)return;
+  D.linesTop.forEach(l=>{c.dispatchAction({type:l.n===name?'legendSelect':'legendUnSelect',name:l.n});});
+  c.getDom().scrollIntoView({behavior:'smooth',block:'center'});
  });
 });
 
