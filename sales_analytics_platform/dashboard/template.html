@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>半导体销售分析看板</title>
 <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+<!-- KaTeX（说明 tab 深度层公式渲染；cdnjs 与 Font Awesome 同源，懒加载不阻塞首屏） -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.11/katex.min.css">
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.11/katex.min.js"></script>
 <style>
 :root{
 /* Legacy Tokens (保留兼容，逐步迁移) */
@@ -444,6 +447,156 @@ body{font-family:-apple-system,'Microsoft YaHei','Segoe UI',sans-serif;backgroun
     color: var(--text-secondary);
     border: 1px solid var(--border);
 }
+/* ================================================================
+   说明中心（Docs tab · POC）— 阅读版式
+   设计约束：1280 宽容器 / 行高 1.8+ / 卡片 24-32px / 章节间距 56px
+   配色：只用 :root 平台 token（chart-1~6 作各面主题色），不引入新色
+   命名：.doc-* 前缀，与全站现有类零冲突
+   ================================================================ */
+#tabDocs{padding:0 0 64px;content-visibility:visible}
+
+/* --- 首屏 hero：浅蓝渐隐 + 点阵纹理 --- */
+.doc-hero{position:relative;overflow:hidden;border-bottom:1px solid var(--border);background:linear-gradient(180deg,var(--primary-50) 0%,#F8FAFC 60%,var(--bg) 100%)}
+.doc-hero::before{content:"";position:absolute;inset:0;background-image:radial-gradient(rgba(37,99,235,.13) 1px,transparent 1px);background-size:22px 22px;-webkit-mask-image:linear-gradient(180deg,#000 0%,transparent 84%);mask-image:linear-gradient(180deg,#000 0%,transparent 84%);pointer-events:none}
+.doc-hero-inner{position:relative;max-width:1280px;margin:0 auto;padding:52px 28px 40px}
+.doc-eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:var(--font-xs);font-weight:var(--weight-heading);letter-spacing:.14em;color:var(--primary-700);background:var(--surface);border:1px solid var(--primary-100);border-radius:999px;padding:5px 13px;box-shadow:var(--shadow-sm)}
+.doc-title{font-size:34px;line-height:1.28;font-weight:600;letter-spacing:-.6px;color:var(--text-primary);margin:20px 0 14px}
+.doc-lede{max-width:780px;font-size:15px;line-height:1.95;color:var(--text-secondary);margin:0 0 24px}
+.doc-lede b{color:var(--text-primary);font-weight:600}
+.doc-hero-meta{display:flex;flex-wrap:wrap;gap:10px 26px;font-size:var(--font-xs);color:var(--text-tertiary)}
+.doc-hero-meta span{display:inline-flex;align-items:center;gap:6px}
+.doc-hero-meta i{color:var(--primary-400);font-size:11px}
+
+/* --- 二级导航（贴 tab-bar 下方吸顶，锚点滚动） --- */
+.doc-subnav{position:sticky;top:42px;z-index:40;background:rgba(245,246,248,.92);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:1px solid var(--border)}
+.doc-subnav-inner{display:flex;align-items:center;gap:6px;max-width:1280px;margin:0 auto;padding:9px 28px}
+.doc-subnav-item{display:inline-flex;align-items:center;gap:6px;font-size:var(--font-sm);color:var(--text-secondary);text-decoration:none;padding:5px 13px;border-radius:999px;border:1px solid transparent;transition:var(--transition);cursor:pointer}
+.doc-subnav-item:hover{color:var(--primary);background:var(--primary-50)}
+.doc-subnav-item.active{color:var(--primary-700);background:var(--surface);border-color:var(--primary-100);font-weight:var(--weight-heading);box-shadow:var(--shadow-sm)}
+.doc-subnav-spacer{flex:1}
+.doc-subnav-note{font-size:var(--font-xs);color:var(--text-muted)}
+
+/* --- 正文容器与章节节奏 --- */
+.doc-body{max-width:1280px;margin:0 auto;padding:8px 28px 24px}
+.doc-section{margin-top:56px;scroll-margin-top:112px}
+.doc-section:first-child{margin-top:34px}
+.doc-h2-row{display:flex;gap:16px;align-items:flex-start;margin:0 0 26px}
+.doc-h2-no{flex:0 0 auto;margin-top:3px;font-size:var(--font-sm);font-weight:600;letter-spacing:.08em;font-variant-numeric:tabular-nums;color:var(--primary-700);background:var(--primary-50);border:1px solid var(--primary-100);border-radius:var(--radius-md);padding:4px 9px}
+.doc-h2{font-size:var(--font-xl);font-weight:600;letter-spacing:-.2px;color:var(--text-primary);margin:0 0 6px}
+.doc-h2-sub{font-size:var(--font-md);color:var(--text-tertiary);line-height:1.7;margin:0}
+.doc-h3{font-size:var(--font-lg);font-weight:600;color:var(--text-primary);line-height:1.4;margin:44px 0 14px;padding-left:12px;border-left:3px solid var(--primary-400)}
+.doc-h3-count{font-size:var(--font-xs);font-weight:400;color:var(--text-tertiary);margin-left:8px}
+.doc-p{max-width:940px;font-size:var(--font-card-title);line-height:1.88;color:var(--text-secondary);margin:0 0 18px}
+.doc-p b,.doc-p strong{color:var(--text-primary);font-weight:600}
+.doc-p code{font-family:ui-monospace,Consolas,monospace;font-size:12px;background:var(--surface-subtle);border:1px solid var(--border);border-radius:4px;padding:1px 5px}
+
+/* --- 总览：四面说明页入口卡（每面 chart 色系点缀） --- */
+.doc-faces{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--space-card);margin:0 0 10px}
+.doc-face-card{position:relative;display:flex;flex-direction:column;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:26px 22px 20px;box-shadow:var(--shadow-sm);transition:var(--transition);overflow:hidden}
+.doc-face-card::before{content:"";position:absolute;left:0;right:0;top:0;height:3px;background:var(--fc,var(--chart-1))}
+.doc-face-card:hover{box-shadow:var(--shadow-lg);transform:translateY(-2px)}
+.doc-face-card.is-pending{opacity:.74}
+.doc-face-card.is-pending:hover{transform:none;box-shadow:var(--shadow-sm)}
+.doc-face-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.doc-face-code{font-size:var(--font-xs);font-weight:600;letter-spacing:.05em;color:var(--fc,var(--chart-1))}
+.doc-face-card h3{font-size:var(--font-card-title);font-weight:600;color:var(--text-primary);margin:0}
+.doc-face-card p{flex:1;font-size:var(--font-sm);line-height:1.78;color:var(--text-secondary);margin:0}
+.doc-face-actions{display:flex;align-items:center;justify-content:space-between;gap:8px;padding-top:10px;border-top:1px dashed var(--border)}
+.doc-face-more{font-size:var(--font-xs);font-weight:600;color:var(--primary);cursor:pointer;text-decoration:none;transition:var(--transition)}
+.doc-face-more:hover{color:var(--primary-700);text-decoration:underline}
+.doc-face-more.is-off{color:var(--text-muted);cursor:default}
+.doc-face-more.is-off:hover{color:var(--text-muted);text-decoration:none}
+
+/* --- 状态徽标 --- */
+.doc-chip{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:600;line-height:1.7;border-radius:999px;padding:2px 9px;white-space:nowrap;border:1px solid transparent}
+.doc-chip.is-ready{color:var(--success-text);background:var(--success-bg);border-color:#A7F3D0}
+.doc-chip.is-demo{color:var(--primary-700);background:var(--primary-50);border-color:var(--primary-100)}
+.doc-chip.is-pending{color:var(--text-tertiary);background:var(--surface-subtle);border-color:var(--border)}
+.doc-chip.is-fix{color:var(--danger-text);background:var(--danger-bg);border-color:#FECACA}
+.doc-chip.is-todo{color:var(--warning-text);background:var(--warning-bg);border-color:#FDE68A}
+.doc-chip.is-muted{color:var(--text-muted);background:var(--surface-subtle);border-color:var(--border)}
+
+/* --- 表格：继承 data-table 斑马纹，改阅读版式（大 padding / 允许换行 / 去指针） --- */
+.doc-table-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow-sm);background:var(--surface);margin:0 0 10px}
+.doc-table th{position:static;padding:12px 16px;font-size:var(--font-xs);letter-spacing:.05em;background:var(--surface-subtle);border-bottom:1px solid var(--border)}
+.doc-table td{padding:14px 16px;font-size:var(--font-md);line-height:1.8;white-space:normal;overflow:visible;text-overflow:clip;vertical-align:top}
+.doc-table td:first-child{font-weight:600;color:var(--text-primary)}
+.doc-table tbody tr{cursor:default}
+.doc-table tbody tr:last-child td{border-bottom:none}
+.doc-table .doc-td-caveat{background:linear-gradient(90deg,rgba(245,158,11,.07) 0%,rgba(245,158,11,0) 72%)}
+.doc-table .doc-face-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--fc,var(--chart-1));margin-right:8px;vertical-align:1px}
+.doc-table .doc-dim{color:var(--text-tertiary)}
+.doc-table .doc-td-actions{white-space:nowrap}
+.doc-tbl-cap{font-size:var(--font-xs);color:var(--text-tertiary);line-height:1.8;margin:0 0 26px}
+
+/* --- 去看图 → 跳转链接（路由函数 docGoto） --- */
+.doc-goto{display:inline-flex;align-items:center;gap:3px;font-size:var(--font-xs);font-weight:600;color:var(--primary);background:var(--primary-50);border:1px solid var(--primary-100);border-radius:999px;padding:2px 10px;cursor:pointer;text-decoration:none;transition:var(--transition);white-space:nowrap;vertical-align:1px}
+.doc-goto:hover{background:var(--primary-100);border-color:var(--primary-300);color:var(--primary-700);transform:translateX(2px)}
+.doc-goto i{font-size:9px}
+.doc-goto.is-face{color:var(--text-secondary);background:var(--surface-subtle);border-color:var(--border)}
+.doc-goto.is-face:hover{color:var(--primary);background:var(--primary-50);border-color:var(--primary-200)}
+@keyframes docFlash{0%{box-shadow:0 0 0 0 rgba(37,99,235,0),0 0 0 0 rgba(37,99,235,0)}22%{box-shadow:0 0 0 3px rgba(37,99,235,.5),0 0 46px 8px rgba(37,99,235,.22)}100%{box-shadow:0 0 0 0 rgba(37,99,235,0)}}
+.doc-jump-flash{border-radius:var(--radius-md);animation:docFlash 2s ease-out}
+
+/* --- 口径 note（info 语义卡） --- */
+.doc-note{display:flex;gap:14px;background:var(--info-bg);border:1px solid #A5F3FC;border-radius:var(--radius-lg);padding:20px 22px;margin:6px 0 10px}
+.doc-note-icon{flex:0 0 auto;width:28px;height:28px;border-radius:var(--radius-md);background:var(--surface);color:var(--info-text);display:flex;align-items:center;justify-content:center;font-size:12px;box-shadow:var(--shadow-sm)}
+.doc-note-body{min-width:0}
+.doc-note h4{font-size:var(--font-md);font-weight:600;color:var(--info-text);margin:2px 0 8px}
+.doc-note p{font-size:var(--font-md);line-height:1.85;color:var(--text-secondary);margin:0 0 8px}
+.doc-note p:last-child{margin-bottom:0}
+.doc-note b{color:var(--text-primary);font-weight:600}
+
+/* --- 诚实账：浅色警示卡（warning 语义，左竖线 + 编号） --- */
+.doc-debt{position:relative;display:flex;gap:18px;background:linear-gradient(180deg,#FFFDF6 0%,var(--surface) 72%);border:1px solid #FDE68A;border-left:3px solid var(--warning);border-radius:var(--radius-lg);padding:24px 26px;margin:0 0 16px;box-shadow:var(--shadow-sm);transition:var(--transition);scroll-margin-top:112px}
+.doc-debt:hover{box-shadow:var(--shadow-md)}
+.doc-debt-no{flex:0 0 auto;width:30px;height:30px;border-radius:50%;background:var(--warning-bg);border:1px solid #FDE68A;color:var(--warning-text);font-size:var(--font-sm);font-weight:600;display:flex;align-items:center;justify-content:center}
+.doc-debt-body{min-width:0;flex:1}
+.doc-debt h4{font-size:var(--font-card-title);font-weight:600;color:var(--text-primary);margin:2px 0 8px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.doc-debt p{font-size:var(--font-md);line-height:1.85;color:var(--text-secondary);margin:0 0 14px}
+.doc-fix{display:flex;gap:10px;align-items:flex-start;background:var(--surface);border:1px dashed var(--border);border-radius:var(--radius-md);padding:12px 14px;font-size:var(--font-sm);line-height:1.8;color:var(--text-secondary)}
+.doc-fix-tag{flex:0 0 auto;margin-top:2px;font-size:10px;font-weight:600;color:var(--warning-text);background:var(--warning-bg);border-radius:var(--radius-sm);padding:2px 8px;white-space:nowrap}
+
+/* --- 待拍板：浅蓝卡（primary 语义） --- */
+.doc-decide-grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-card)}
+.doc-decide{background:var(--primary-50);border:1px solid var(--primary-100);border-radius:var(--radius-lg);padding:22px 24px;transition:var(--transition)}
+.doc-decide:hover{border-color:var(--primary-200);box-shadow:var(--shadow-sm)}
+.doc-decide-head{display:flex;gap:10px;align-items:baseline;margin-bottom:12px}
+.doc-decide-no{font-size:var(--font-sm);font-weight:600;color:var(--primary-700)}
+.doc-decide h4{font-size:var(--font-md);font-weight:600;color:var(--text-primary);margin:0}
+.doc-decide dl{margin:0;display:grid;gap:12px}
+.doc-decide dt{font-size:10px;font-weight:600;letter-spacing:.08em;color:var(--primary-700);margin-bottom:3px}
+.doc-decide dd{margin:0;font-size:var(--font-sm);line-height:1.82;color:var(--text-secondary)}
+.doc-decide dd b{color:var(--text-primary)}
+
+/* --- 深度层折叠块（原生 details，零 JS） --- */
+.doc-fold{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow-sm);margin:0 0 16px;overflow:hidden;transition:var(--transition)}
+.doc-fold[open]{box-shadow:var(--shadow-md)}
+.doc-fold summary{display:flex;align-items:center;gap:12px;padding:18px 24px;cursor:pointer;font-size:var(--font-card-title);font-weight:600;color:var(--text-primary);list-style:none;user-select:none;transition:var(--transition)}
+.doc-fold summary::-webkit-details-marker{display:none}
+.doc-fold summary:hover{background:var(--surface-subtle);color:var(--primary)}
+.doc-fold-ico{flex:0 0 auto;width:26px;height:26px;border-radius:var(--radius-md);background:var(--primary-50);color:var(--primary);display:flex;align-items:center;justify-content:center;font-size:12px}
+.doc-fold-arrow{margin-left:auto;color:var(--text-muted);transition:transform .25s ease;font-size:12px}
+.doc-fold[open] .doc-fold-arrow{transform:rotate(180deg)}
+.doc-fold-body{padding:6px 24px 26px;border-top:1px solid var(--border-light)}
+.doc-fold-body .doc-p{font-size:var(--font-md)}
+.doc-fold-body .doc-p:first-child{margin-top:14px}
+
+/* --- 公式：轻盈排版（0.95em / text-secondary / 居中 / 1.2em 留白 / 浅蓝左竖线） --- */
+.doc-formula{position:relative;margin:1.2em auto;padding:16px 20px;background:var(--primary-50);border:1px solid var(--primary-100);border-left:3px solid var(--primary-400);border-radius:var(--radius-md);text-align:center;font-size:.95em;color:var(--text-secondary);overflow-x:auto}
+.doc-formula .katex-display{margin:0}
+.doc-formula .doc-tex-fallback{font-family:ui-monospace,Consolas,monospace;font-size:12px;color:var(--text-tertiary);line-height:1.7;text-align:left;white-space:pre-wrap;margin:0}
+.doc-formula-cap{display:block;text-align:center;font-size:var(--font-xs);line-height:1.8;color:var(--text-tertiary);margin:-6px 0 24px}
+
+/* --- 页脚与响应式收口（主看板不做移动端适配，此处仅避免窄屏挤压） --- */
+.doc-footer{display:flex;flex-wrap:wrap;gap:8px 22px;margin-top:56px;padding-top:20px;border-top:1px solid var(--border);font-size:var(--font-xs);color:var(--text-muted);line-height:1.8}
+.doc-footer i{color:var(--primary-300)}
+@keyframes docRise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+.tab-content.active#tabDocs .doc-section{animation:docRise .5s cubic-bezier(.22,.61,.36,1) both}
+.tab-content.active#tabDocs .doc-section:nth-of-type(2){animation-delay:.07s}
+.tab-content.active#tabDocs .doc-section:nth-of-type(3){animation-delay:.14s}
+@media (max-width:1100px){.doc-faces{grid-template-columns:1fr 1fr}.doc-decide-grid{grid-template-columns:1fr}.doc-title{font-size:28px}}
+@media (prefers-reduced-motion:reduce){.tab-content.active#tabDocs .doc-section{animation:none}.doc-jump-flash{animation:none}}
 </style>
 
 <!-- Font Awesome icons (Tailwind CDN removed — utilities replaced by CSS above) -->
@@ -461,6 +614,7 @@ body{font-family:-apple-system,'Microsoft YaHei','Segoe UI',sans-serif;backgroun
  <button class="tab-btn" data-tab="D" id="btnD">销售能力</button>
  <button class="tab-btn" data-tab="E" id="btnE">月度作战雷达</button>
 <button class="tab-btn" data-tab="F" id="btnF">半年度专项</button>
+ <button class="tab-btn" data-tab="Docs" id="btnDocs"><i class="fa-solid fa-book-open" style="font-size:11px;margin-right:5px;opacity:.85"></i>说明</button>
   <div style="margin-left:auto;display:flex;gap:6px;align-items:center;padding:4px 0">
   <span id="dataVersion" style="font-size:10px;color:var(--text-tertiary);padding:2px 8px;white-space:nowrap">数据截至 %%DATA_AS_OF%%</span>
   <span id="dataIdentity" style="font-size:10px;color:var(--text-tertiary);padding:2px 8px;white-space:nowrap;cursor:help;overflow:hidden;text-overflow:ellipsis;max-width:46vw" title="%%DATA_IDENTITY_TIP%%">%%DATA_IDENTITY%%</span>
@@ -766,6 +920,399 @@ body{font-family:-apple-system,'Microsoft YaHei','Segoe UI',sans-serif;backgroun
  <div id="fKaaaTable" style="max-height:400px;overflow-y:auto;font-size:12px"></div>
  </div>
  <div class="cb" style="padding:10px"><h3 style="margin:0 0 6px;font-size:var(--font-md)"><i class="fa-solid fa-lightbulb" style="color:var(--warning)"></i> 半年度关键问题与解决方案 <span style="font-size:10px;color:var(--text-tertiary)">[点击展开归因分析]</span></h3><div id="fIssues" style="font-size:12px"></div></div>
+</div>
+
+<!-- ============================ 说明中心（Docs tab · POC 骨架） ============================
+ 三层结构：① 总览（四面导航 / 全看板速读 / 诚实账·待拍板汇总）
+           ② 分面层（销售能力说明页全文，手工内嵌示例）
+           ③ 深度层（方案书公式折叠块，KaTeX 渲染）
+ 内容源：docs/看板说明页_*.md ｜ 设计依据：docs/看板说明页接入方案.md §2.2-2.4
+ 跳转锚点：<a class="doc-goto" href="javascript:void(0)" data-face="D" data-chart="dRadar"> → 页尾独立脚本 docGoto()
+ P1 接入：本段整体改由 %%DOC_*%% 占位符 + md 渲染器注入，结构保持不变
+ ================================================================================ -->
+<div class="tab-content" id="tabDocs">
+
+ <header class="doc-hero">
+ <div class="doc-hero-inner">
+  <span class="doc-eyebrow"><i class="fa-solid fa-book-open"></i> 看板说明中心 · 设计 POC</span>
+  <h1 class="doc-title">先读说明，再看数字</h1>
+  <p class="doc-lede">把每面看板<b>回答什么问题</b>、每个数字<b>怎么读</b>、以及<b>什么时候不能信</b>，放在同一个地方讲清楚：总览速读 → 分面全文 → 深度公式，三层递进；每一条指标说明都能<b>直接跳到对应图表</b>。</p>
+  <div class="doc-hero-meta">
+  <span><i class="fa-solid fa-layer-group"></i> 三层结构：总览 / 分面 / 深度</span>
+  <span><i class="fa-solid fa-file-lines"></i> 内容源：docs/看板说明页_*.md</span>
+  <span><i class="fa-solid fa-code-branch"></i> POC：手工内嵌 1 套完整示例 + 总览聚合</span>
+  <span><i class="fa-solid fa-arrow-up-right-from-square"></i> 跳转：说明 → 图表（switchTab + 滚动 + 描边）</span>
+  </div>
+ </div>
+ </header>
+
+ <nav class="doc-subnav">
+ <div class="doc-subnav-inner">
+  <a class="doc-subnav-item active" data-doc-anchor="doc-overview" href="#doc-overview">① 总览 · 速读与汇总</a>
+  <a class="doc-subnav-item" data-doc-anchor="doc-face-d" href="#doc-face-d">② 销售能力说明（完整示例）</a>
+  <a class="doc-subnav-item" data-doc-anchor="doc-deep" href="#doc-deep">③ 深度阅读 · 公式</a>
+  <span class="doc-subnav-spacer"></span>
+  <span class="doc-subnav-note">P0 骨架 · 全量接入见 P1</span>
+ </div>
+ </nav>
+
+ <div class="doc-body">
+
+ <!-- ================= ① 总览层 ================= -->
+ <section class="doc-section" id="doc-overview">
+  <div class="doc-h2-row">
+  <span class="doc-h2-no">01</span>
+  <div>
+   <h2 class="doc-h2">总览：说明体系怎么用</h2>
+   <p class="doc-h2-sub">四套说明页的入口 · 七面看板速读 · 欠账与待拍板汇总——先在这里定位，再逐层下沉</p>
+  </div>
+  </div>
+
+  <div class="doc-faces">
+  <div class="doc-face-card" style="--fc:var(--chart-6)">
+   <div class="doc-face-top"><span class="doc-face-code">C 面 · 产品生命周期</span><span class="doc-chip is-demo">聚合示例</span></div>
+   <h3>产品生命周期看板 · 说明页</h3>
+   <p>把每个产品放进「销量动能 × 盈利健康」的交叉格子：四区占比看组合老化，自比 / 他比健康度抓「量稳利跌」。本 POC 取其四要素汇入下方总览聚合。</p>
+   <div class="doc-face-actions">
+   <a class="doc-face-more" data-doc-scroll="doc-debt" href="#doc-debt">看总览聚合 ↓</a>
+   <a class="doc-goto" href="javascript:void(0)" data-face="C" data-chart="chart-risk">去看图 →</a>
+   </div>
+  </div>
+  <div class="doc-face-card" style="--fc:var(--chart-1)">
+   <div class="doc-face-top"><span class="doc-face-code">D 面 · 销售能力</span><span class="doc-chip is-ready">完整示例</span></div>
+   <h3>销售能力看板 · 说明页</h3>
+   <p>不做「按收入排队的排行榜」：把每位销售员拆成九种能力分别打分，再放进同体量、同客户结构的小组里定 A/B/C/D。本 POC 已接入全文。</p>
+   <div class="doc-face-actions">
+   <a class="doc-face-more" data-doc-scroll="doc-face-d" href="#doc-face-d">进入说明 ↓</a>
+   <a class="doc-goto" href="javascript:void(0)" data-face="D" data-chart="dRadar">去看图 →</a>
+   </div>
+  </div>
+  <div class="doc-face-card is-pending" style="--fc:var(--chart-3)">
+   <div class="doc-face-top"><span class="doc-face-code">B 面 · 客户360</span><span class="doc-chip is-pending">待接入 · P1</span></div>
+   <h3>客户360看板 · 说明页</h3>
+   <p>把每个客户拆成「值多少钱、还在涨吗、靠得住吗、下一步做什么」四层来回答——收入排行只是最表面的一层。</p>
+   <div class="doc-face-actions">
+   <span class="doc-face-more is-off">全文 P1 接入</span>
+   <a class="doc-goto" href="javascript:void(0)" data-face="B" data-chart="bTrend">去看图 →</a>
+   </div>
+  </div>
+  <div class="doc-face-card is-pending" style="--fc:var(--chart-4)">
+   <div class="doc-face-top"><span class="doc-face-code">A · R · E · F 面</span><span class="doc-chip is-pending">待接入 · P1</span></div>
+   <h3>总览 · 作战 · 专项 · 风险行动 · 说明页</h3>
+   <p>总览看「今年到现在」，作战看「这个月」，专项看「这半年」，风险与行动看「现在该处理什么」——同一份数据在四种管理节奏上的切片。</p>
+   <div class="doc-face-actions">
+   <span class="doc-face-more is-off">全文 P1 接入</span>
+   <a class="doc-goto" href="javascript:void(0)" data-face="A" data-chart="mainBar">去看图 →</a>
+   </div>
+  </div>
+  </div>
+
+  <h3 class="doc-h3">全看板速读<span class="doc-h3-count">7 面 · 一行一个</span></h3>
+  <p class="doc-p">每面看板回答什么、多久刷新一次。右侧「去看图」直接切面并定位到对应图表——说明与图表之间不再需要来回找。</p>
+  <div class="doc-table-wrap">
+  <table class="data-table doc-table">
+  <thead><tr><th style="width:170px">面</th><th style="width:230px">定位</th><th>回答什么问题</th><th style="width:96px">刷新</th><th style="width:130px">跳转</th></tr></thead>
+  <tbody>
+  <tr>
+   <td><span class="doc-face-dot" style="--fc:var(--chart-4)"></span>A 面 · 总览决策</td>
+   <td class="doc-dim">经营总览：整体 + 常用维度速览</td>
+   <td>今年到现在经营得怎么样；产品线 / 品类 / 客户层级谁在贡献、谁在拖累</td>
+   <td class="doc-dim">每月</td>
+   <td class="doc-td-actions"><a class="doc-goto" href="javascript:void(0)" data-face="A" data-chart="mainBar">去看图 →</a></td>
+  </tr>
+  <tr>
+   <td><span class="doc-face-dot" style="--fc:var(--danger)"></span>R 面 · 风险与行动</td>
+   <td class="doc-dim">当月风险信号与待办事项</td>
+   <td>这个月有哪些客户 / 产品需要马上处理——数据驱动候选，经人工审定后展示</td>
+   <td class="doc-dim">每月</td>
+   <td class="doc-td-actions"><a class="doc-goto is-face" href="javascript:void(0)" data-face="R">去看面 →</a></td>
+  </tr>
+  <tr>
+   <td><span class="doc-face-dot" style="--fc:var(--chart-3)"></span>B 面 · 客户360</td>
+   <td class="doc-dim">以客户为轴心的下钻分析</td>
+   <td>单个客户的长期趋势、品类构成、新品与风险——从整体落到一个客户</td>
+   <td class="doc-dim">每月</td>
+   <td class="doc-td-actions"><a class="doc-goto" href="javascript:void(0)" data-face="B" data-chart="bTrend">去看图 →</a></td>
+  </tr>
+  <tr>
+   <td><span class="doc-face-dot" style="--fc:var(--chart-6)"></span>C 面 · 产品生命周期</td>
+   <td class="doc-dim">以 SKU 为轴心的生命周期与风险分析</td>
+   <td>产品画像、风险等级、生命周期阶段与策略建议——该加投还是该退场</td>
+   <td class="doc-dim">每月</td>
+   <td class="doc-td-actions"><a class="doc-goto" href="javascript:void(0)" data-face="C" data-chart="chart-risk">去看图 →</a></td>
+  </tr>
+  <tr>
+   <td><span class="doc-face-dot" style="--fc:var(--chart-1)"></span>D 面 · 销售能力</td>
+   <td class="doc-dim">以销售员 / 部门为轴心的能力与业绩评估</td>
+   <td>销售员业绩、能力画像、客户覆盖与品类热度——九维打分与同类组定级</td>
+   <td class="doc-dim">每月</td>
+   <td class="doc-td-actions"><a class="doc-goto" href="javascript:void(0)" data-face="D" data-chart="dRadar">去看图 →</a></td>
+  </tr>
+  <tr>
+   <td><span class="doc-face-dot" style="--fc:var(--chart-2)"></span>E 面 · 月度作战雷达</td>
+   <td class="doc-dim">月度级次的执行作战视图</td>
+   <td>当月客户异动、量利拆解、首次大量导入与销售员贡献</td>
+   <td class="doc-dim">每月</td>
+   <td class="doc-td-actions"><a class="doc-goto" href="javascript:void(0)" data-face="E" data-chart="eMatrix">去看图 →</a></td>
+  </tr>
+  <tr>
+   <td><span class="doc-face-dot" style="--fc:var(--chart-5)"></span>F 面 · 半年度专项</td>
+   <td class="doc-dim">半年度窗口复盘专项</td>
+   <td>按半年度窗口对比的产品线 / 品类 / 部门 / 客户 / 新品多维复盘；窗口由数据月份自动推导</td>
+   <td class="doc-dim">半年度</td>
+   <td class="doc-td-actions"><span class="doc-chip is-muted">当前关闭</span></td>
+  </tr>
+  </tbody>
+  </table>
+  </div>
+  <p class="doc-tbl-cap">定位与刷新节奏取自 faces.yaml（P1 构建时自动生成，零维护）。两条已知限制：R 面无稳定图表 id，只做面级跳转（接入方案 §1e）；F 面关闭期间按钮会被服务端移除，路由函数自动降级为提示（§1d-③）。</p>
+
+  <h3 class="doc-h3" id="doc-debt">诚实账汇总<span class="doc-h3-count">本示例聚合 2 套说明页 · 9 条</span></h3>
+  <p class="doc-p">各套说明页的「我们还的账」集中登记在此：<b>不藏进技术细节</b>，每条都带状态与补法方向。状态只有两种——<span class="doc-chip is-fix">待修</span> 与 <span class="doc-chip is-muted">已登记</span>。</p>
+  <div class="doc-table-wrap">
+  <table class="data-table doc-table">
+  <thead><tr><th style="width:150px">来源</th><th>欠账（一句话）</th><th style="width:96px">状态</th><th style="width:130px">动作</th></tr></thead>
+  <tbody>
+  <tr><td>C 面 · 产品生命周期</td><td>风险评分的权重是历史经验值——能证明「曾被数据校准过」，证明不了「最优」</td><td><span class="doc-chip is-muted">已登记</span></td><td class="doc-td-actions"><a class="doc-goto is-face" href="javascript:void(0)" data-face="C">去看 C 面 →</a></td></tr>
+  <tr><td>C 面 · 产品生命周期</td><td>每月预警名单的误报率从未统计——若误报占比过高，复核会疲劳、预警会失去信任</td><td><span class="doc-chip is-muted">已登记</span></td><td class="doc-td-actions"><a class="doc-goto is-face" href="javascript:void(0)" data-face="C">去看 C 面 →</a></td></tr>
+  <tr><td>C 面 · 产品生命周期</td><td>预测的 80%/95% 区间从未回测，目前只能当「不确定性大小」的相对刻度</td><td><span class="doc-chip is-muted">已登记</span></td><td class="doc-td-actions"><a class="doc-goto is-face" href="javascript:void(0)" data-face="C">去看 C 面 →</a></td></tr>
+  <tr><td>C 面 · 产品生命周期</td><td>各阈值调整的影响面未测算——任何一道分档线挪一点、会有多少产品跨档，现在答不上来</td><td><span class="doc-chip is-muted">已登记</span></td><td class="doc-td-actions"><a class="doc-goto is-face" href="javascript:void(0)" data-face="C">去看 C 面 →</a></td></tr>
+  <tr><td>D 面 · 销售能力</td><td>九维权重是硬编码的历史决定（绝对贡献 35%），想改必须改代码、业务侧没有开关</td><td><span class="doc-chip is-muted">已登记</span></td><td class="doc-td-actions"><a class="doc-face-more" data-doc-scroll="doc-debt-1" href="#doc-debt-1">看详情 ↓</a></td></tr>
+  <tr><td>D 面 · 销售能力</td><td>版本演进不可复现：v4.11→v4.14 连续四版，中间一版（v4.12）连代码痕迹都没有</td><td><span class="doc-chip is-muted">已登记</span></td><td class="doc-td-actions"><a class="doc-face-more" data-doc-scroll="doc-debt-2" href="#doc-debt-2">看详情 ↓</a></td></tr>
+  <tr><td>D 面 · 销售能力</td><td>能力档案「抗风险」的证据文案有取数缺陷——集中度取不到时按 0 处理，永远说「客户高度分散」</td><td><span class="doc-chip is-fix">待修</span></td><td class="doc-td-actions"><a class="doc-face-more" data-doc-scroll="doc-debt-3" href="#doc-debt-3">看详情 ↓</a></td></tr>
+  <tr><td>D 面 · 销售能力</td><td>小分组定级天然不稳——小组里人少时排名百分位抖动大，月度间等级跳动是常态</td><td><span class="doc-chip is-muted">已登记</span></td><td class="doc-td-actions"><a class="doc-face-more" data-doc-scroll="doc-debt-4" href="#doc-debt-4">看详情 ↓</a></td></tr>
+  <tr><td>D 面 · 销售能力</td><td>分层阈值从未测算——量级线（1000 万 / 100 万）与亚组线（150 / 50）决定「谁和谁比」</td><td><span class="doc-chip is-muted">已登记</span></td><td class="doc-td-actions"><a class="doc-face-more" data-doc-scroll="doc-debt-5" href="#doc-debt-5">看详情 ↓</a></td></tr>
+  </tbody>
+  </table>
+  </div>
+  <p class="doc-tbl-cap">客户360 与 总览作战两套说明页的欠账待 P1 接入后并入本表（接入方案 §2.2：构建时自动汇总）。</p>
+
+  <h3 class="doc-h3">待拍板汇总<span class="doc-h3-count">6 项 · 管理层入口</span></h3>
+  <p class="doc-p">需要管理层确认的事项集中在这里：<b>现状</b>与<b>待决</b>分开写，拍板前先看影响面。</p>
+  <div class="doc-decide-grid">
+  <div class="doc-decide">
+   <div class="doc-decide-head"><span class="doc-decide-no">①</span><h4>退货从销量里扣不扣</h4><span class="doc-chip is-pending">产品生命周期</span></div>
+   <dl>
+   <dt>现状</dt><dd>保留退货冲减（净额口径），反映经营真实</dd>
+   <dt>需要拍板</dt><dd>经营分析以<b>净额还是发货额</b>为准；两口径差异量级待测算——可立项一次性跑对比，看多少产品因此换画像 / 换风险档</dd>
+   </dl>
+  </div>
+  <div class="doc-decide">
+   <div class="doc-decide-head"><span class="doc-decide-no">②</span><h4>毛利率极端值怎么处理</h4><span class="doc-chip is-pending">产品生命周期</span></div>
+   <dl>
+   <dt>现状</dt><dd>数据层保留真实值、仅展示层截断（此前验证：反向操作会高估收入约 0.5%）</dd>
+   <dt>需要拍板</dt><dd>已拍板方向，<b>确认维持现状即可</b>；这是回退阀门，默认不动</dd>
+   </dl>
+  </div>
+  <div class="doc-decide">
+   <div class="doc-decide-head"><span class="doc-decide-no">③</span><h4>大客户订货量因子要不要恢复</h4><span class="doc-chip is-pending">产品生命周期</span></div>
+   <dl>
+   <dt>现状</dt><dd>设计中有（10% 权重），生产上从未生效、权重自动让渡给其余因子</dd>
+   <dt>需要拍板</dt><dd>恢复需打通大客户订单数据通道，成本与收益待评估；不恢复则把现行三因子安排<b>正式固定</b></dd>
+   </dl>
+  </div>
+  <div class="doc-decide">
+   <div class="doc-decide-head"><span class="doc-decide-no">①</span><h4>九维权重是否符合当前管理导向</h4><span class="doc-chip is-demo">销售能力</span></div>
+   <dl>
+   <dt>现状</dt><dd>绝对贡献 35% 一家独大，新客 / 激活各只有 6-8%</dd>
+   <dt>需要拍板</dt><dd>若当前更看重开拓与新市场，可提出调整（如新客提至 15%）；调整前先做<b>敏感性对拍</b>——改权重后 A 级名单变多少人</dd>
+   </dl>
+  </div>
+  <div class="doc-decide">
+   <div class="doc-decide-head"><span class="doc-decide-no">②</span><h4>硬保护线是否合适</h4><span class="doc-chip is-demo">销售能力</span></div>
+   <dl>
+   <dt>现状</dt><dd>近 12 月总营收 8000 万强制 A、归零强制 D</dd>
+   <dt>需要拍板</dt><dd>8000 万是经验值且无过渡带（7900 万的 D 级与 8100 万的 A 级仅差 200 万）；是否设「中档保护」（如 5000 万保 B）供讨论</dd>
+   </dl>
+  </div>
+  <div class="doc-decide">
+   <div class="doc-decide-head"><span class="doc-decide-no">③</span><h4>小组保底线</h4><span class="doc-chip is-demo">销售能力</span></div>
+   <dl>
+   <dt>现状</dt><dd>组内不足 2 人直接给 B（保底，不是评价）</dd>
+   <dt>需要拍板</dt><dd>是否把保底提到 5 人、不足时并入上一级组或标「样本不足不定级」——影响小团队销售员的等级可信度</dd>
+   </dl>
+  </div>
+  </div>
+ </section>
+
+ <!-- ================= ② 分面层：销售能力（完整示例） ================= -->
+ <section class="doc-section" id="doc-face-d">
+  <div class="doc-h2-row">
+  <span class="doc-h2-no">02</span>
+  <div>
+   <h2 class="doc-h2">分面层示例：销售能力看板 · 说明页</h2>
+   <p class="doc-h2-sub">D 面全文（源：docs/看板说明页_销售能力.md）· 四要素：问题表 / 速览表（含失效条件）/ 诚实账 / 待拍板</p>
+  </div>
+  </div>
+
+  <div class="doc-note">
+  <div class="doc-note-icon"><i class="fa-solid fa-quote-left"></i></div>
+  <div class="doc-note-body">
+   <h4>这页说明随看板发布，用人话讲三件事：看板回答哪些管理问题、每个数字怎么读、什么时候不能信。</h4>
+   <p>数据基础：客户画像（近 12 个月窗口）+ 当年出货明细，每月刷新一次，覆盖考核名单内全员销售员。</p>
+   <p><b>设计者的一句话：</b>这套看板不做「按收入排队的排行榜」，而是把每位销售员拆成九种能力分别打分，再放进「同体量、同客户结构」的小组里定 A/B/C/D——因为管 332 个客户和管 12 个客户的销售员放在一张榜上，怎么排都不公平。</p>
+  </div>
+  </div>
+
+  <h3 class="doc-h3">一、这页看板回答什么问题</h3>
+  <div class="doc-table-wrap">
+  <table class="data-table doc-table">
+  <thead><tr><th style="width:270px">你要问的</th><th>看板怎么看</th><th style="width:110px">定位</th></tr></thead>
+  <tbody>
+  <tr><td>每个销售员靠什么赚钱？</td><td>九维雷达：绝对贡献、客户维系、品类拓展、客户升级、新客开拓、产品结构、组合抗风险、定价博弈、客户激活——个人形状 vs 团队均值，一眼看出强项短板</td><td class="doc-td-actions"><a class="doc-goto" href="javascript:void(0)" data-face="D" data-chart="dRadar">去看图 →</a></td></tr>
+  <tr><td>他在同类人里排第几？</td><td>能力等级（A/B/C/D）：先按体量分组（重量 / 中量 / 轻量级），再按客户结构分组（大客户 / 均衡 / 批量型），小组内排百分位——A = 同类组前 30%</td><td class="doc-td-actions"><a class="doc-goto" href="javascript:void(0)" data-face="D" data-chart="dRanking">去看图 →</a></td></tr>
+  <tr><td>收入差不多的两个人，谁的结构更健康？</td><td>气泡图（横轴收入、纵轴毛利率、气泡大小 = 客户数、颜色 = 客户结构类型）+ 组合抗风险分：一个大客户撑八成的销售员，气泡大但抗风险分低</td><td class="doc-td-actions"><a class="doc-goto" href="javascript:void(0)" data-face="D" data-chart="dBubble">去看图 →</a></td></tr>
+  <tr><td>谁在给未来攒筹码？</td><td>新客开拓、客户激活、品类拓展三个慢变量维度——当期收入看不见它们，掉分时当年报表也没反应</td><td class="doc-dim">—</td></tr>
+  <tr><td>客户利润藏在谁手上？</td><td>客户热力图：前 33 大客户 × 销售员的利润矩阵——颜色最深的格子就是「利润最集中的那个人那家客户」</td><td class="doc-td-actions"><a class="doc-goto" href="javascript:void(0)" data-face="D" data-chart="dCustHeatmap">去看图 →</a></td></tr>
+  <tr><td>每个人的品类地盘有多大？</td><td>品类热力图：前 15 大品类 × 销售员的收入矩阵——空白格就是覆盖缺口</td><td class="doc-td-actions"><a class="doc-goto" href="javascript:void(0)" data-face="D" data-chart="dHeatmap">去看图 →</a></td></tr>
+  <tr><td>这个人最近怎么样？</td><td>点排名表任意一行：能力档案给出 2 个强项 + 1 个弱项 + 具体证据（哪个客户同比掉了、新客几个）</td><td class="doc-td-actions"><a class="doc-goto" href="javascript:void(0)" data-face="D" data-chart="dProfile">去看图 →</a></td></tr>
+  <tr><td>团队整体走势如何？</td><td>团队趋势图：月度成本与毛利堆叠柱（栈高即收入）+ 毛利率线，可切到个人</td><td class="doc-td-actions"><a class="doc-goto" href="javascript:void(0)" data-face="D" data-chart="dTeamTrend">去看图 →</a></td></tr>
+  </tbody>
+  </table>
+  </div>
+
+  <h3 class="doc-h3">二、指标速览：怎么读、什么时候不可信</h3>
+  <div class="doc-table-wrap">
+  <table class="data-table doc-table">
+  <thead><tr><th style="width:190px">指标</th><th>怎么读</th><th>什么时候不可信（看板有标注）</th></tr></thead>
+  <tbody>
+  <tr><td>九维各维分数</td><td>50 分是中性起点不是团队均值；看形状和相对差距，别抠绝对值</td><td class="doc-td-caveat">「客户激活」维度：名下没被分配激活策略的销售员恒为 50（没被考过，不是考得好）</td></tr>
+  <tr><td>综合能力分</td><td>九维加权（绝对贡献占 35%，其余 8 维分摊 65%）</td><td class="doc-td-caveat"><b>跨组不可比</b>：批量型组的 72 分和大客户型组的 72 分不是一个意思</td></tr>
+  <tr><td>能力等级 A/B/C/D</td><td>同类组内定位：前 30% 为 A、之后 30% 为 B、末 25% 为 D、其余 C</td><td class="doc-td-caveat"><b>小组人少时定级不稳</b>：3-5 人的组里一人变动会牵动全组；组里只有 1 人时直接给 B（保底，不是评价）；「前 30%」规则在小组合失真——8 人组百分位只有 9 档、会出 3 个 A；并列分数取平均秩进一步放大抖动</td></tr>
+  <tr><td>硬保护</td><td>近 12 月画像口径总营收超 8000 万强制 A 级、总营收归零强制 D 级——不看排名</td><td class="doc-td-caveat">这两类的等级是<b>营收事实，不是能力结论</b></td></tr>
+  <tr><td>排名表业绩列</td><td>当年 YTD 口径（收入 / 毛利 / 同比 / 环比），按销售员归属汇总</td><td class="doc-td-caveat"><b>与能力等级不同窗</b>：等级按近 12 个月画像定，业绩列是当年数——同一人两处「营收」可能不相等</td></tr>
+  <tr><td>客户 / 品类热力图</td><td>客户图看利润、品类图看收入；行列只取头部（前 33 客户 / 前 15 品类 / 前 15 销售员）</td><td class="doc-td-caveat"><b>现算口径</b>：当次从出货明细聚合，与能力等级的近 12 月窗口不同；头部之外的格子不在图上</td></tr>
+  <tr><td>气泡图</td><td>横轴收入、纵轴毛利率、气泡 = 客户数</td><td class="doc-td-caveat">横轴按 2%~98% 分位截断，首尾约 2% 的极端值不显示（完整名单看排名表）</td></tr>
+  <tr><td>团队趋势</td><td>月度成本 + 毛利堆叠柱（栈高即收入）、叠毛利率线，2024 年起</td><td class="doc-td-caveat">个人中途接手 / 移交客户会造成台阶，非业绩跳变</td></tr>
+  <tr><td>能力档案证据</td><td>每条短板附带客户名 / 同比数 / 新客数</td><td class="doc-td-caveat">抗风险一项的证据文案目前恒显示「客户高度分散」（取数缺陷，见下面账目③）</td></tr>
+  </tbody>
+  </table>
+  </div>
+
+  <div class="doc-note">
+  <div class="doc-note-icon"><i class="fa-solid fa-circle-info"></i></div>
+  <div class="doc-note-body">
+   <h4>两条全局口径，读任何数字前应知道</h4>
+   <p><b>① 两套口径并存</b>：能力分数与等级 = 近 12 个月画像口径；排名表业绩列与两张热力图 = 当年 YTD 现算口径。两套并存是历史形成，未合并。</p>
+   <p><b>② 谁在榜上</b>：能力等级只看当年有交易的销售员；画像里有但当年没动静的人不出现在看板上。</p>
+  </div>
+  </div>
+
+  <h3 class="doc-h3">三、五条我们还的账（诚实清单）<span class="doc-h3-count">设计者自述，登记在案、不藏进技术细节</span></h3>
+  <div class="doc-debt" id="doc-debt-1">
+  <div class="doc-debt-no">1</div>
+  <div class="doc-debt-body">
+   <h4>九维权重是硬编码的历史决定</h4>
+   <p>绝对贡献 35% 是 v4.14 版本（分层评比那次改版）拍下来的，当时的校准过程没有留档——我们能证明「何时定的」，证明不了「为什么是 35%」。想改权重现在必须改代码，业务侧没有开关。</p>
+   <div class="doc-fix"><span class="doc-fix-tag">建议补法</span><span>把权重迁入系统配置（与客户评分权重同构、现值为默认）；调整前先做敏感性对拍——35% 对比 30%/40% 下 A 级名单变多少人，差异大才调。<a class="doc-goto" href="javascript:void(0)" data-face="D" data-chart="dRanking">去看图 →</a></span></div>
+  </div>
+  </div>
+  <div class="doc-debt" id="doc-debt-2">
+  <div class="doc-debt-no">2</div>
+  <div class="doc-debt-body">
+   <h4>版本演进不可复现</h4>
+   <p>v4.11 到 v4.14 连续改了四版，中间一版（v4.12）连代码痕迹都没有；早期各维权重只留下「绝对贡献 20%」一条记录。</p>
+   <div class="doc-fix"><span class="doc-fix-tag">建议补法</span><span>从本套文档起建立版本档案（每次改权重 / 阈值登记动机与影响面数字），并对现权重做一次可复现的敏感性验证。</span></div>
+  </div>
+  </div>
+  <div class="doc-debt" id="doc-debt-3">
+  <div class="doc-debt-no">3</div>
+  <div class="doc-debt-body">
+   <h4>能力档案里「抗风险」的证据文案有取数缺陷<span class="doc-chip is-fix">待修</span></h4>
+   <p>集中度数字取不到时按 0 处理，导致这条证据永远说「客户高度分散」——分数本身（由客户营收分布算出）是对的，证据文字是错的，待修。</p>
+   <div class="doc-fix"><span class="doc-fix-tag">建议补法</span><span>把这条证据的集中度真正算出来（看板月度侧已有现成算法可复用），或先撤下该文案——分数不受影响，仅证据文字待修。<a class="doc-goto" href="javascript:void(0)" data-face="D" data-chart="dRadar">去看图 →</a></span></div>
+  </div>
+  </div>
+  <div class="doc-debt" id="doc-debt-4">
+  <div class="doc-debt-no">4</div>
+  <div class="doc-debt-body">
+   <h4>小分组定级天然不稳</h4>
+   <p>分组换来了公平（同体量同结构才互比），代价是小组里人少时排名百分位抖动大、月度间等级跳动会是常态——把「跳动」当信号之前，先看组里几个人。</p>
+   <div class="doc-fix"><span class="doc-fix-tag">建议补法</span><span>保底线从 2 人提到 5 人（不足时并入上一级组或标「样本不足-不定级」），并发布月度等级变动清单，区分「机制跳动」与真实变化。<a class="doc-goto" href="javascript:void(0)" data-face="D" data-chart="dRanking">去看图 →</a></span></div>
+  </div>
+  </div>
+  <div class="doc-debt" id="doc-debt-5">
+  <div class="doc-debt-no">5</div>
+  <div class="doc-debt-body">
+   <h4>分层阈值从未测算</h4>
+   <p>量级线（1000 万 / 100 万）与亚组线（150 / 50）决定「谁和谁比」，是这套公平性比较的地基——两组线当时按业务直觉设定，设定依据与敏感度都没有交代。</p>
+   <div class="doc-fix"><span class="doc-fix-tag">建议补法</span><span>对四条线做一次性敏感度扫描（每档 ±20% 输出换组人数），形成「参数-影响」对照表附在配置旁。</span></div>
+  </div>
+  </div>
+
+  <h3 class="doc-h3">四、需要管理层确认的三件事</h3>
+  <div class="doc-decide-grid">
+  <div class="doc-decide">
+   <div class="doc-decide-head"><span class="doc-decide-no">①</span><h4>九维权重是否符合当前管理导向</h4></div>
+   <dl>
+   <dt>现状</dt><dd>绝对贡献 35% 一家独大，新客 / 激活各只有 6-8%</dd>
+   <dt>需要拍板</dt><dd>若当前更看重开拓与新市场，可提出调整（如新客提至 15%）；调整前建议先做一次<b>敏感性对拍</b>（改权重后 A 级名单变多少人）</dd>
+   </dl>
+  </div>
+  <div class="doc-decide">
+   <div class="doc-decide-head"><span class="doc-decide-no">②</span><h4>硬保护线是否合适</h4></div>
+   <dl>
+   <dt>现状</dt><dd>近 12 月总营收 8000 万强制 A、归零强制 D</dd>
+   <dt>需要拍板</dt><dd>8000 万是经验值且<b>无过渡带</b>（7900 万的 D 级与 8100 万的 A 级仅差 200 万）；是否设「中档保护」（如 5000 万保 B）供讨论，敏感性对拍须覆盖此线</dd>
+   </dl>
+  </div>
+  <div class="doc-decide">
+   <div class="doc-decide-head"><span class="doc-decide-no">③</span><h4>小组保底线</h4></div>
+   <dl>
+   <dt>现状</dt><dd>组内不足 2 人直接给 B</dd>
+   <dt>需要拍板</dt><dd>是否把保底提到 5 人、不足时并入上一级组或标「样本不足不定级」——影响小团队销售员的等级可信度</dd>
+   </dl>
+  </div>
+  </div>
+
+  <h3 class="doc-h3">五、使用边界</h3>
+  <p class="doc-p">能力等级是<b>同类组内的相对位置</b>，不是全公司绝对排序——轻量级 A 和重量级 A 不可互换解读；跨组直接比等级、拿综合分当绩效考核唯一依据，都超出了它的设计能力。单人单月分数波动正常，连续三个月的方向比单点可信。业绩对账请以财务口径为准，看板数字用于结构与趋势判断。</p>
+  <p class="doc-tbl-cap">完整公式、权重、分层规则与设计取舍见同目录《销售能力方案书_深度版.md》（开发者可进一步核对《销售能力系统.md》技术底稿）——下面深度层摘录其中 4 个公式做排版示范。</p>
+ </section>
+
+ <!-- ================= ③ 深度层：公式折叠（KaTeX） ================= -->
+ <section class="doc-section" id="doc-deep">
+  <div class="doc-h2-row">
+  <span class="doc-h2-no">03</span>
+  <div>
+   <h2 class="doc-h2">深度层示例：公式与设计取舍</h2>
+   <p class="doc-h2-sub">源：docs/销售能力方案书_深度版.md · 默认收起，点开渲染 KaTeX（公式为 ASCII 数学符号，中文标签在公式外——KaTeX 无中文字形，P1 渲染器请注意同一约定）</p>
+  </div>
+  </div>
+
+  <details class="doc-fold">
+  <summary><span class="doc-fold-ico"><i class="fa-solid fa-square-root-variable"></i></span>公式怎么长这样：50 分基线 + 偏移累加<span class="doc-fold-arrow"><i class="fa-solid fa-chevron-down"></i></span></summary>
+  <div class="doc-fold-body">
+   <p class="doc-p">每个维度都从 50 分出发、按子项加减、截断到 [0, 100]：</p>
+   <div class="doc-formula" data-tex="S = \mathrm{clip}\left(50 + \sum_i \Delta_i,\ 0,\ 100\right)"><code class="doc-tex-fallback">S = clip( 50 + Σ Δᵢ , 0 , 100 )</code></div>
+   <span class="doc-formula-cap">S 为该维度得分；Δᵢ 为子项偏移量；clip 为截断。缺数据的子项自然跳过、分数退回中性 50。</span>
+   <p class="doc-p">选择偏移式而非「指标→分档映射表」的理由：子项可拆可解释；缺数据不需要为每个场景设计兜底分支；各维同构，加权时无需知道维内构成。代价：偏移系数都是经验值，且 <b>50 ≠ 团队均值</b>——它是中性点，不是任何统计量。</p>
+   <p class="doc-p">一条完整公式的实际密度（绝对贡献力，权重 35%，营收为主、毛利为辅、增长做调节）：</p>
+   <div class="doc-formula" data-tex="S_{\mathrm{contrib}} = \mathrm{clip}\Big( 50 + \big(\mathrm{clip}(20\log_{10}R,\,20,\,100) - 50\big)\times 0.5 + \big(\mathrm{clip}(20\log_{10}(P+1),\,20,\,100) - 50\big)\times 0.3 + \mathrm{clip}(100\,\tilde{g},\,-20,\,50)\times 0.2,\ 0,\ 100 \Big)"><code class="doc-tex-fallback">S_contrib = clip( 50 + (clip(20·log10 R, 20, 100) − 50) × 0.5 + (clip(20·log10(P+1), 20, 100) − 50) × 0.3 + clip(100·ĝ, −20, 50) × 0.2 , 0 , 100 )</code></div>
+   <span class="doc-formula-cap">R = 名下客户近 12 月收入合计；P = 近 12 月毛利合计；ĝ = 客户级收入增长率中位数（小数）。</span>
+  </div>
+  </details>
+
+  <details class="doc-fold">
+  <summary><span class="doc-fold-ico"><i class="fa-solid fa-scale-balanced"></i></span>两个「例外」：硬保护线与组合抗风险力<span class="doc-fold-arrow"><i class="fa-solid fa-chevron-down"></i></span></summary>
+  <div class="doc-fold-body">
+   <p class="doc-p">硬保护在组内排名<b>之后</b>执行、不可被覆盖——在两端钉住绝对事实：</p>
+   <div class="doc-formula" data-tex="R &gt; 8000 \Rightarrow A,\qquad R \le 0 \Rightarrow D"><code class="doc-tex-fallback">R &gt; 8000 ⇒ A；R ≤ 0 ⇒ D</code></div>
+   <span class="doc-formula-cap">总营收 R（万元）：超 8000 万强制 A 级；归零强制 D 级。反向代价：8000 万这条线是纯经验阈值，没有过渡带。</span>
+   <p class="doc-p">九维中唯一非「50 基线偏移」结构的维度——集中度本身就是 0-1 的完备度量，无需基线改造：</p>
+   <div class="doc-formula" data-tex="S_{\mathrm{risk}} = \mathrm{clip}\Big( (1 - \mathrm{HHI}) \times 100,\ 0,\ 100 \Big),\qquad \mathrm{HHI} = \sum_{c}\Big(\frac{R_c}{\sum R}\Big)^2"><code class="doc-tex-fallback">S_risk = clip( (1 − HHI) × 100 , 0 , 100 )；HHI = Σ_c ( R_c / ΣR )²</code></div>
+   <span class="doc-formula-cap">R_c = 客户 c 近 12 月收入；总营收 ≤ 0 时返回 50。单客户垄断 HHI = 1 → 0 分，完全分散 → 趋近 100 分。</span>
+   <p class="doc-p">这个维度也挂着上面账目③的那笔欠账：分数由客户营收分布算出、是对的，但能力档案里的证据文案因取数缺陷恒显示「客户高度分散」。<a class="doc-face-more" data-doc-scroll="doc-debt-3" href="#doc-debt-3">回到账目③ ↑</a></p>
+  </div>
+  </details>
+ </section>
+
+ <div class="doc-footer">
+  <span><i class="fa-solid fa-file-lines"></i> 内容源：docs/看板说明页_*.md ｜ 设计依据：docs/看板说明页接入方案.md</span>
+  <span><i class="fa-solid fa-code-branch"></i> 本页为 P0 骨架 POC：手工内嵌，P1 起改由构建管道注入并保持结构不变</span>
+ </div>
+
+ </div>
 </div>
 
 <script>
@@ -4182,6 +4729,125 @@ window.addEventListener('resize', () => {
  </div>
  <div id="appDrawerContent" style="padding:12px 16px;overflow-y:auto;flex:1"></div>
 </div>
+
+<script>
+/* ================================================================
+   说明中心（Docs tab · POC）— 独立脚本块，不改动主 IIFE
+   职责：① 【去看图】路由 docGoto（设计依据：看板说明页接入方案 §2.3）
+        ② 页内锚点平滑滚动 + 二级导航 scrollspy
+        ③ 「说明」tab 按钮 ④ 深度层 KaTeX 公式渲染
+   兼容：模板占位符未替换时主脚本会整体失败（window.switchTab 缺失），
+        此处自带最小降级实现，保证 file:// 直接打开即可演示；
+        生产构建里 window.switchTab 存在，一律走正式 switchTab。
+   ================================================================ */
+(function(){
+ 'use strict';
+ var DOCS_TAB='Docs';
+
+ // ---- ① 切面：优先正式 switchTab（含懒初始化/弹层关闭），缺失时最小降级 ----
+ function switchFace(face){
+  if(typeof window.switchTab==='function'){ window.switchTab(face); return true; }
+  var btn=document.getElementById('btn'+face),tab=document.getElementById('tab'+face);
+  if(!btn||!tab) return false;
+  Array.prototype.forEach.call(document.querySelectorAll('.tab-btn'),function(b){b.classList.remove('active')});
+  Array.prototype.forEach.call(document.querySelectorAll('.tab-content'),function(p){p.classList.remove('active')});
+  btn.classList.add('active'); tab.classList.add('active');
+  return true;
+ }
+
+ // ---- ② docGoto：切面 → 350ms 后滚动 + 描边闪一次 ----
+ function docGoto(face,chartId){
+  if(!face||!document.getElementById('tab'+face)) return;
+  if(!document.getElementById('btn'+face)){          // F 面 visible:false 防御（§1d-③）
+   alert('该页面当前处于关闭状态（半年度专项仅复盘期开启）'); return;
+  }
+  switchFace(face);
+  setTimeout(function(){                              // §1d-①：避开首访 100-150ms 懒初始化
+   var el=chartId&&document.getElementById(chartId);
+   if(!el) return;
+   var target=(el.closest&&el.closest('.cb'))||el;    // 连同卡片标题一起入镜
+   target.classList.add('doc-jump-flash');            // CSS 级高亮（§1c 第一级，零风险）
+   try{ target.scrollIntoView({behavior:'smooth',block:'center'}); }catch(e){ target.scrollIntoView(); }
+   setTimeout(function(){ target.classList.remove('doc-jump-flash'); },2100);
+   /* P2 可选：ECharts 级高亮需按图配 seriesIndex/dataIndex（§1c 第二级），
+      TABS.ChartRegistry.get(chartId) → dispatchAction({type:'highlight',...}) */
+  },350);
+ }
+ window.docGoto=docGoto;
+
+ // ---- ③ 页内锚点滚动（二级导航 / 卡片入口 / 账目回链） ----
+ function scrollToId(id){
+  var el=id&&document.getElementById(id); if(!el) return;
+  try{ el.scrollIntoView({behavior:'smooth',block:'start'}); }catch(e){ el.scrollIntoView(); }
+ }
+ var subItems=document.querySelectorAll('.doc-subnav-item');
+ Array.prototype.forEach.call(subItems,function(a){
+  a.addEventListener('click',function(ev){
+   ev.preventDefault(); scrollToId(a.getAttribute('data-doc-anchor'));
+  });
+ });
+ Array.prototype.forEach.call(document.querySelectorAll('[data-doc-scroll]'),function(el){
+  el.addEventListener('click',function(ev){
+   ev.preventDefault(); scrollToId(el.getAttribute('data-doc-scroll'));
+  });
+ });
+ function setActiveSub(){
+  var best=null,bestTop=-1e9;
+  Array.prototype.forEach.call(subItems,function(a){
+   var sec=document.getElementById(a.getAttribute('data-doc-anchor'));
+   if(!sec) return;
+   var top=sec.getBoundingClientRect().top;
+   if(top<150&&top>bestTop){bestTop=top;best=a;}
+  });
+  // 页面滚到底时末节无法到达顶部 → 强制点亮最后一项；页面顶部无节命中 → 点亮第一项
+  if(window.innerHeight+window.scrollY>=document.body.scrollHeight-4&&subItems.length){
+   best=subItems[subItems.length-1];
+  }else if(!best&&subItems.length){
+   best=subItems[0];
+  }
+  if(!best) return;
+  Array.prototype.forEach.call(subItems,function(x){x.classList.toggle('active',x===best)});
+ }
+ var ticking=false;
+ window.addEventListener('scroll',function(){
+  if(ticking) return; ticking=true;
+  requestAnimationFrame(function(){ setActiveSub(); ticking=false; });
+ },{passive:true});
+
+ // ---- ④ 【去看图 →】统一事件委托 ----
+ document.addEventListener('click',function(ev){
+  var a=ev.target&&ev.target.closest?ev.target.closest('.doc-goto'):null;
+  if(!a) return;
+  ev.preventDefault();
+  docGoto(a.getAttribute('data-face'),a.getAttribute('data-chart')||'');
+ });
+
+ // ---- ⑤ KaTeX：公式文本在 data-tex（ASCII 数学；KaTeX 无中文字形，中文放 HTML） ----
+ var katexDone=false;
+ function renderFormulas(){
+  if(katexDone) return true;
+  if(typeof window.katex==='undefined') return false;
+  Array.prototype.forEach.call(document.querySelectorAll('.doc-formula[data-tex]'),function(el){
+   var tex=el.getAttribute('data-tex')||'';
+   try{ katex.render(tex,el,{displayMode:true,throwOnError:false,strict:'ignore'}); el.classList.add('is-rendered'); }
+   catch(e){ /* 渲染失败保留 <code> 回退文本 */ }
+  });
+  katexDone=true; return true;
+ }
+
+ // ---- ⑥「说明」tab 按钮 + 首次激活时补渲染公式 ----
+ var btnDocs=document.getElementById('btnDocs');
+ if(btnDocs) btnDocs.addEventListener('click',function(){ switchFace(DOCS_TAB); renderFormulas(); });
+
+ // KaTeX 为 defer 加载：轮询等待（最多 20s），说明 tab 打开时再补一次
+ if(!renderFormulas()){
+  var tries=0,timer=setInterval(function(){
+   tries++;
+   if(renderFormulas()||tries>40) clearInterval(timer);
+  },500);
+ }
+})();
+</script>
 
 </body>
 </html>
