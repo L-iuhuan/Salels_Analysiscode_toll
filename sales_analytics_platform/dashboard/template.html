@@ -454,7 +454,10 @@ body{font-family:-apple-system,'Microsoft YaHei','Segoe UI',sans-serif;backgroun
    交互：滚动淡入（IntersectionObserver）/ 导航联动 / 顶部细进度条
    兼容：动画初始隐藏态挂在 #tabDocs.doc-anim 下——脚本未生效时内容照常可读
    ================================================================ */
-#tabDocs{padding:0;content-visibility:visible;background:var(--surface)}
+#tabDocs{padding:0;content-visibility:visible;background:var(--surface);--flow-max:min(100%,max(1200px,80vw))}
+/* 统一盒模型：带 padding/border 的块（数据流图、计算方式卡、表格容器）与纯文本块右缘对齐 */
+#tabDocs,#tabDocs *,#tabDocs *::before,#tabDocs *::after{box-sizing:border-box}
+#tabDocs .katex,#tabDocs .katex *{box-sizing:content-box}
 
 /* 顶部细进度条（进度条是 #tabDocs 子元素，非激活 tab 时随 display:none 一并隐藏） */
 .doc-progress{position:fixed;left:0;right:0;top:41px;height:2px;background:transparent;z-index:45;pointer-events:none}
@@ -484,59 +487,60 @@ body{font-family:-apple-system,'Microsoft YaHei','Segoe UI',sans-serif;backgroun
 .doc-sec:first-child{border-top:none;padding-top:0}
 
 /* --- 滚动淡入（进入视口 40% 触发；仅脚本就绪时启用） --- */
-#tabDocs.doc-anim .doc-sec .rv{opacity:0;transform:translateY(14px);transition:opacity .6s cubic-bezier(.22,.61,.36,1),transform .6s cubic-bezier(.22,.61,.36,1)}
+#tabDocs.doc-anim .doc-sec .rv{opacity:0;transform:translateY(10px);transition:opacity .45s cubic-bezier(.22,.61,.36,1),transform .45s cubic-bezier(.22,.61,.36,1)}
 #tabDocs.doc-anim .doc-sec.is-in .rv{opacity:1;transform:none}
 #tabDocs.doc-anim .doc-sec .rv:nth-child(2){transition-delay:.06s}
 #tabDocs.doc-anim .doc-sec .rv:nth-child(3){transition-delay:.12s}
 #tabDocs.doc-anim .doc-sec .rv:nth-child(4){transition-delay:.18s}
 #tabDocs.doc-anim .doc-sec .rv:nth-child(5){transition-delay:.24s}
+#tabDocs.doc-anim .doc-sec.is-in.is-jump .rv{transition:none;transition-delay:0s}
 
 /* --- 序章 --- */
 .doc-prologue{padding:88px 0 64px}
 .doc-eyebrow{display:inline-block;font-size:11px;letter-spacing:.2em;color:var(--text-muted);border-bottom:1px solid var(--border);padding-bottom:8px;margin-bottom:28px}
-.doc-hero-title{font-size:48px;line-height:1.16;letter-spacing:-1.2px;font-weight:600;color:var(--text-primary);margin:0 0 22px;max-width:880px}
-.doc-hero-lede{font-size:16px;line-height:1.95;color:var(--text-secondary);max-width:780px;margin:0 0 44px}
+.doc-hero-title{font-size:48px;line-height:1.16;letter-spacing:-1.2px;font-weight:600;color:var(--text-primary);margin:0 0 22px;max-width:var(--flow-max)}
+.doc-hero-lede{font-size:16px;line-height:1.95;color:var(--text-secondary);max-width:var(--flow-max);margin:0 0 44px}
 .doc-hero-lede b{color:var(--text-primary);font-weight:600}
-.doc-stats{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));border:1px solid var(--border);border-radius:10px;overflow:hidden;max-width:1100px}
+.doc-stats{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));border:1px solid var(--border);border-radius:10px;overflow:hidden;max-width:var(--flow-max)}
 .doc-stats>div{padding:20px 22px;border-left:1px solid var(--border)}
 .doc-stats>div:first-child{border-left:none}
 .doc-stats b{display:block;font-size:25px;font-weight:600;letter-spacing:-.6px;color:var(--text-primary);margin-bottom:6px;font-variant-numeric:tabular-nums}
 .doc-stats span{display:block;font-size:12px;line-height:1.6;color:var(--text-tertiary)}
-.doc-who{margin-top:24px;font-size:12.5px;line-height:1.9;color:var(--text-tertiary);max-width:1000px}
+.doc-who{margin-top:24px;font-size:12.5px;line-height:1.9;color:var(--text-tertiary);max-width:var(--flow-max)}
 .doc-who b{color:var(--text-secondary);font-weight:600}
 
 /* --- 章节头 --- */
 .doc-ch-meta{display:flex;align-items:center;gap:14px;margin-bottom:16px}
 .doc-ch-no{font-size:12px;font-weight:600;letter-spacing:.12em;line-height:1.4;color:var(--fc,var(--primary));padding-left:9px;border-left:2px solid var(--fc,var(--primary))}
 .doc-ch-face{font-size:11px;letter-spacing:.14em;color:var(--text-muted)}
-.doc-ch-title{font-size:30px;line-height:1.32;letter-spacing:-.6px;font-weight:600;color:var(--text-primary);margin:0 0 14px;max-width:900px}
-.doc-ch-lede{font-size:15px;line-height:1.92;color:var(--text-secondary);max-width:840px;margin:0}
+.doc-ch-title{font-size:30px;line-height:1.32;letter-spacing:-.6px;font-weight:600;color:var(--text-primary);margin:0 0 14px;max-width:var(--flow-max)}
+.doc-ch-lede{font-size:15px;line-height:1.92;color:var(--text-secondary);max-width:var(--flow-max);margin:0}
 
 /* --- 章内块 --- */
 .doc-block{margin-top:40px}
 .doc-h3{font-size:15px;font-weight:600;color:var(--text-primary);margin:0 0 16px;letter-spacing:.01em}
 .doc-h3::before{content:"";display:inline-block;width:14px;height:1px;background:var(--text-muted);vertical-align:middle;margin-right:10px}
-.doc-p{font-size:13.5px;line-height:1.9;color:var(--text-secondary);margin:0 0 14px;max-width:960px}
+.doc-p{font-size:13.5px;line-height:1.9;color:var(--text-secondary);margin:0 0 14px;max-width:var(--flow-max);overflow-wrap:break-word}
 .doc-p b{color:var(--text-primary);font-weight:600}
 .doc-p:last-child{margin-bottom:0}
 
 /* 经营问题（问答列表） */
-.doc-qa{list-style:none;margin:0;padding:0;max-width:1040px}
-.doc-qa li{display:grid;grid-template-columns:290px minmax(0,1fr);gap:28px;padding:15px 0;border-top:1px solid var(--border-light)}
+.doc-qa{list-style:none;margin:0;padding:0;max-width:var(--flow-max)}
+.doc-qa li{display:grid;grid-template-columns:300px minmax(0,1fr);gap:28px;padding:15px 0;border-top:1px solid var(--border-light)}
 .doc-qa li:first-child{border-top:none}
 .doc-qa li:last-child{border-bottom:1px solid var(--border-light)}
 .doc-qa b{font-size:14px;font-weight:600;line-height:1.75;color:var(--text-primary)}
-.doc-qa span{font-size:13.5px;line-height:1.85;color:var(--text-secondary)}
+.doc-qa span{font-size:13.5px;line-height:1.85;color:var(--text-secondary);overflow-wrap:break-word}
 
 /* 表格（继承 data-table 斑马纹，更疏朗） */
-.doc-tbl-wrap{border:1px solid var(--border);border-radius:10px;overflow:hidden;max-width:1180px}
+.doc-tbl-wrap{border:1px solid var(--border);border-radius:10px;overflow:hidden;overflow-x:auto;max-width:var(--flow-max)}
 .doc-tbl th{position:static;background:var(--surface-subtle);padding:11px 16px;font-size:11px;letter-spacing:.06em;border-bottom:1px solid var(--border);white-space:nowrap}
-.doc-tbl td{padding:14px 16px;font-size:13px;line-height:1.8;white-space:normal;overflow:visible;text-overflow:clip;vertical-align:top;color:var(--text-secondary)}
+.doc-tbl td{padding:14px 16px;font-size:13px;line-height:1.8;white-space:normal;overflow:visible;text-overflow:clip;vertical-align:top;color:var(--text-secondary);overflow-wrap:break-word;word-break:break-word}
 .doc-tbl td:first-child{font-weight:600;color:var(--text-primary);width:190px}
 .doc-tbl tbody tr{cursor:default}
 .doc-tbl tbody tr:last-child td{border-bottom:none}
 .doc-tbl .doc-dim{color:var(--text-tertiary)}
-.doc-tbl-cap{font-size:12px;line-height:1.8;color:var(--text-tertiary);margin:12px 0 0;max-width:1000px}
+.doc-tbl-cap{font-size:12px;line-height:1.8;color:var(--text-tertiary);margin:12px 0 0;max-width:var(--flow-max);overflow-wrap:break-word}
 
 /* 状态标签 */
 .doc-chip{display:inline-flex;align-items:center;font-size:10.5px;font-weight:600;line-height:1.7;border-radius:999px;padding:2px 9px;white-space:nowrap;border:1px solid var(--border);color:var(--text-tertiary);background:var(--bg)}
@@ -546,6 +550,7 @@ body{font-family:-apple-system,'Microsoft YaHei','Segoe UI',sans-serif;backgroun
 /* 去看图 跳转按钮组 */
 .doc-jumps{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:36px;padding-top:20px;border-top:1px solid var(--border-light)}
 .doc-jumps-label{font-size:11px;letter-spacing:.14em;color:var(--text-muted);margin-right:4px}
+.doc-jumps .doc-tbl-cap{flex:1 1 320px}
 .doc-jump{display:inline-flex;align-items:center;gap:9px;font-size:13px;color:var(--text-primary);background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:9px 15px;text-decoration:none;cursor:pointer;transition:border-color .18s ease,color .18s ease,background .18s ease,box-shadow .18s ease}
 .doc-jump:hover{border-color:var(--primary-300);color:var(--primary-700);background:var(--primary-50);box-shadow:var(--shadow-sm)}
 .doc-jump .arr{color:var(--text-muted);transition:transform .18s ease,color .18s ease}
@@ -556,15 +561,28 @@ body{font-family:-apple-system,'Microsoft YaHei','Segoe UI',sans-serif;backgroun
 @keyframes docFlash{0%{box-shadow:0 0 0 0 rgba(37,99,235,0),0 0 0 0 rgba(37,99,235,0)}22%{box-shadow:0 0 0 3px rgba(37,99,235,.5),0 0 46px 8px rgba(37,99,235,.22)}100%{box-shadow:0 0 0 0 rgba(37,99,235,0)}}
 .doc-jump-flash{border-radius:var(--radius-md);animation:docFlash 2s ease-out}
 
-/* 公式（KaTeX；纯 ASCII 数学符号，中文标签在公式外） */
-.doc-formula{position:relative;margin:1.2em 0;padding:16px 20px;background:var(--primary-50);border:1px solid var(--primary-100);border-left:3px solid var(--primary-400);border-radius:8px;text-align:center;font-size:.95em;color:var(--text-secondary);overflow-x:auto;max-width:1180px}
+/* 计算方式块：人话在前（doc-formula-plain），数学式折叠在后（doc-formula-math，弱化展示） */
+.doc-calc{border:1px solid var(--border);border-radius:10px;background:var(--surface);padding:18px 22px;margin:0 0 16px;max-width:var(--flow-max)}
+.doc-formula-plain{font-size:13.5px;line-height:1.9;color:var(--text-primary);margin:0}
+.doc-formula-plain b{font-weight:600}
+.doc-formula-math{margin-top:12px}
+.doc-formula-toggle{display:inline-flex;align-items:center;gap:8px;background:none;border:none;padding:2px 0;font-family:inherit;font-size:12px;color:var(--text-tertiary);cursor:pointer;transition:color .18s ease}
+.doc-formula-toggle:hover{color:var(--primary)}
+.doc-formula-toggle .t-close{display:none}
+.doc-formula-math.open .doc-formula-toggle .t-open{display:none}
+.doc-formula-math.open .doc-formula-toggle .t-close{display:inline}
+.doc-formula-toggle .caret{width:6px;height:6px;border-right:1.2px solid currentColor;border-bottom:1.2px solid currentColor;transform:rotate(45deg);transition:transform .2s ease;display:inline-block;margin-top:-3px}
+.doc-formula-math.open .doc-formula-toggle .caret{transform:rotate(-135deg)}
+.doc-formula-body{display:none;margin-top:12px}
+.doc-formula-math.open .doc-formula-body{display:block}
+.doc-formula{position:relative;padding:12px 16px;background:var(--surface-subtle);border:1px solid var(--border-light);border-left:2px solid var(--primary-300);border-radius:6px;text-align:center;font-size:.86em;color:var(--text-secondary);overflow-x:auto;max-width:var(--flow-max)}
 .doc-formula .katex-display{margin:0}
-.doc-formula .doc-tex-fallback{font-family:ui-monospace,Consolas,monospace;font-size:12px;color:var(--text-tertiary);line-height:1.7;text-align:left;white-space:pre-wrap;margin:0}
-.doc-formula-cap{display:block;font-size:12px;line-height:1.8;color:var(--text-tertiary);margin:-4px 0 28px;max-width:940px}
+.doc-formula .doc-tex-fallback{font-family:ui-monospace,Consolas,monospace;font-size:11.5px;color:var(--text-tertiary);line-height:1.7;text-align:left;white-space:pre-wrap;margin:0}
+.doc-formula-cap{display:block;font-size:11.5px;line-height:1.8;color:var(--text-tertiary);margin:10px 0 0;max-width:var(--flow-max)}
 .doc-formula-cap b{color:var(--text-secondary);font-weight:600}
 
 /* 数据流图（纯 SVG；节点淡入 + 连线绘制） */
-.doc-flowfig{border:1px solid var(--border);border-radius:10px;padding:26px 28px 20px;background:var(--surface);max-width:1200px}
+.doc-flowfig{border:1px solid var(--border);border-radius:10px;padding:26px 28px 20px;background:var(--surface);max-width:var(--flow-max)}
 .doc-flowfig svg{display:block;width:100%;height:auto}
 #tabDocs.doc-anim .dg-node{opacity:0}
 #tabDocs.doc-anim .dg-line{stroke-dasharray:46;stroke-dashoffset:46}
@@ -591,11 +609,11 @@ body{font-family:-apple-system,'Microsoft YaHei','Segoe UI',sans-serif;backgroun
 .dg-arrow{fill:var(--border)}
 
 /* 终章：账目 / 拍板 / 读法 */
-.doc-ledger-fig{display:flex;gap:26px;flex-wrap:wrap;max-width:1180px;margin:0 0 18px}
+.doc-ledger-fig{display:flex;gap:26px;flex-wrap:wrap;max-width:var(--flow-max);margin:0 0 18px}
 .doc-ledger-fig div{border-left:2px solid var(--border);padding-left:12px}
 .doc-ledger-fig b{display:block;font-size:20px;font-weight:600;color:var(--text-primary);font-variant-numeric:tabular-nums}
 .doc-ledger-fig span{font-size:11.5px;color:var(--text-tertiary)}
-.doc-rules{list-style:none;margin:0;padding:0;counter-reset:r;max-width:1040px}
+.doc-rules{list-style:none;margin:0;padding:0;counter-reset:r;max-width:var(--flow-max)}
 .doc-rules li{counter-increment:r;position:relative;padding:14px 0 14px 44px;border-top:1px solid var(--border-light);font-size:13.5px;line-height:1.85;color:var(--text-secondary)}
 .doc-rules li:first-child{border-top:none}
 .doc-rules li::before{content:counter(r,decimal-leading-zero);position:absolute;left:0;top:14px;font-size:11px;letter-spacing:.1em;color:var(--text-muted);font-variant-numeric:tabular-nums}
@@ -633,7 +651,7 @@ body{font-family:-apple-system,'Microsoft YaHei','Segoe UI',sans-serif;backgroun
  <button class="tab-btn" data-tab="D" id="btnD">销售能力</button>
  <button class="tab-btn" data-tab="E" id="btnE">月度作战雷达</button>
 <button class="tab-btn" data-tab="F" id="btnF">半年度专项</button>
- <button class="tab-btn" data-tab="Docs" id="btnDocs"><i class="fa-solid fa-book-open" style="font-size:11px;margin-right:5px;opacity:.85"></i>说明</button>
+ <button class="tab-btn" data-tab="Docs" id="btnDocs">说明</button>
   <div style="margin-left:auto;display:flex;gap:6px;align-items:center;padding:4px 0">
   <span id="dataVersion" style="font-size:10px;color:var(--text-tertiary);padding:2px 8px;white-space:nowrap">数据截至 %%DATA_AS_OF%%</span>
   <span id="dataIdentity" style="font-size:10px;color:var(--text-tertiary);padding:2px 8px;white-space:nowrap;cursor:help;overflow:hidden;text-overflow:ellipsis;max-width:46vw" title="%%DATA_IDENTITY_TIP%%">%%DATA_IDENTITY%%</span>
@@ -1099,10 +1117,26 @@ body{font-family:-apple-system,'Microsoft YaHei','Segoe UI',sans-serif;backgroun
 
    <div class="doc-block rv">
     <h3 class="doc-h3">计算方式</h3>
-    <div class="doc-formula" data-tex="\mathrm{YoY}_{R} = \frac{R_{\mathrm{ytd}} - R_{\mathrm{pytd}}}{R_{\mathrm{pytd}}} \times 100\%,\qquad \Delta m = m_{\mathrm{ytd}} - m_{\mathrm{pytd}}\ (\mathrm{pp})"><code class="doc-tex-fallback">YoY_R = ( R_ytd − R_pytd ) / R_pytd × 100% ；Δm = m_ytd − m_pytd（pp）</code></div>
-    <span class="doc-formula-cap"><b>同比口径：</b>本年 1/1 至最新月末 vs 上年 1/1 至上年同月末（同月数对齐）；毛利率差用百分点（pp）表示。ASP = 收入 ÷ 发货数量。</span>
-    <div class="doc-formula" data-tex="\mathrm{share}_{r} = \frac{R_{r}}{R_{\mathrm{all}}}"><code class="doc-tex-fallback">share_r = R_r / R_all</code></div>
-    <span class="doc-formula-cap"><b>地域占比：</b>分母<b>包含</b>海外与未识别——保证所有份额加总 100%、不做隐性归一；解析不出的部分单列“未识别”桶，让解析质量的退化直接显形在页面上。</span>
+    <div class="doc-calc">
+     <p class="doc-formula-plain">同比 = 今年到最新月末的累计收入 ÷ 去年同月数的累计收入 − 100%；毛利率差 = 今年毛利率 − 去年毛利率，用「百分点（pp）」表示。</p>
+     <div class="doc-formula-math">
+      <button class="doc-formula-toggle" type="button" aria-expanded="false"><span class="t-open">查看数学式</span><span class="t-close">收起数学式</span><span class="caret"></span></button>
+      <div class="doc-formula-body">
+       <div class="doc-formula" data-tex="\mathrm{YoY}_{R} = \frac{R_{\mathrm{ytd}} - R_{\mathrm{pytd}}}{R_{\mathrm{pytd}}} \times 100\%,\qquad \Delta m = m_{\mathrm{ytd}} - m_{\mathrm{pytd}}\ (\mathrm{pp})"><code class="doc-tex-fallback">YoY_R = ( R_ytd − R_pytd ) / R_pytd × 100% ；Δm = m_ytd − m_pytd（pp）</code></div>
+       <span class="doc-formula-cap"><b>同比口径：</b>本年 1/1 至最新月末 vs 上年 1/1 至上年同月末（同月数对齐）；毛利率差用百分点（pp）表示。ASP = 收入 ÷ 发货数量。</span>
+      </div>
+     </div>
+    </div>
+    <div class="doc-calc">
+     <p class="doc-formula-plain">某省收入占比 = 该省近 12 个月收入 ÷ 全部近 12 个月收入（分母包含海外与未识别，份额加总 100%）。</p>
+     <div class="doc-formula-math">
+      <button class="doc-formula-toggle" type="button" aria-expanded="false"><span class="t-open">查看数学式</span><span class="t-close">收起数学式</span><span class="caret"></span></button>
+      <div class="doc-formula-body">
+       <div class="doc-formula" data-tex="\mathrm{share}_{r} = \frac{R_{r}}{R_{\mathrm{all}}}"><code class="doc-tex-fallback">share_r = R_r / R_all</code></div>
+       <span class="doc-formula-cap"><b>地域占比：</b>分母<b>包含</b>海外与未识别——保证所有份额加总 100%、不做隐性归一；解析不出的部分单列“未识别”桶，让解析质量的退化直接显形在页面上。</span>
+      </div>
+     </div>
+    </div>
    </div>
 
    <div class="doc-jumps rv">
@@ -1147,16 +1181,32 @@ body{font-family:-apple-system,'Microsoft YaHei','Segoe UI',sans-serif;backgroun
 
    <div class="doc-block rv">
     <h3 class="doc-h3">计算方式</h3>
-    <div class="doc-formula" data-tex="\Delta L > +10\% \ \wedge\ |\Delta L| \ge 10^{4}"><code class="doc-tex-fallback">ΔL &gt; +10% 且 |ΔL| ≥ 1 万</code></div>
-    <span class="doc-formula-cap"><b>较上月的死区判定：</b>两个条件同时满足才判「恶化」（相对幅度 AND 绝对金额 ≥1 万，防“小基数大百分比”误报）；反向 −10% 判「好转」，死区内维持「持平」。</span>
-    <div class="doc-formula" data-tex="\mathrm{rank} = \big(\mathrm{level}\ \downarrow,\ \Delta L\ \downarrow\big) \Rightarrow \mathrm{Top}\ 12"><code class="doc-tex-fallback">rank = ( 等级 ↓ , 损失 ↓ ) ⇒ Top 12</code></div>
-    <span class="doc-formula-cap"><b>上榜排序：</b>先按等级（高→低）、再按损失额降序取前 12；溢出信号全量写入附件——这是“有界榜单 + 无损附件”的一般模式。</span>
+    <div class="doc-calc">
+     <p class="doc-formula-plain">较上月判定：本月损失额比上月变化超过 +10%、且金额差 ≥ 1 万元，才算「恶化」；反向 −10% 判定「好转」。</p>
+     <div class="doc-formula-math">
+      <button class="doc-formula-toggle" type="button" aria-expanded="false"><span class="t-open">查看数学式</span><span class="t-close">收起数学式</span><span class="caret"></span></button>
+      <div class="doc-formula-body">
+       <div class="doc-formula" data-tex="\Delta L > +10\% \ \wedge\ |\Delta L| \ge 10^{4}"><code class="doc-tex-fallback">ΔL &gt; +10% 且 |ΔL| ≥ 1 万</code></div>
+       <span class="doc-formula-cap"><b>较上月的死区判定：</b>两个条件同时满足才判「恶化」（相对幅度 AND 绝对金额 ≥1 万，防“小基数大百分比”误报）；反向 −10% 判「好转」，死区内维持「持平」。</span>
+      </div>
+     </div>
+    </div>
+    <div class="doc-calc">
+     <p class="doc-formula-plain">上榜排序：先按等级（高→低）、再按损失额（大→小）排队，取前 12 条；其余信号进附件。</p>
+     <div class="doc-formula-math">
+      <button class="doc-formula-toggle" type="button" aria-expanded="false"><span class="t-open">查看数学式</span><span class="t-close">收起数学式</span><span class="caret"></span></button>
+      <div class="doc-formula-body">
+       <div class="doc-formula" data-tex="\mathrm{rank} = \big(\mathrm{level}\ \downarrow,\ \Delta L\ \downarrow\big) \Rightarrow \mathrm{Top}\ 12"><code class="doc-tex-fallback">rank = ( 等级 ↓ , 损失 ↓ ) ⇒ Top 12</code></div>
+       <span class="doc-formula-cap"><b>上榜排序：</b>先按等级（高→低）、再按损失额降序取前 12；溢出信号全量写入附件——这是“有界榜单 + 无损附件”的一般模式。</span>
+      </div>
+     </div>
+    </div>
    </div>
 
    <div class="doc-jumps rv">
     <span class="doc-jumps-label">去这面看图</span>
     <a class="doc-jump is-face" href="javascript:void(0)" data-face="R">去风险与行动面<span class="arr">→</span></a>
-    <span class="doc-tbl-cap" style="margin:0;max-width:640px">该面内容由月度审定文档渲染，没有稳定的图表级锚点，因此只做面级跳转（接入方案已登记该限制）。</span>
+    <span class="doc-tbl-cap" style="margin:0">该面内容由月度审定文档渲染，没有稳定的图表级锚点，因此只做面级跳转（接入方案已登记该限制）。</span>
    </div>
   </section>
 
@@ -1197,10 +1247,26 @@ body{font-family:-apple-system,'Microsoft YaHei','Segoe UI',sans-serif;backgroun
 
    <div class="doc-block rv">
     <h3 class="doc-h3">计算方式</h3>
-    <div class="doc-formula" data-tex="S = 0.35\,D_{1} + 0.25\,D_{2} + 0.20\,D_{3} + 0.15\,D_{4} + 0.05\,D_{5}"><code class="doc-tex-fallback">S = 0.35 D₁ + 0.25 D₂ + 0.20 D₃ + 0.15 D₄ + 0.05 D₅</code></div>
-    <span class="doc-formula-cap"><b>五维综合分：</b>D₁–D₅ 依次为价值 / 增长 / 稳定 / 潜力 / 效率；层级阈值 S ≥ 34、A ≥ 28、B ≥ 22，其余 C，非活跃客户统一覆写为「休眠」。权重是设计时的经验判断，从未做过校准对拍（见终章账目）。</span>
-    <div class="doc-formula" data-tex="S_{\mathrm{risk}} = 0.70\,(100 - D_{\mathrm{stable}}) + 0.30\,(100 - D_{\mathrm{eff}})"><code class="doc-tex-fallback">S_risk = 0.70 (100 − D_stable) + 0.30 (100 − D_eff)</code></div>
-    <span class="doc-formula-cap"><b>风险评级：</b>取「稳定」与「效率」两维的反向加权（≥85 / 78 / 60 分为极高 / 高 / 中 / 低）——度量的是关系脆弱度，不是财务信用。</span>
+    <div class="doc-calc">
+     <p class="doc-formula-plain">综合价值分 = 价值 × 0.35 + 增长 × 0.25 + 稳定 × 0.20 + 潜力 × 0.15 + 效率 × 0.05（五维各 0–100 分）。</p>
+     <div class="doc-formula-math">
+      <button class="doc-formula-toggle" type="button" aria-expanded="false"><span class="t-open">查看数学式</span><span class="t-close">收起数学式</span><span class="caret"></span></button>
+      <div class="doc-formula-body">
+       <div class="doc-formula" data-tex="S = 0.35\,D_{1} + 0.25\,D_{2} + 0.20\,D_{3} + 0.15\,D_{4} + 0.05\,D_{5}"><code class="doc-tex-fallback">S = 0.35 D₁ + 0.25 D₂ + 0.20 D₃ + 0.15 D₄ + 0.05 D₅</code></div>
+       <span class="doc-formula-cap"><b>五维综合分：</b>D₁–D₅ 依次为价值 / 增长 / 稳定 / 潜力 / 效率；层级阈值 S ≥ 34、A ≥ 28、B ≥ 22，其余 C，非活跃客户统一覆写为「休眠」。权重是设计时的经验判断，从未做过校准对拍（见终章账目）。</span>
+      </div>
+     </div>
+    </div>
+    <div class="doc-calc">
+     <p class="doc-formula-plain">风险分 =（100 − 稳定分）× 0.70 +（100 − 效率分）× 0.30，分数越高关系越脆弱。</p>
+     <div class="doc-formula-math">
+      <button class="doc-formula-toggle" type="button" aria-expanded="false"><span class="t-open">查看数学式</span><span class="t-close">收起数学式</span><span class="caret"></span></button>
+      <div class="doc-formula-body">
+       <div class="doc-formula" data-tex="S_{\mathrm{risk}} = 0.70\,(100 - D_{\mathrm{stable}}) + 0.30\,(100 - D_{\mathrm{eff}})"><code class="doc-tex-fallback">S_risk = 0.70 (100 − D_stable) + 0.30 (100 − D_eff)</code></div>
+       <span class="doc-formula-cap"><b>风险评级：</b>取「稳定」与「效率」两维的反向加权（≥85 / 78 / 60 分为极高 / 高 / 中 / 低）——度量的是关系脆弱度，不是财务信用。</span>
+      </div>
+     </div>
+    </div>
    </div>
 
    <div class="doc-jumps rv">
@@ -1246,10 +1312,26 @@ body{font-family:-apple-system,'Microsoft YaHei','Segoe UI',sans-serif;backgroun
 
    <div class="doc-block rv">
     <h3 class="doc-h3">计算方式</h3>
-    <div class="doc-formula" data-tex="S_{\mathrm{risk}} = \sum_{i} S_{i}\,w_{i},\qquad (w_{1},\,w_{4},\,w_{5},\,w_{6}) = (0.10,\ 0.60,\ 0.20,\ 0.10)"><code class="doc-tex-fallback">S_risk = Σ Sᵢ wᵢ ；(w₁, w₄, w₅, w₆) = (0.10, 0.60, 0.20, 0.10)</code></div>
-    <span class="doc-formula-cap"><b>综合风险：</b>四因子加权——动能 60%、自比健康 20%、毛利趋势 10%、大客户订货 10%（生产上大客户因子未生效，权重自动让渡给其余因子）。权重来自历史版本的经验校准，样本已无法复现。</span>
-    <div class="doc-formula" data-tex="H_{\mathrm{self}} = \frac{m_{12}}{m_{\mathrm{peak}}}"><code class="doc-tex-fallback">H_self = m₁₂ / m_peak</code></div>
-    <span class="doc-formula-cap"><b>自比健康度：</b>近 12 个月毛利额 ÷ 历史峰值毛利额；0.6 表示现在只有自己巅峰的六成。历史上没有赚钱月份的产品判“无法评估”，不参与该维度比较。</span>
+    <div class="doc-calc">
+     <p class="doc-formula-plain">综合风险 = 动能衰减 × 0.60 + 自比健康 × 0.20 + 毛利趋势 × 0.10 + 大客户订货 × 0.10（大客户因子生产上未生效，权重让渡给其余因子）。</p>
+     <div class="doc-formula-math">
+      <button class="doc-formula-toggle" type="button" aria-expanded="false"><span class="t-open">查看数学式</span><span class="t-close">收起数学式</span><span class="caret"></span></button>
+      <div class="doc-formula-body">
+       <div class="doc-formula" data-tex="S_{\mathrm{risk}} = \sum_{i} S_{i}\,w_{i},\qquad (w_{1},\,w_{4},\,w_{5},\,w_{6}) = (0.10,\ 0.60,\ 0.20,\ 0.10)"><code class="doc-tex-fallback">S_risk = Σ Sᵢ wᵢ ；(w₁, w₄, w₅, w₆) = (0.10, 0.60, 0.20, 0.10)</code></div>
+       <span class="doc-formula-cap"><b>综合风险：</b>四因子加权——动能 60%、自比健康 20%、毛利趋势 10%、大客户订货 10%（生产上大客户因子未生效，权重自动让渡给其余因子）。权重来自历史版本的经验校准，样本已无法复现。</span>
+      </div>
+     </div>
+    </div>
+    <div class="doc-calc">
+     <p class="doc-formula-plain">自比健康度 = 近 12 个月毛利额 ÷ 自己历史最高时期的毛利额（0.6 就是只剩巅峰的六成）。</p>
+     <div class="doc-formula-math">
+      <button class="doc-formula-toggle" type="button" aria-expanded="false"><span class="t-open">查看数学式</span><span class="t-close">收起数学式</span><span class="caret"></span></button>
+      <div class="doc-formula-body">
+       <div class="doc-formula" data-tex="H_{\mathrm{self}} = \frac{m_{12}}{m_{\mathrm{peak}}}"><code class="doc-tex-fallback">H_self = m₁₂ / m_peak</code></div>
+       <span class="doc-formula-cap"><b>自比健康度：</b>近 12 个月毛利额 ÷ 历史峰值毛利额；0.6 表示现在只有自己巅峰的六成。历史上没有赚钱月份的产品判“无法评估”，不参与该维度比较。</span>
+      </div>
+     </div>
+    </div>
    </div>
 
    <div class="doc-jumps rv">
@@ -1297,10 +1379,26 @@ body{font-family:-apple-system,'Microsoft YaHei','Segoe UI',sans-serif;backgroun
 
    <div class="doc-block rv">
     <h3 class="doc-h3">计算方式</h3>
-    <div class="doc-formula" data-tex="S = \mathrm{clip}\left(50 + \sum_{i} \Delta_{i},\ 0,\ 100\right)"><code class="doc-tex-fallback">S = clip( 50 + Σ Δᵢ , 0 , 100 )</code></div>
-    <span class="doc-formula-cap"><b>50 分基线 + 偏移累加：</b>每个维度都从 50 分出发、按子项加减、截断到 [0, 100]。缺数据的子项自然跳过、分数退回中性 50——注意 50 是中性点，不是任何统计量。</span>
-    <div class="doc-formula" data-tex="\mathrm{HHI} = \sum_{c}\left(\frac{R_{c}}{\sum R}\right)^{2},\qquad S_{\mathrm{risk}} = \mathrm{clip}\big((1 - \mathrm{HHI}) \times 100,\ 0,\ 100\big)"><code class="doc-tex-fallback">HHI = Σ_c ( R_c / ΣR )² ；S_risk = clip( (1 − HHI) × 100 , 0 , 100 )</code></div>
-    <span class="doc-formula-cap"><b>组合抗风险（v4.14 新增）：</b>客户营收份额平方和 HHI——单客户垄断 HHI = 1 → 0 分，完全分散 → 趋近 100 分。它是九维中唯一不是“50 基线结构”的维度。该维度的证据文案有取数缺陷，见终章账目。</span>
+    <div class="doc-calc">
+     <p class="doc-formula-plain">维度得分 = 50 分起点 + 各子项加减分，最后卡在 0–100 分之间（缺数据的子项跳过，不加不扣）。</p>
+     <div class="doc-formula-math">
+      <button class="doc-formula-toggle" type="button" aria-expanded="false"><span class="t-open">查看数学式</span><span class="t-close">收起数学式</span><span class="caret"></span></button>
+      <div class="doc-formula-body">
+       <div class="doc-formula" data-tex="S = \mathrm{clip}\left(50 + \sum_{i} \Delta_{i},\ 0,\ 100\right)"><code class="doc-tex-fallback">S = clip( 50 + Σ Δᵢ , 0 , 100 )</code></div>
+       <span class="doc-formula-cap"><b>50 分基线 + 偏移累加：</b>每个维度都从 50 分出发、按子项加减、截断到 [0, 100]。缺数据的子项自然跳过、分数退回中性 50——注意 50 是中性点，不是任何统计量。</span>
+      </div>
+     </div>
+    </div>
+    <div class="doc-calc">
+     <p class="doc-formula-plain">组合抗风险 = 100 ×（1 − 客户营收集中度）；集中度用各客户营收占比的平方和衡量，客户越分散分数越高。</p>
+     <div class="doc-formula-math">
+      <button class="doc-formula-toggle" type="button" aria-expanded="false"><span class="t-open">查看数学式</span><span class="t-close">收起数学式</span><span class="caret"></span></button>
+      <div class="doc-formula-body">
+       <div class="doc-formula" data-tex="\mathrm{HHI} = \sum_{c}\left(\frac{R_{c}}{\sum R}\right)^{2},\qquad S_{\mathrm{risk}} = \mathrm{clip}\big((1 - \mathrm{HHI}) \times 100,\ 0,\ 100\big)"><code class="doc-tex-fallback">HHI = Σ_c ( R_c / ΣR )² ；S_risk = clip( (1 − HHI) × 100 , 0 , 100 )</code></div>
+       <span class="doc-formula-cap"><b>组合抗风险（v4.14 新增）：</b>客户营收份额平方和 HHI——单客户垄断 HHI = 1 → 0 分，完全分散 → 趋近 100 分。它是九维中唯一不是“50 基线结构”的维度。该维度的证据文案有取数缺陷，见终章账目。</span>
+      </div>
+     </div>
+    </div>
    </div>
 
    <div class="doc-jumps rv">
@@ -1346,10 +1444,26 @@ body{font-family:-apple-system,'Microsoft YaHei','Segoe UI',sans-serif;backgroun
 
    <div class="doc-block rv">
     <h3 class="doc-h3">计算方式</h3>
-    <div class="doc-formula" data-tex="\Delta R = \underbrace{\Delta Q \cdot \mathrm{ASP}_{\mathrm{prev}}}_{v_Q} + \underbrace{\Delta \mathrm{ASP} \cdot Q_{\mathrm{prev}}}_{v_P} + \underbrace{\Delta Q \cdot \Delta \mathrm{ASP}}_{\mathrm{residual}}"><code class="doc-tex-fallback">ΔR = ΔQ·ASP_prev (v_Q) + ΔASP·Q_prev (v_P) + ΔQ·ΔASP (residual)</code></div>
-    <span class="doc-formula-cap"><b>量价分解：</b>收入变化 = 量贡献 v_Q + 价贡献 v_P + 交叉项残差。交叉项不摊分是设计选择——量价分解是会计口径、不是物理定律，线性归因会系统性偏袒一侧；误差量级留给使用者判断（见终章账目）。</span>
-    <div class="doc-formula" data-tex="Q_{\mathrm{prev}} = 0 \ \Rightarrow\ v_Q = v_P = 0 \ \Rightarrow\ \mathrm{NEW}"><code class="doc-tex-fallback">Q_prev = 0 ⇒ v_Q = v_P = 0 ⇒ NEW</code></div>
-    <span class="doc-formula-cap"><b>新项处理：</b>上期没有销量的组合不去强行拆分——变化列直接标 NEW，表示本期收入全部为增量；毛利变化 ΔP 单独成列核算，不混入收入拆解。</span>
+    <div class="doc-calc">
+     <p class="doc-formula-plain">收入变化 =「量的变化 × 上期单价」+「单价变化 × 上期销量」+ 两者相乘的交叉项（交叉项不摊分，两项之和不完全等于收入变化）。</p>
+     <div class="doc-formula-math">
+      <button class="doc-formula-toggle" type="button" aria-expanded="false"><span class="t-open">查看数学式</span><span class="t-close">收起数学式</span><span class="caret"></span></button>
+      <div class="doc-formula-body">
+       <div class="doc-formula" data-tex="\Delta R = \underbrace{\Delta Q \cdot \mathrm{ASP}_{\mathrm{prev}}}_{v_Q} + \underbrace{\Delta \mathrm{ASP} \cdot Q_{\mathrm{prev}}}_{v_P} + \underbrace{\Delta Q \cdot \Delta \mathrm{ASP}}_{\mathrm{residual}}"><code class="doc-tex-fallback">ΔR = ΔQ·ASP_prev (v_Q) + ΔASP·Q_prev (v_P) + ΔQ·ΔASP (residual)</code></div>
+       <span class="doc-formula-cap"><b>量价分解：</b>收入变化 = 量贡献 v_Q + 价贡献 v_P + 交叉项残差。交叉项不摊分是设计选择——量价分解是会计口径、不是物理定律，线性归因会系统性偏袒一侧；误差量级留给使用者判断（见终章账目）。</span>
+      </div>
+     </div>
+    </div>
+    <div class="doc-calc">
+     <p class="doc-formula-plain">上期没有销量的组合不拆分，直接标 NEW —— 本期收入全部算增量。</p>
+     <div class="doc-formula-math">
+      <button class="doc-formula-toggle" type="button" aria-expanded="false"><span class="t-open">查看数学式</span><span class="t-close">收起数学式</span><span class="caret"></span></button>
+      <div class="doc-formula-body">
+       <div class="doc-formula" data-tex="Q_{\mathrm{prev}} = 0 \ \Rightarrow\ v_Q = v_P = 0 \ \Rightarrow\ \mathrm{NEW}"><code class="doc-tex-fallback">Q_prev = 0 ⇒ v_Q = v_P = 0 ⇒ NEW</code></div>
+       <span class="doc-formula-cap"><b>新项处理：</b>上期没有销量的组合不去强行拆分——变化列直接标 NEW，表示本期收入全部为增量；毛利变化 ΔP 单独成列核算，不混入收入拆解。</span>
+      </div>
+     </div>
+    </div>
    </div>
 
    <div class="doc-jumps rv">
@@ -1393,10 +1507,26 @@ body{font-family:-apple-system,'Microsoft YaHei','Segoe UI',sans-serif;backgroun
 
    <div class="doc-block rv">
     <h3 class="doc-h3">计算方式</h3>
-    <div class="doc-formula" data-tex="\mathrm{hoh} = \frac{R_{\mathrm{cur}} - R_{\mathrm{half}}}{R_{\mathrm{half}}},\qquad \mathrm{yoy} = \frac{R_{\mathrm{cur}} - R_{\mathrm{year}}}{R_{\mathrm{year}}},\qquad \Delta m = m_{\mathrm{cur}} - m_{\mathrm{base}}"><code class="doc-tex-fallback">hoh = (R_cur − R_half) / R_half ；yoy = (R_cur − R_year) / R_year ；Δm = m_cur − m_base</code></div>
-    <span class="doc-formula-cap"><b>三窗对比：</b>hoh 对上一半年窗、yoy 对去年同期窗、毛利率用 pp 差；窗口内月度环比锚在末月，前一月越出窗口起点即无值（显示“—”）。</span>
-    <div class="doc-formula" data-tex="\mathrm{impact}_{i} = R_{i} \times \frac{\Delta m_{i}}{100}"><code class="doc-tex-fallback">impactᵢ = Rᵢ × Δmᵢ / 100</code></div>
-    <span class="doc-formula-cap"><b>归因影响量：</b>按影响最负排序取前 8，定位“谁把毛利率拖下来的”；客户级归因再判价格原因 / 结构原因 / 综合原因，结论写入关键问题表供复盘会引用。</span>
+    <div class="doc-calc">
+     <p class="doc-formula-plain">hoh = 当前半年收入 ÷ 上一半年收入 − 100%；yoy = 当前半年 ÷ 去年同期 − 100%；毛利率差用百分点。</p>
+     <div class="doc-formula-math">
+      <button class="doc-formula-toggle" type="button" aria-expanded="false"><span class="t-open">查看数学式</span><span class="t-close">收起数学式</span><span class="caret"></span></button>
+      <div class="doc-formula-body">
+       <div class="doc-formula" data-tex="\mathrm{hoh} = \frac{R_{\mathrm{cur}} - R_{\mathrm{half}}}{R_{\mathrm{half}}},\qquad \mathrm{yoy} = \frac{R_{\mathrm{cur}} - R_{\mathrm{year}}}{R_{\mathrm{year}}},\qquad \Delta m = m_{\mathrm{cur}} - m_{\mathrm{base}}"><code class="doc-tex-fallback">hoh = (R_cur − R_half) / R_half ；yoy = (R_cur − R_year) / R_year ；Δm = m_cur − m_base</code></div>
+       <span class="doc-formula-cap"><b>三窗对比：</b>hoh 对上一半年窗、yoy 对去年同期窗、毛利率用 pp 差；窗口内月度环比锚在末月，前一月越出窗口起点即无值（显示“—”）。</span>
+      </div>
+     </div>
+    </div>
+    <div class="doc-calc">
+     <p class="doc-formula-plain">某品种对毛利率的拖累 = 该品种当期收入 × 它的毛利率变化 ÷ 100，按影响最负排前 8。</p>
+     <div class="doc-formula-math">
+      <button class="doc-formula-toggle" type="button" aria-expanded="false"><span class="t-open">查看数学式</span><span class="t-close">收起数学式</span><span class="caret"></span></button>
+      <div class="doc-formula-body">
+       <div class="doc-formula" data-tex="\mathrm{impact}_{i} = R_{i} \times \frac{\Delta m_{i}}{100}"><code class="doc-tex-fallback">impactᵢ = Rᵢ × Δmᵢ / 100</code></div>
+       <span class="doc-formula-cap"><b>归因影响量：</b>按影响最负排序取前 8，定位“谁把毛利率拖下来的”；客户级归因再判价格原因 / 结构原因 / 综合原因，结论写入关键问题表供复盘会引用。</span>
+      </div>
+     </div>
+    </div>
    </div>
 
    <div class="doc-jumps rv">
@@ -1404,7 +1534,7 @@ body{font-family:-apple-system,'Microsoft YaHei','Segoe UI',sans-serif;backgroun
     <a class="doc-jump" href="javascript:void(0)" data-face="F" data-chart="fProductTable">产品维度半年对比<span class="arr">→</span></a>
     <a class="doc-jump" href="javascript:void(0)" data-face="F" data-chart="fCatH1Table">品类维度半年对比<span class="arr">→</span></a>
     <a class="doc-jump" href="javascript:void(0)" data-face="F" data-chart="fDeptRadar">部门雷达对比<span class="arr">→</span></a>
-    <span class="doc-tbl-cap" style="margin:0;max-width:560px">F 面当前关闭（visible:false）；按钮被服务端移除时，路由函数会给出提示而不是跳转——这是设计好的防御。</span>
+    <span class="doc-tbl-cap" style="margin:0">F 面当前关闭（visible:false）；按钮被服务端移除时，路由函数会给出提示而不是跳转——这是设计好的防御。</span>
    </div>
   </section>
 
@@ -4943,6 +5073,7 @@ window.addEventListener('resize', () => {
   if(!document.getElementById('btn'+face)){          // F 面关闭期防御
    alert('该页面当前处于关闭状态（半年度专项仅复盘期开启）'); return;
   }
+  saveDocsPos();                                     // 离开说明 tab 前记录阅读位置
   switchFace(face);
   setTimeout(function(){                              // 避开首访 100-150ms 懒初始化
    var el=chartId&&document.getElementById(chartId);
@@ -4995,25 +5126,32 @@ window.addEventListener('resize', () => {
   for(var j=0;j<links.length;j++) links[j].classList.toggle('is-active',j===best);
  }
 
- // ---- ④ 章节淡入（进入视口 40% 触发；无 IO 时不做动画，内容照常可读） ----
- if(typeof IntersectionObserver!=='undefined'){
-  tabDocs.classList.add('doc-anim');
-  var io=new IntersectionObserver(function(entries){
-   for(var i=0;i<entries.length;i++){
-    if(entries[i].isIntersecting){ entries[i].target.classList.add('is-in'); io.unobserve(entries[i].target); }
+ // ---- ④ 章节淡入：提前 600px 预置 + 滚动帧复核；跳转跨屏时直接显示不做过渡（快速滚动零空白） ----
+ tabDocs.classList.add('doc-anim');
+ var revealed=[];
+ var lastSY=window.scrollY;
+ function updateReveal(){
+  if(!tabDocs.classList.contains('active')) return;
+  var limit=window.innerHeight+600;                  // 进入视口前 600px 即先就位
+  var dy=Math.abs(window.scrollY-lastSY); lastSY=window.scrollY;
+  var jump=dy>window.innerHeight*0.9;                // 一帧内跨屏 = 跳转/拖拽滚动条
+  for(var i=0;i<secs.length;i++){
+   if(revealed[i]) continue;
+   if(secs[i].getBoundingClientRect().top<limit){
+    if(jump) secs[i].classList.add('is-jump');      // 跳过场动画，内容立即就位
+    secs[i].classList.add('is-in'); revealed[i]=1;
    }
-  },{root:null,rootMargin:'0px 0px -40% 0px',threshold:0});
-  for(var k=0;k<secs.length;k++) io.observe(secs[k]);
+  }
  }
 
  // ---- 滚动节流 ----
  var ticking=false;
  function onScroll(){
   if(ticking) return; ticking=true;
-  requestAnimationFrame(function(){ updateSpy(); updateProgress(); ticking=false; });
+  requestAnimationFrame(function(){ updateSpy(); updateProgress(); updateReveal(); ticking=false; });
  }
  window.addEventListener('scroll',onScroll,{passive:true});
- window.addEventListener('resize',function(){ updateSpy(); updateProgress(); });
+ window.addEventListener('resize',function(){ updateSpy(); updateProgress(); updateReveal(); });
 
  // ---- ⑤ KaTeX ----
  var katexDone=false;
@@ -5028,12 +5166,13 @@ window.addEventListener('resize', () => {
   katexDone=true; return true;
  }
 
- // ---- ⑥「说明」tab 按钮 ----
+ // ---- ⑥「说明」tab 按钮（含位置记忆恢复） ----
  var btnDocs=document.getElementById('btnDocs');
  if(btnDocs) btnDocs.addEventListener('click',function(){
   switchFace(DOCS);
   renderFormulas();
-  setTimeout(function(){ updateSpy(); updateProgress(); },120);
+  restoreDocsPos();
+  setTimeout(function(){ updateSpy(); updateProgress(); updateReveal(); },120);
  });
 
  // ---- ⑦ 【去看图】统一事件委托 ----
@@ -5044,8 +5183,34 @@ window.addEventListener('resize', () => {
   docGoto(a.getAttribute('data-face'),a.getAttribute('data-chart')||'');
  });
 
+ // ---- ⑧ 数学式折叠开关（人话层恒显，数学式按需展开） ----
+ document.addEventListener('click',function(ev){
+  var t=ev.target&&ev.target.closest?ev.target.closest('.doc-formula-toggle'):null;
+  if(!t) return;
+  var box=t.closest('.doc-formula-math');
+  if(!box) return;
+  var open=box.classList.toggle('open');
+  t.setAttribute('aria-expanded',open?'true':'false');
+ });
+
+ // ---- ⑨ 位置记忆：离开说明 tab 前记录，回来时恢复（同一会话内有效） ----
+ var docsScrollY=0;
+ function saveDocsPos(){
+  if(tabDocs.classList.contains('active')) docsScrollY=Math.round(window.scrollY||0);
+ }
+ function restoreDocsPos(){
+  if(!docsScrollY) return;
+  var y=docsScrollY;
+  requestAnimationFrame(function(){ window.scrollTo(0,y); });
+ }
+ // 直接点击其他 tab 按钮离开说明时，同样记录位置（捕获阶段，先于切面执行）
+ document.addEventListener('click',function(ev){
+  var b=ev.target&&ev.target.closest?ev.target.closest('.tab-btn'):null;
+  if(b&&b.getAttribute('data-tab')!==DOCS) saveDocsPos();
+ },true);
+
  // ---- 初始化：若说明 tab 已是激活状态则同步一次；KaTeX 为 defer 加载，轮询等待 ----
- updateSpy(); updateProgress();
+ updateSpy(); updateProgress(); updateReveal();
  if(!renderFormulas()){
   var tries=0,timer=setInterval(function(){
    tries++;
