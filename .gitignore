@@ -1,53 +1,98 @@
-# ── 数据与产出(大文件,不入库) ──
-*.xlsx
-*.xls
-*.csv
-*.pkl
-*.db
-*.rar
-*.zip
-*.html
-# 例外：看板模板是源文件不是产物（2026-08-25 发现 template.html 长期被 *.html 误伤未跟踪）
-!sales_analytics_platform/dashboard/template.html
-!sales_analytics_platform/dashboard/template_risk_test.html
-*.png
-*.svg
-*.pyc
+# ===== 换机必需的数据（已纳入版本管理）=====
+# 说明 2026-09-30 起改变策略：不再按扩展名一刀切排除数据。
+# 判定标准是「换一台电脑开发是否需要它」——
+#   需要 → 纳入；可由数据+代码重建 / 纯工具产物 → 排除。
+# 原因：旧规则把 *.xlsx/*.csv/*.parquet 全排掉，导致 1610 个已跟踪文件里
+# 数据文件数为 0，换机 clone 后无数据可用。
+
+# ===== 工具与缓存产物（可重新生成，不入库）=====
+qa_tool/
+qa_tool_old/
+graphify-out/
+.grill/
+.opencode/
+.codegraph/
 __pycache__/
 .pytest_cache/
-.codegraph/
-.solomd/
+*.pyc
 
-# ── 数据/产出目录 ──
-data/
-data_warehouse/
-output/
-outputs/
-test_output/
-backtest_results/
-figs/
-silver/
-gold/
-report/
-reports/*.xlsx
-
-# ── 范围外 ──
+# 修正范围产物（CoStrict 产生，非源码）
 CoStrict/
 nul_
 *.TAG
 .silver_checksum
 
-# ── 系统 ──
+# 系统垃圾
 Thumbs.db
 .DS_Store
 
-# unified ����Ա��ո�Ĵ���CSV(������֤,�����)
-project_analysis/unified_compare/**/*.csv
-
-# kanban Ϊ���� git �ֿ⣨����Я Python �������������뱾�ֿ�
+# kanban 是独立 git 仓库（已带自身 .git），不要重复纳管
 kanban/
 
-# r14b: ������������(���ݹ���Ŀ¼�Ȼ���������÷����)
-sales_analytics_platform/chain_config.json
+# ===== 超大原始数据（留本地，换机时用网盘/共享盘搬）=====
+# sales_analytics_platform/data/ 约 1000MB（4 个财务 xlsx，单个最大 285MB，
+#   超过 GitHub 单文件 100MB 上限，必然 push 失败）
+sales_analytics_platform/data/
+# 与上面同源的历史重复路径（2026-09-30 确认为旧路径残留）
+sales_analytics_platform/processing/data/
+# 分析中间层与成品产物（可由 data + 代码重建，约 530MB）
+sales_analytics_platform/output/
+sales_analytics_platform/processing/output/
 
-.opencode/
+# ===== 预测实验产物（可由代码重跑，不入库）=====
+# 放开 *.csv 后这些历史回测产物会被重新纳管，动辄数万行，纯属噪音
+forecasting/**/output/
+forecasting/_archive/**
+project_analysis/unified_compare/
+
+# ===== 分析报告工程：只入库脚本，不入库素材与交付物 =====
+分析报告/**
+!分析报告/**/
+!分析报告/**/*.py
+!分析报告/**/*.pyw
+!分析报告/**/*.md
+!分析报告/**/*.yaml
+!分析报告/**/*.yml
+# 显式再排除一次子目录里的二进制与 QA 产物（上面的 ! 会让目录内容可见）
+分析报告/**/qa/
+分析报告/**/qa_export/
+分析报告/**/.qa-images/
+分析报告/**/assets_media/
+分析报告/**/pptd/
+分析报告/**/media/
+分析报告/**/05_过程数据/
+分析报告/**/06_文本/
+分析报告/**/04_审查过程/
+分析报告/**/_council/
+分析报告/**/*.txt
+分析报告/**/*.xlsx
+分析报告/**/*.xlsm
+分析报告/**/*.xls
+分析报告/**/*.pptx
+分析报告/**/*.ppt
+分析报告/**/*.docx
+分析报告/**/*.pdf
+分析报告/**/*.png
+分析报告/**/*.jpg
+分析报告/**/*.jpeg
+分析报告/**/*.svg
+分析报告/**/*.zip
+
+# ===== 其它大体积归档（本地保留）=====
+# 注意：git 不会进入已忽略的目录，所以用 /** 锚定到目录内每一层
+# （单写目录名时，目录内已跟踪/新出现的文件仍会漏出来，
+#   如 _archive_source/.../_intermediate.pkl 155MB、silver_cleaned_rows.csv 271MB，
+#   这两个超过 GitHub 单文件 100MB 上限会直接导致 push 被拒）
+_archive_source/**
+_deprecated/**
+_archived/**
+
+# ===== 例外：看板源模板必须入库 =====
+# template.html 曾长期被 *.html 规则误伤导致长期未入库
+!sales_analytics_platform/dashboard/template.html
+!sales_analytics_platform/dashboard/template_risk_test.html
+!sales_analytics_platform/dashboard/看板介绍页.html
+
+# ===== 链路配置：目标值/阈值等，随代码走 =====
+# 旧规则排除了它，导致换机后 forecast_target 配置丢失
+# sales_analytics_platform/chain_config.json

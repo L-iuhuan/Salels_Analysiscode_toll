@@ -368,6 +368,15 @@ def main():
         else:
             print("\n[跳过] 数据处理（--skip-processing），直接用 output/ 现有结果")
 
+    # ── 步骤 1.5/2：月度滚动预测（读 silver → 产预测交付 CSV，供看板「月度滚动预测」面消费）──
+    # --dashboard-only 为纯快速路径（数据未变、预测 CSV 已是最新），跳过；
+    # 预测失败仅告警不阻断看板生成（覆盖式写盘，旧预测 CSV 保留可用）。
+    if not args.dashboard_only:
+        fc = [sys.executable, os.path.join(PKG, "scripts", "run_forecast.py")]
+        rc_f, _ = run_subprocess(fc, PKG, "步骤 1.5/2 · 月度滚动预测 (scripts/run_forecast.py)")
+        if rc_f != 0:
+            print("\n[警告] 预测计算失败(exit=%d)，看板将继续生成（预测面沿用上次交付 CSV）。" % rc_f)
+
     # ── 步骤 2/2：生成看板（后段，从 output/ 和 data/ 取数）──
     if not args.skip_dashboard:
         # --dashboard-only 严格门禁：预聚合缓存过期/缺失必须报错退出（台账未决#3）

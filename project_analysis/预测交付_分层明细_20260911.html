@@ -1,0 +1,91 @@
+<!DOCTYPE html><html lang="zh"><head><meta charset="utf-8"><style>
+body { font-family: 'Microsoft YaHei','PingFang SC','Segoe UI',sans-serif; color:#1a1a2e; margin:0; padding:24px 28px; font-size:12.5px; }
+h1 { font-size:22px; margin:0 0 4px; color:#0f2b46; }
+h2 { font-size:15px; margin:22px 0 8px; color:#0f2b46; border-left:4px solid #2e6da4; padding-left:8px; }
+.sub { color:#666; font-size:11.5px; margin-bottom:14px; }
+.cards { display:flex; gap:12px; margin:14px 0 4px; }
+.card { flex:1; border:1px solid #d5dde8; border-radius:8px; padding:12px 14px; background:#f7fafd; break-inside:avoid; }
+.card .t { font-size:12px; color:#46617d; margin-bottom:6px; }
+.card .v { font-size:21px; font-weight:700; color:#0f2b46; }
+.card .v2 { font-size:12px; color:#2e6da4; margin-top:4px; }
+.card .r { font-size:11px; color:#888; margin-top:3px; }
+table { border-collapse:collapse; width:100%; margin-top:6px; }
+th { background:#0f2b46; color:#fff; padding:6px 7px; font-size:11.5px; text-align:right; white-space:nowrap; }
+th:first-child, td:first-child { text-align:left; }
+td { border-bottom:1px solid #e3e9f0; padding:5px 7px; text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; }
+tr:nth-child(even) td { background:#f4f7fb; }
+tr.total td { background:#eaf1f8; font-weight:700; border-top:2px solid #0f2b46; }
+.note { background:#fff8e6; border:1px solid #f0dfa8; border-radius:6px; padding:10px 12px; font-size:11.5px; line-height:1.7; margin-top:8px; break-inside:avoid; }
+ul { margin:6px 0 6px 18px; padding:0; line-height:1.75; }
+b.k { color:#b3541e; }
+.pct { color:#777; font-size:10.5px; }
+</style></head><body>
+<h1>销售预测交付 · 三个数分层明细</h1>
+<div class="sub">生成日期 2026-09-11 ｜ 数据截至 2026-08（含 2020-2026 长历史标定）｜ 口径：RMB 未税金额 ｜ 单位：万元</div>
+<h2>一、三个数总览（公司口径）</h2>
+<div class="cards">
+<div class="card"><div class="t">2026 全年（1-8月实际 + 9-12月预测）</div><div class="v">87,162 万</div><div class="v2">8.72 亿 ｜ 无偏口径 88,339 万（8.83 亿）</div><div class="r">八成把握区间 [86,906 ~ 90,662] 万</div></div>
+<div class="card"><div class="t">未来 6 个月（2026-09 ~ 2027-02）</div><div class="v">45,065 万</div><div class="v2">4.51 亿 ｜ 无偏口径 46,867 万（4.69 亿）</div><div class="r">八成把握区间 [45,193 ~ 49,981] 万</div></div>
+<div class="card"><div class="t">未来 12 个月（2026-09 ~ 2027-08）</div><div class="v">90,133 万</div><div class="v2">9.01 亿 ｜ 无偏口径 93,738 万（9.37 亿）</div><div class="r">八成把握区间 [91,687 ~ 98,396] 万</div></div>
+</div>
+<div class="note"><b>本月修订（2026-09-11）：</b>利用新打通的 2020-2026 长历史数据，重新标定了春节月份的预测规则（此前只有 2 个春节样本，现有 6 个）。2027 年 1 月由 11,129 下调至 <b class="k">10,226 万</b>（三种算法取中间值，避免单一算法在高增长年份的高估），2027 年 2 月由 5,637 下调至 <b class="k">5,420 万</b>（按历史上 4 个"春节在 2 月"年份的低谷规律：前一个月的 53%）。6 个月/12 个月合计相应下修；<b>2026 全年预测不变</b>。</div>
+<h2>二、公司口径分月（万元）</h2>
+<table><tr><th>月</th><th>基准</th><th>无偏口径</th><th>预测规则</th></tr>
+<tr><td>2026-09</td><td>7,312</td><td>7,604</td><td style="text-align:left">近6个月平均</td></tr>
+<tr><td>2026-10</td><td>7,468</td><td>7,767</td><td style="text-align:left">近6个月平均</td></tr>
+<tr><td>2026-11</td><td>7,290</td><td>7,581</td><td style="text-align:left">近6个月平均</td></tr>
+<tr><td>2026-12</td><td>7,350</td><td>7,644</td><td style="text-align:left">近6个月平均</td></tr>
+<tr><td>2027-01</td><td>10,226</td><td>10,635</td><td style="text-align:left">春节前月·三法取中（去年1月×近年增速 ／ 上年12月×节前冲量 ／ 2024年1月×两年复合增速）</td></tr>
+<tr><td>2027-02</td><td>5,420</td><td>5,636</td><td style="text-align:left">春节低谷月：前一月×0.53（4个同类春节年份的中位规律）</td></tr>
+<tr><td>2027-03</td><td>7,511</td><td>7,811</td><td style="text-align:left">近6个月平均</td></tr>
+<tr><td>2027-04</td><td>7,544</td><td>7,846</td><td style="text-align:left">近6个月平均</td></tr>
+<tr><td>2027-05</td><td>7,557</td><td>7,859</td><td style="text-align:left">近6个月平均</td></tr>
+<tr><td>2027-06</td><td>7,601</td><td>7,905</td><td style="text-align:left">近6个月平均</td></tr>
+<tr><td>2027-07</td><td>7,643</td><td>7,949</td><td style="text-align:left">近6个月平均</td></tr>
+<tr><td>2027-08</td><td>7,213</td><td>7,501</td><td style="text-align:left">近6个月平均</td></tr>
+</table>
+<h2>三、产品线分层明细（万元；预测值已锚定公司口径）</h2>
+<table><tr><th>产品线</th><th>采用的算法</th><th>1-8月实际</th><th>9-12月预测</th><th>2026全年</th><th>全年占比</th><th>未来6个月</th><th>未来12个月</th></tr>
+<tr><td>通用电源管理</td><td style="text-align:left">近12个月平均</td><td>35,798</td><td>17,624</td><td><b>53,422</b></td><td class="pct">61.3%</td><td><b>27,049</b></td><td><b>53,663</b></td></tr>
+<tr><td>有刷直流电机驱动</td><td style="text-align:left">上月延续（用最近一个月作预测）</td><td>9,348</td><td>4,311</td><td><b>13,660</b></td><td class="pct">15.7%</td><td><b>6,593</b></td><td><b>13,050</b></td></tr>
+<tr><td>POE电源管理</td><td style="text-align:left">近12个月趋势外推</td><td>3,421</td><td>2,122</td><td><b>5,542</b></td><td class="pct">6.4%</td><td><b>3,369</b></td><td><b>7,322</b></td></tr>
+<tr><td>充电与控制电源管理</td><td style="text-align:left">上月延续（用最近一个月作预测）</td><td>2,923</td><td>1,807</td><td><b>4,730</b></td><td class="pct">5.4%</td><td><b>2,763</b></td><td><b>5,469</b></td></tr>
+<tr><td>步进电机驱动</td><td style="text-align:left">近3个月平均</td><td>2,197</td><td>1,221</td><td><b>3,419</b></td><td class="pct">3.9%</td><td><b>1,866</b></td><td><b>3,692</b></td></tr>
+<tr><td>车规电机驱动</td><td style="text-align:left">上月延续（用最近一个月作预测）</td><td>1,536</td><td>920</td><td><b>2,456</b></td><td class="pct">2.8%</td><td><b>1,407</b></td><td><b>2,784</b></td></tr>
+<tr><td>硬件锂电保护</td><td style="text-align:left">去年同月</td><td>849</td><td>551</td><td><b>1,400</b></td><td class="pct">1.6%</td><td><b>689</b></td><td><b>1,417</b></td></tr>
+<tr><td>音频功放</td><td style="text-align:left">上月延续（用最近一个月作预测）</td><td>471</td><td>215</td><td><b>685</b></td><td class="pct">0.8%</td><td><b>328</b></td><td><b>649</b></td></tr>
+<tr><td>磁传感</td><td style="text-align:left">近6个月平均</td><td>254</td><td>142</td><td><b>396</b></td><td class="pct">0.5%</td><td><b>214</b></td><td><b>423</b></td></tr>
+<tr><td>无刷直流电机驱动</td><td style="text-align:left">近3个月平均</td><td>245</td><td>138</td><td><b>383</b></td><td class="pct">0.4%</td><td><b>207</b></td><td><b>405</b></td></tr>
+<tr><td>电脑&计算电源管理</td><td style="text-align:left">近12个月趋势外推</td><td>235</td><td>128</td><td><b>362</b></td><td class="pct">0.4%</td><td><b>196</b></td><td><b>413</b></td></tr>
+<tr><td>车规电源管理</td><td style="text-align:left">近12个月趋势外推</td><td>194</td><td>144</td><td><b>338</b></td><td class="pct">0.4%</td><td><b>242</b></td><td><b>571</b></td></tr>
+<tr><td>电机驱动</td><td style="text-align:left">近6个月平均</td><td>150</td><td>54</td><td><b>203</b></td><td class="pct">0.2%</td><td><b>74</b></td><td><b>141</b></td></tr>
+<tr><td>dTOF模组</td><td style="text-align:left">近6个月平均</td><td>45</td><td>18</td><td><b>63</b></td><td class="pct">0.1%</td><td><b>27</b></td><td><b>53</b></td></tr>
+<tr><td>新显示MLED驱动</td><td style="text-align:left">近6个月趋势外推</td><td>52</td><td>0</td><td><b>52</b></td><td class="pct">0.1%</td><td><b>0</b></td><td><b>0</b></td></tr>
+<tr><td>车规有刷H桥栅驱</td><td style="text-align:left">近3个月平均</td><td>14</td><td>22</td><td><b>36</b></td><td class="pct">0.0%</td><td><b>33</b></td><td><b>65</b></td></tr>
+<tr><td>电源模组</td><td style="text-align:left">近12个月平均</td><td>11</td><td>5</td><td><b>16</b></td><td class="pct">0.0%</td><td><b>8</b></td><td><b>15</b></td></tr>
+<tr class="total"><td>合计</td><td></td><td>57,743</td><td>29,419</td><td>87,162</td><td class="pct">100%</td><td>45,065</td><td>90,133</td></tr>
+</table>
+<div class="note">读表说明：规模越大的产品线预测越准——头部线（通用电源管理约占 61%）月度平均误差约 20%，长尾小线误差 50%-80%；但由于分层结果会按比例对齐到公司总量，<b>各层级的合计始终等于公司口径总预测</b>，分层的意义在于看清结构占比，而非每层独立精度。新显示MLED驱动近 3 个月无出货（偶发脉冲式产品线），机械外推为 0，如需可结合业务判断调整。</div>
+<h2>四、品类分层明细（万元；Top15 + 其他，已锚定公司口径）</h2>
+<table><tr><th>品类</th><th>1-8月实际</th><th>9-12月预测</th><th>2026全年</th><th>未来6个月</th><th>未来12个月</th></tr>
+<tr><td>DCDC-18V-降压2-4A</td><td>13,671</td><td>6,601</td><td><b>20,272</b></td><td><b>10,000</b></td><td><b>19,494</b></td></tr>
+<tr><td>DCDC-18V-降压5-12A</td><td>1,408</td><td>769</td><td><b>2,177</b></td><td><b>1,168</b></td><td><b>2,281</b></td></tr>
+<tr><td>DCDC-30V/40V降压1-6A通用系列</td><td>1,833</td><td>1,196</td><td><b>3,029</b></td><td><b>1,887</b></td><td><b>4,116</b></td></tr>
+<tr><td>DCDC-5V-降压1-3A</td><td>7,422</td><td>3,498</td><td><b>10,920</b></td><td><b>5,308</b></td><td><b>10,317</b></td></tr>
+<tr><td>H桥BDC-中大功率(合封系列20/30/40V/60V )</td><td>1,997</td><td>1,071</td><td><b>3,069</b></td><td><b>1,623</b></td><td><b>3,171</b></td></tr>
+<tr><td>H桥BDC-低压5-20V <3A（单芯）</td><td>817</td><td>394</td><td><b>1,212</b></td><td><b>597</b></td><td><b>1,157</b></td></tr>
+<tr><td>H桥BDC-高压36V以上<3A</td><td>5,254</td><td>2,086</td><td><b>7,340</b></td><td><b>3,156</b></td><td><b>6,149</b></td></tr>
+<tr><td>LDO通用/双通道</td><td>2,586</td><td>1,414</td><td><b>4,000</b></td><td><b>2,344</b></td><td><b>4,631</b></td></tr>
+<tr><td>LED驱动-降压中低压</td><td>787</td><td>403</td><td><b>1,190</b></td><td><b>611</b></td><td><b>1,191</b></td></tr>
+<tr><td>LNB PMU</td><td>1,395</td><td>430</td><td><b>1,825</b></td><td><b>649</b></td><td><b>1,261</b></td></tr>
+<tr><td>POE-PD协议及隔离DC-DC</td><td>1,014</td><td>480</td><td><b>1,494</b></td><td><b>727</b></td><td><b>1,415</b></td></tr>
+<tr><td>PSE</td><td>1,888</td><td>1,207</td><td><b>3,095</b></td><td><b>1,924</b></td><td><b>4,270</b></td></tr>
+<tr><td>Power Switch-中压18V/5V</td><td>1,093</td><td>532</td><td><b>1,625</b></td><td><b>802</b></td><td><b>1,560</b></td></tr>
+<tr><td>USB单通道/多通道2.4A/3A</td><td>2,221</td><td>1,120</td><td><b>3,340</b></td><td><b>1,705</b></td><td><b>3,420</b></td></tr>
+<tr><td>步进驱动细分/微细分</td><td>1,756</td><td>949</td><td><b>2,705</b></td><td><b>1,437</b></td><td><b>2,800</b></td></tr>
+<tr class="total"><td>合计</td><td>45,142</td><td>22,151</td><td>67,293</td><td>33,937</td><td>67,232</td></tr>
+</table>
+<h2>五、预测方法说明（通俗版）</h2>
+<ul><li><b>整体思路：先定总量，再往下分。</b>先预测全公司每月总销售额；产品线、品类再各自独立预测，最后按比例调整，使各层加起来严格等于公司总量——所以大数稳、小数参考结构即可。</li><li><b>平时月份怎么算：</b>用最近 6 个月的平均值向前滚动。这一规则是用 2022-2026 年共 56 个月逐月模拟回测选出的最稳方案（月平均误差约 7%%）。</li><li><b>春节月份单独处理：</b>春节月出货受放假影响大，用普通平均会严重高估。改用过去 6 个春节年份的实际规律：节前一个月通常比正常月多约 17%%（客户提前备货）；春节假期所在月约为上一个月的 53%%。2027 年春节在 2 月 6 日，故 1 月按"节前备货月"、2 月按"低谷月"处理。</li><li><b>为什么有两列数（基准 / 无偏）：</b>回测发现模型整体会系统性低估约 6%%（因为公司近两年在增长，而平均法天然滞后）。"无偏口径"= 基准 ×1.04 修正这一低估。日常跟进用基准值，定目标、报计划建议用无偏值。</li><li><b>单价波动未单独预测：</b>默认售价延续最近水平（回测显示单独预测价格对总精度提升很小）。<b>若近期有已知涨价/降价/汇率大变动，请在此基数上人工加减。</b></li><li><b>客户维度不下分：</b>试过按客户逐个预测再汇总，误差反而更大（小客户噪声多），故客户层面不做进本表；客户结构分析请见月度经营看板。</li><li><b>数据基础：</b>ERP 出货明细 2020 年 1 月至 2026 年 8 月（80 个月，不含税人民币口径）；2024 年之前数据来自已冻结的历史总表，与现行口径逐月核对一致。</li></ul>
+<div class="sub" style="margin-top:14px">数据源：ERP 出货明细（2020-01 ~ 2026-08，金额=RMB 未税口径）｜ 方法细节见《预测能力提升规划备忘》（E1-E23 全实验记录）｜ 生成脚本：复核脚本/build_pdf_report.py</div>
+</body></html>

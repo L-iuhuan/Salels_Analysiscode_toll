@@ -346,3 +346,25 @@ faces:
         definition: 按品类/客户维度拆解当前半年窗毛利率较上一半年窗与去年同期窗变化的责任来源
       - term: ASP轴截断
         definition: 产品ASP趋势图坐标轴按正值1%~99%分位截断，极端值仍在表中不在图中
+
+  P:
+    id: P
+    name: 月度滚动预测
+    theme: 公司销售预测（未来 12 个月，随每月数据自动更新）
+    enabled: true
+    cadence: monthly
+    visible: true
+    owner: 数据分析组
+    description: 公司口径未来 12 个月销售预测——分月/分季/产品线/品类
+    sections:
+      - title: 怎么用这些数
+        definition: 结论区与各表的预测读数
+        koujing: 定目标、报计划用「无偏」值，日常跟进看「基准」值；区间 = 八成把握的落点范围。产品线分档：可信 = 数字可直接用，可用 = 留余量，参考 = 只看方向不引用数值。预测随每月出货数据自动更新。
+        usage: 先看顶部四个数，再看分季与分月
+        update_note: 随 run_chain 每月自动更新
+    chart_guides: {}
+    glossary:
+      - term: 无偏 / 基准
+        definition: 无偏 = 校正了系统性低估的值（报计划用）；基准 = 模型原始输出（日常跟进用）
+      - term: 八成区间
+        definition: 历史回测误差分布的八成落点范围

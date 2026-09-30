@@ -748,7 +748,7 @@ def _hide_invisible_faces(page_html):
     """插拔（W4）：faces.yaml 中不可见面的 tab 按钮从输出中移除（服务端，模板结构不动）。
     同时移除对应按钮的 JS 监听器——否则 getElementById 拿到 null，addEventListener 抛 TypeError 卡死后续 JS。"""
     _tab_names = {"A": "总览决策", "R": "风险与行动", "B": "客户360", "C": "产品生命周期",
-                  "D": "销售能力", "E": "月度作战雷达", "F": "半年度专项"}
+                  "D": "销售能力", "E": "月度作战雷达", "F": "半年度专项", "P": "月度滚动预测"}
     for _fid, _fname in _tab_names.items():
         if not _face_visible(_fid):
             for _pat in (f'<button class="tab-btn" data-tab="{_fid}" id="btn{_fid}">{_fname}</button>',
@@ -760,6 +760,95 @@ def _hide_invisible_faces(page_html):
             _lis = f"document.getElementById('btn{_fid}').addEventListener('click',function(){{switchTab('{_fid}')}});"
             page_html = page_html.replace(_lis + "\n", "").replace(_lis, "")
     return page_html
+
+
+def _build_p_face_data():
+    """预测面（tabP）数据：读月度滚动预测交付 CSV + 展示元数据 JSON，组装 P_DATA。
+    与 R 面同款"永远现算"策略：预测 CSV 由 run_chain 预测步骤（scripts/run_forecast.py）
+    在每次跑批时先行更新，其变化不触发看板指纹，故不进 preagg 缓存、每路径现读。
+    组装逻辑与 project_analysis/月度滚动预测_20260910/生成预测驾驶舱.py 同源；
+    展示元数据（kpis/结论带/覆盖/春节月）由预测脚本写入 看板数据_预测面.json。
+    任何文件缺失 → 返回 _missing 空壳，tabP 前端显示占位提示，不阻断看板生成。"""
+    fdir = r"E:\3-其他资料\数据分析\project_analysis\月度滚动预测_20260910"
+    _empty = {"_missing": True, "histMonths": [], "histVal": [], "months": [],
+              "base": [], "unbiased": [], "bandLo": [], "bandRng": [],
+              "linesTop": [], "lines": [],
+              "kpis": {"fy": [0, 0, "—"], "m6": [0, 0, "—"], "m12": [0, 0, "—"]},
+              "cover": {"A": 0, "B": 0, "C": 0},
+              "conclusion": {"lead": "预测数据缺失", "note": "运行 scripts/run_forecast.py 生成"},
+              "cnyMarks": []}
+    try:
+        comp = pd.read_csv(os.path.join(fdir, "交付_公司分月.csv"), encoding="utf-8-sig")
+        line_fc = pd.read_csv(os.path.join(fdir, "交付_产品线.csv"), encoding="utf-8-sig", index_col=0)
+        conf = pd.read_csv(os.path.join(fdir, "看板数据_线级置信分层.csv"), encoding="utf-8-sig")
+        hist = pd.read_csv(os.path.join(fdir, "公司月度长序列80月.csv"), encoding="utf-8-sig")
+        lhist = pd.read_csv(os.path.join(fdir, "线级月度长序列80月.csv"), encoding="utf-8-sig")
+        e12 = pd.read_csv(os.path.join(fdir, "E12b_量价集成_对比.csv"), encoding="utf-8-sig")
+        with open(os.path.join(fdir, "看板数据_预测面.json"), encoding="utf-8") as _f:
+            meta = json.load(_f)
+    except Exception as _e:
+        print(f"  [预测面] 数据缺失（{type(_e).__name__}: {_e}），tabP 将显示占位提示")
+        return _empty
+    base_w = [round(float(v) / 1e4) for v in comp["预测"]]
+    unb_w = [round(float(v) / 1e4) for v in comp["无偏"]]
+    hist_w = [round(float(v) / 1e4) for v in hist["金额"]]
+    FUT = [str(m) for m in comp["月"]]
+    pool = (e12["实际"] / e12["combo_volxasp"]).dropna()
+    q10, q90 = float(pool.quantile(0.10)), float(pool.quantile(0.90))
+    band_lo = [None] * (len(hist_w) - 1) + [hist_w[-1]] + [round(v * q10) for v in base_w]
+    band_hi = [None] * (len(hist_w) - 1) + [hist_w[-1]] + [round(v * q90) for v in base_w]
+    band_rng = [None if a is None else round(b - a) for a, b in zip(band_lo, band_hi)]
+    lh = lhist.pivot_table(index="月", columns="产品线", values="金额",
+                           aggfunc="sum", fill_value=0.0).sort_index() / 1e4
+    months_h = [str(m) for m in lh.index]
+    lines_top = []
+    for _, r in conf.head(6).iterrows():
+        name = str(r["产品线"])
+        hv = ([round(float(v)) for v in lh[name].reindex(months_h, fill_value=0).values]
+              if name in lh.columns else [0] * len(months_h))
+        fv = [round(float(pd.to_numeric(line_fc.loc[name, m], errors="coerce")) / 1e4) for m in FUT]
+        lines_top.append({"n": name, "hist": hv, "fut": fv,
+                          "share": float(r["金额占比%"]), "g": str(r["置信档"])})
+    lines = []
+    for _, r in conf.iterrows():
+        name = str(r["产品线"])
+        v6 = sum(pd.to_numeric(line_fc.loc[name, m], errors="coerce") for m in FUT[:6]) / 1e4
+        v12 = sum(pd.to_numeric(line_fc.loc[name, m], errors="coerce") for m in FUT) / 1e4
+        lines.append({"n": name, "share": float(r["金额占比%"]), "wape": float(r["WAPE%"]),
+                      "g": str(r["置信档"]), "v6": round(float(v6)), "v12": round(float(v12))})
+    # 品类预测（Top15 + 其他，供预测面品类表展示）
+    cat_rows = []
+    try:
+        cat_fc = pd.read_csv(os.path.join(fdir, "交付_品类.csv"), encoding="utf-8-sig", index_col=0)
+        for name, r in cat_fc.iterrows():
+            cv6 = sum(pd.to_numeric(r[m], errors="coerce") for m in FUT[:6]) / 1e4
+            cv12 = sum(pd.to_numeric(r[m], errors="coerce") for m in FUT) / 1e4
+            cat_rows.append({"n": str(name), "m": str(r["选优方法"]),
+                             "v6": round(float(cv6)), "v12": round(float(cv12))})
+    except Exception:
+        pass
+    return {
+        "histMonths": months_h, "histVal": hist_w,
+        "months": FUT, "base": base_w, "unbiased": unb_w,
+        "rules": [str(x) for x in comp["规则"]],
+        "cat": cat_rows,
+        "bandLo": band_lo, "bandRng": band_rng,
+        "linesTop": lines_top, "lines": lines,
+        "kpis": meta.get("kpis", _empty["kpis"]),
+        "quarters": meta.get("quarters", []),
+        "track": meta.get("track"),
+        "seasonal": meta.get("seasonal"),
+        "custConc": meta.get("custConc"),
+        "newShare": meta.get("newShare"),
+        "target": meta.get("target"),
+        "cover": meta.get("cover", _empty["cover"]),
+        # 旧版 看板数据_预测面.json 可能缺 conclusion key：CSV 在手时只说明结论未生成，
+        # 不用 _empty 的"预测数据缺失"文案自相矛盾（整面缺失由 _missing 横幅负责）。
+        "conclusion": meta.get("conclusion") or {"lead": "结论生成中", "note": ""},
+        "cnyMarks": meta.get("cnyMarks", []),
+        "cnyNote": meta.get("cnyNote", ""),
+        "lastMonth": meta.get("lastMonth", ""),
+    }
 
 
 # ========== 批次③ 车道D：看板自缓存（preagg.json）判定 ==========
@@ -873,6 +962,10 @@ if _cache_hit and _cached_obj:
                                                  '风险与行动文档异常，当前为占位提示——请检查销售数据分析看板的文档后重新生成</div>')
             print(f"  [R面] 降级为红色占位提示: {type(_e2_c).__name__}: {_e2_c}")
     _replacements["%%R_FACE_ERR%%"] = str(r_face_err_c)
+
+    # 预测面（tabP）：与 R 面同款"永远现算"——预测 CSV 由 run_chain 预测步骤先行更新，
+    # 其变化不触发看板指纹，故不入 preagg 缓存，缓存命中路径同样现读注入。
+    _replacements["%%FORECAST_DATA%%"] = json.dumps(_build_p_face_data(), ensure_ascii=False)
 
     _replacements.update(_identity_replacements())   # r24：数据身份徽标（缓存路径同款）
 
@@ -3400,7 +3493,7 @@ def _build_guide_replacements(face_id, cfg):
 
 # 确保 faces.yaml 已加载
 _face_visible("A")
-_FACE_META_CACHE = {fid: _FACES_CFG.get(fid, {}) for fid in ("A", "B", "C", "D", "E", "F")}
+_FACE_META_CACHE = {fid: _FACES_CFG.get(fid, {}) for fid in ("A", "B", "C", "D", "E", "F", "P")}
 
 # ========== HTML ==========
 _timed("F面H1汇总+C面DATA构建", _t_seg0); _t_seg0 = _time_mod.time()
@@ -3461,6 +3554,8 @@ replacements = {
     # ---- W4：风险与行动面（人工审定总体文档渲染，服务端 HTML 注入；R_FACE_ERR 与 R面HTML 同寿命现算）----
     "%%R_FACE_HTML%%": r_face_html,
     "%%R_FACE_ERR%%": str(r_face_err),
+    # ---- 预测面（tabP）：永远现算，不入 preagg 缓存（见写缓存处的排除清单） ----
+    "%%FORECAST_DATA%%": json.dumps(_build_p_face_data(), ensure_ascii=False),
     # ---- W4：面级口径条（A/B/C/D/E，R 面已有自己的口径节）----
     "%%FACE_META_A%%": _build_face_meta_html("A", _FACE_META_CACHE.get("A", {})),
     "%%FACE_META_B%%": _build_face_meta_html("B", _FACE_META_CACHE.get("B", {})),
@@ -3468,6 +3563,7 @@ replacements = {
     "%%FACE_META_D%%": _build_face_meta_html("D", _FACE_META_CACHE.get("D", {})),
     "%%FACE_META_E%%": _build_face_meta_html("E", _FACE_META_CACHE.get("E", {})),
     "%%FACE_META_F%%": _build_face_meta_html("F", _FACE_META_CACHE.get("F", {})),
+    "%%FACE_META_P%%": _build_face_meta_html("P", _FACE_META_CACHE.get("P", {})),
     "%%GUIDE_DETAILS_JSON%%": json.dumps(
         {f"{_fid}_{_cid}": _txt
          for _fid, _fcfg in _FACE_META_CACHE.items()
@@ -3541,11 +3637,13 @@ if not _NO_CACHE and _fp is not None and _fp_cur is not None:
         os.makedirs(PREAGG_DIR, exist_ok=True)
         _cache_payload = {
             "data_block": data_block,
-            # 缓存除 DATA_BLOCK / C_DATA_JSON / 毛利率轴（现算）/ R面HTML+R_FACE_ERR（现算，审定 md 毫秒级解析）外的全部占位符值
+            # 缓存除 DATA_BLOCK / C_DATA_JSON / 毛利率轴（现算）/ R面HTML+R_FACE_ERR（现算，审定 md 毫秒级解析）
+            # / FORECAST_DATA（现算，预测 CSV 随跑批先行更新、不触发指纹）外的全部占位符值
             "replacements": {k: v for k, v in replacements.items()
                              if k not in ("%%DATA_BLOCK%%", "%%C_DATA_JSON%%",
                                           "%%MARGIN_AXIS_MIN%%", "%%MARGIN_AXIS_MAX%%",
-                                          "%%R_FACE_HTML%%", "%%R_FACE_ERR%%")},
+                                          "%%R_FACE_HTML%%", "%%R_FACE_ERR%%",
+                                          "%%FORECAST_DATA%%")},
             # ASP 轴边界源自 fingerprinted 的 rex 数据，缓存原始浮点值
             "asp_axis": _asp_axis_cache,
         }
