@@ -102,13 +102,27 @@ class SimpleValidator:
             return {"valid": True, "issues": []}
 
     def validate_raw(self, df: pd.DataFrame) -> Dict[str, Any]:
-        """V1：源数据验证。"""
+        """V1：源数据验证。
+
+        2026-10-10 修正：此前 required 沿用清洗后规范名（客户编号/产品品种/数量/金额），
+        而本方法在 run_all 中收到的是列名标准化后的 RAW df（终端客户简称/发货数量/
+        RMB 未税金额小计…），导致每次跑批必报 4 条 "column missing" 假警报。
+        现对齐 raw 真实 schema；金额不做 lo=0 范围检查——退货冲红负数行合法存在，
+        负值告警由 silver 层校验（rev_sum/qty_sum below 0）承担。
+        """
         issues = []
         issues += self.check_required_columns(
-            df, ["客户编号", "产品品种", "数量", "金额", "发货日期"]
+            df,
+            [
+                "终端客户简称",       # 客户标识主键
+                "发货日期",           # 月度切窗依据
+                "RMB 未税金额小计",   # 收入口径
+                "发货数量",           # 数量口径
+                "型号_产品线（新）",  # 产品线聚合键
+                "利润",               # 毛利口径
+            ],
         )
-        issues += self.check_null_constraint(df, ["客户编号", "发货日期"])
-        issues += self.check_value_range(df, "金额", lo=0)
+        issues += self.check_null_constraint(df, ["终端客户简称", "发货日期"])
         return self._report(issues, "raw")
 
     def validate_clean(self, df: pd.DataFrame) -> Dict[str, Any]:
