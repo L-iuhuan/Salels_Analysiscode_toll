@@ -93,6 +93,11 @@ _archived/**
 !sales_analytics_platform/dashboard/template_risk_test.html
 !sales_analytics_platform/dashboard/看板介绍页.html
 
+# ===== 看板生成物不入库 =====
+# r23 起产物落 output\dashboard\（已随 output/ 排除）；旧位 dashboard_a.html 为
+# 09-01 遗留快照，2026-10-10 退出 git 跟踪止住仓库膨胀——本地文件保留作 r23 兼容回退
+sales_analytics_platform/dashboard/dashboard_a.html
+
 # ===== 链路配置：目标值/阈值等，随代码走 =====
 # 旧规则排除了它，导致换机后 forecast_target 配置丢失
 # sales_analytics_platform/chain_config.json
