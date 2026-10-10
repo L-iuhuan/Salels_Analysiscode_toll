@@ -342,9 +342,17 @@ def main():
               % (OUT_PRIMARY, OUT_FALLBACK))
     os.makedirs(out_dir, exist_ok=True)
 
+    # 标定文件解析：交付目录优先；缺失时回退包内静态副本 scripts\calibration\（随代码分发）。
+    # 2026-10-09 修复：客户端/新机器交付目录无 E12b 时此前直接退出，预测面必缺。
     e12_path = os.path.join(out_dir, "E12b_量价集成_对比.csv")
     if not os.path.exists(e12_path):
-        print("[错误] 区间比率池缺失：%s（静态标定产物，需从实验目录恢复）" % e12_path)
+        _cal = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                            "calibration", "E12b_量价集成_对比.csv")
+        if os.path.exists(_cal):
+            e12_path = _cal
+            print("[标定] 交付目录无 E12b，回退包内副本 scripts\\calibration\\E12b_量价集成_对比.csv")
+    if not os.path.exists(e12_path):
+        print("[错误] 区间比率池缺失：%s（静态标定产物，需从实验目录恢复或补 scripts\\calibration\\）" % e12_path)
         sys.exit(1)
 
     # ---- 1. 银层 ----

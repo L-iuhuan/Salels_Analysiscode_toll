@@ -762,6 +762,30 @@ def _hide_invisible_faces(page_html):
     return page_html
 
 
+# 2026-10-09 客户端可移植修复：预测面数据目录改为候选解析（此前硬编码开发机绝对路径，
+# 客户端永远读不到 → tabP 恒为"预测数据缺失"占位）。
+# 候选：①包内 output\forecast（run_forecast.py 的回退写盘位，客户端唯一通道）
+#       ②开发机历史交付目录（用户拍板的交付位置，开发机主通道）。
+# 规则：取「交付_公司分月.csv」存在且 mtime 最新的目录；都缺 → None → 占位提示。
+_FORECAST_DIR_CANDIDATES = [
+    os.path.join(PROJECT, "output", "forecast"),
+    r"E:\3-其他资料\数据分析\project_analysis\月度滚动预测_20260910",
+]
+
+
+def _resolve_forecast_dir():
+    best, best_mt = None, -1.0
+    for d in _FORECAST_DIR_CANDIDATES:
+        marker = os.path.join(d, "交付_公司分月.csv")
+        if os.path.isfile(marker):
+            mt = os.path.getmtime(marker)
+            if mt > best_mt:
+                best, best_mt = d, mt
+    if best is not None and best != _FORECAST_DIR_CANDIDATES[0]:
+        print("  [预测面] 数据目录: %s" % best)
+    return best
+
+
 def _build_p_face_data():
     """预测面（tabP）数据：读月度滚动预测交付 CSV + 展示元数据 JSON，组装 P_DATA。
     与 R 面同款"永远现算"策略：预测 CSV 由 run_chain 预测步骤（scripts/run_forecast.py）
@@ -769,14 +793,17 @@ def _build_p_face_data():
     组装逻辑与 project_analysis/月度滚动预测_20260910/生成预测驾驶舱.py 同源；
     展示元数据（kpis/结论带/覆盖/春节月）由预测脚本写入 看板数据_预测面.json。
     任何文件缺失 → 返回 _missing 空壳，tabP 前端显示占位提示，不阻断看板生成。"""
-    fdir = r"E:\3-其他资料\数据分析\project_analysis\月度滚动预测_20260910"
+    fdir = _resolve_forecast_dir()
     _empty = {"_missing": True, "histMonths": [], "histVal": [], "months": [],
               "base": [], "unbiased": [], "bandLo": [], "bandRng": [],
               "linesTop": [], "lines": [],
               "kpis": {"fy": [0, 0, "—"], "m6": [0, 0, "—"], "m12": [0, 0, "—"]},
               "cover": {"A": 0, "B": 0, "C": 0},
-              "conclusion": {"lead": "预测数据缺失", "note": "运行 scripts/run_forecast.py 生成"},
-              "cnyMarks": []}
+               "conclusion": {"lead": "预测数据缺失", "note": "运行 scripts/run_forecast.py 生成"},
+               "cnyMarks": []}
+    if fdir is None:
+        print("  [预测面] 数据缺失（候选目录均无交付 CSV），tabP 将显示占位提示")
+        return _empty
     try:
         comp = pd.read_csv(os.path.join(fdir, "交付_公司分月.csv"), encoding="utf-8-sig")
         line_fc = pd.read_csv(os.path.join(fdir, "交付_产品线.csv"), encoding="utf-8-sig", index_col=0)
