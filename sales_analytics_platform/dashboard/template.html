@@ -907,7 +907,8 @@ body{font-family:-apple-system,'Microsoft YaHei','Segoe UI',sans-serif;backgroun
 
 <div class="cb" id="pTargetBar" style="display:none;padding:8px 14px;margin-bottom:var(--space-card);font-size:var(--font-md)"><i class="fa-solid fa-flag" style="color:var(--primary)"></i> <span id="pTargetTxt"></span></div>
 
-<div class="kpi-bar" style="grid-template-columns:repeat(4,1fr)">
+<div class="kpi-bar" style="grid-template-columns:repeat(5,1fr)">
+ <div class="kc" id="pKcFy"><div class="icon-wrap"><i class="fa-solid fa-calendar-check"></i></div><div class="label" id="pKcFyLabel">当年全年·预测</div><div class="value" id="pKcFyVal">—</div><div class="sub" id="pKcFySub">—</div></div>
  <div class="kc" id="pKcBase"><div class="icon-wrap"><i class="fa-solid fa-chart-line"></i></div><div class="label">未来12个月·预测</div><div class="value" id="pKcBaseVal">—</div><div class="sub" id="pKcBaseSub">—</div></div>
  <div class="kc"><div class="icon-wrap"><i class="fa-solid fa-location-crosshairs"></i></div><div class="label">可能范围</div><div class="value" id="pKcBandVal">—</div><div class="sub">八成把握的落点（万元）</div></div>
  <div class="kc kpi-success"><div class="icon-wrap"><i class="fa-solid fa-circle-check"></i></div><div class="label">月度误差</div><div class="value" id="pKcWapeVal">—</div><div class="sub" id="pKcWapeSub">—</div></div>
@@ -3950,8 +3951,16 @@ function initPFace(){
   tooltip:{trigger:'axis',backgroundColor:'rgba(255,255,255,0.97)',borderColor:BDR,borderWidth:1,
   textStyle:{color:TXT,fontSize:12},extraCssText:'box-shadow:0 4px 12px rgba(15,23,42,0.08);border-radius:8px;'},
   grid:{left:64,right:24,top:44,bottom:74}};
- /* ---- 结论句 + 4 KPI（kpis 数值本身即万元，直接 toLocaleString 显示） ---- */
- var k12=(D.kpis&&D.kpis.m12)||[];
+  /* ---- 结论句 + 5 KPI（kpis 数值本身即万元，直接 toLocaleString 显示） ---- */
+  var k12=(D.kpis&&D.kpis.m12)||[];
+  /* 当年全年卡（2026-10-12 新增）：值=全年预测（YTD实际+年内剩余预测），副文本=修正值+实际/预测拆分，悬停显全年范围 */
+  var kf=(D.kpis&&D.kpis.fy)||[];
+  var cy=String((D.histMonths||[]).length?D.histMonths[D.histMonths.length-1]:'').slice(0,4);
+  var fLab=document.getElementById('pKcFyLabel');if(fLab&&cy)fLab.textContent=cy+' 全年·预测';
+  var f1=document.getElementById('pKcFyVal');if(f1)f1.textContent=(kf[0]==null?'—':pFmt(kf[0]));
+  var nAct=0,nFut=0;(D.histMonths||[]).forEach(function(m){if(String(m).slice(0,4)===cy)nAct++;});(D.months||[]).forEach(function(m){if(String(m).slice(0,4)===cy)nFut++;});
+  var f2=document.getElementById('pKcFySub');if(f2)f2.textContent=(kf[1]==null?'—':'修正值 '+pFmt(kf[1])+' 万')+(nAct&&nFut?('（'+nAct+'个月实际+'+nFut+'个月预测）'):'');
+  var fCard=document.getElementById('pKcFy');if(fCard&&kf[2]!=null)fCard.title='八成把握落在 '+kf[2]+' 万';
  var lead=document.getElementById('pLead');
  if(lead)lead.textContent=(D.conclusion&&D.conclusion.lead)||'未来 12 个月预计出货 — 亿，八成把握落在 — ~ — 亿';
   var note=document.getElementById('pLeadNote');
