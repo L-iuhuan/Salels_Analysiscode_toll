@@ -908,14 +908,14 @@ body{font-family:-apple-system,'Microsoft YaHei','Segoe UI',sans-serif;backgroun
 <div class="cb" id="pTargetBar" style="display:none;padding:8px 14px;margin-bottom:var(--space-card);font-size:var(--font-md)"><i class="fa-solid fa-flag" style="color:var(--primary)"></i> <span id="pTargetTxt"></span></div>
 
 <div class="kpi-bar" style="grid-template-columns:repeat(4,1fr)">
- <div class="kc" id="pKcBase"><div class="icon-wrap"><i class="fa-solid fa-chart-line"></i></div><div class="label">未来12个月·基准</div><div class="value" id="pKcBaseVal">—</div><div class="sub" id="pKcBaseSub">—</div></div>
- <div class="kc"><div class="icon-wrap"><i class="fa-solid fa-location-crosshairs"></i></div><div class="label">八成区间</div><div class="value" id="pKcBandVal">—</div><div class="sub">八成把握的落点（万元）</div></div>
+ <div class="kc" id="pKcBase"><div class="icon-wrap"><i class="fa-solid fa-chart-line"></i></div><div class="label">未来12个月·预测</div><div class="value" id="pKcBaseVal">—</div><div class="sub" id="pKcBaseSub">—</div></div>
+ <div class="kc"><div class="icon-wrap"><i class="fa-solid fa-location-crosshairs"></i></div><div class="label">可能范围</div><div class="value" id="pKcBandVal">—</div><div class="sub">八成把握的落点（万元）</div></div>
  <div class="kc kpi-success"><div class="icon-wrap"><i class="fa-solid fa-circle-check"></i></div><div class="label">月度误差</div><div class="value" id="pKcWapeVal">—</div><div class="sub" id="pKcWapeSub">—</div></div>
  <div class="kc"><div class="icon-wrap"><i class="fa-solid fa-arrow-up-long"></i></div><div class="label">方向准确率</div><div class="value" id="pKcDirVal">—</div><div class="sub" id="pKcDirSub">—</div></div>
 </div>
 
 <div class="cb" style="position:relative"><h3><i class="fa-solid fa-chart-line" style="color:var(--primary)"></i> <span id="pHistTitle">历史与预测（万元）</span>
-<span class="st">蓝实线=实际 · 橙虚线=基准 · 浅蓝带=八成区间 · 黄带=春节月</span></h3>
+<span class="st">蓝实线=实际 · 橙虚线=预测 · 蓝点线=修正 · 浅蓝带=可能范围（八成把握）· 黄带=春节月 · 悬停看数值（过去月含当时预测）</span></h3>
 <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin:var(--space-inner) 0">
 <div class="btn-toggle-group" style="margin:0">
 <button class="btn-toggle active" data-win="fy" onclick="setPWin(this)">全年</button>
@@ -929,16 +929,16 @@ body{font-family:-apple-system,'Microsoft YaHei','Segoe UI',sans-serif;backgroun
 <span class="st">实线=历史 · 虚线=预测 · 点明细表行可单独高亮</span></h3>
 <div id="cPLines" style="width:100%;height:360px"></div></div>
 
-<div class="cb"><h3><i class="fa-solid fa-chart-column" style="color:var(--primary)"></i> 分季预测与八成区间（万元）
-<span class="st">柱=基准 · 点=无偏 · 帽线=八成区间</span></h3>
+<div class="cb"><h3><i class="fa-solid fa-chart-column" style="color:var(--primary)"></i> 分季预测与可能范围（万元）
+<span class="st">柱=预测 · 点=修正 · 帽线=可能范围</span></h3>
 <div id="cPQuarter" style="width:100%;height:320px"></div></div>
 
-<div class="cb"><h3><i class="fa-solid fa-table-list" style="color:var(--primary)"></i> 分月明细（基准 / 无偏 / 八成区间，万元）
+<div class="cb"><h3><i class="fa-solid fa-table-list" style="color:var(--primary)"></i> 分月明细（预测 / 修正 / 可能范围，万元）
 <span class="st">橙底=春节月 · 区间底色越深=把握越大</span></h3>
-<div class="tbl-wrap"><table class="data-table"><thead><tr><th>月</th><th class="num">基准(万)</th><th class="num">无偏(万)</th><th class="num">八成区间(万)</th></tr></thead><tbody id="pMonthBody"></tbody></table></div></div>
+<div class="tbl-wrap"><table class="data-table"><thead><tr><th>月</th><th class="num">预测(万)</th><th class="num">修正(万)</th><th class="num">可能范围(万)</th></tr></thead><tbody id="pMonthBody"></tbody></table></div></div>
 
 <div class="cb"><h3><i class="fa-solid fa-bullseye" style="color:var(--primary)"></i> 月度实际 vs 当期预测（万元 / %）
-<span class="st" id="pTrackSub">柱=实际 · 点=当时的预测 · 灰线=偏差% · 橙虚线=校正后偏差%</span></h3>
+<span class="st" id="pTrackSub">柱=实际 · 点=当时的预测 · 灰线=偏差% · 橙虚线=修正后偏差%</span></h3>
 <div id="cPTrack" style="width:100%;height:320px"></div></div>
 
 <div class="cb"><h3><i class="fa-solid fa-calendar-week" style="color:var(--primary)"></i> 月度季节指数（相对全年平均）
@@ -3931,7 +3931,7 @@ function pWhatIf(el){
  if(x===0){
   kc.style.border='';
   val.textContent=pFmt(kk[0]);
-  if(sub)sub.textContent='无偏 '+pFmt(kk[1])+' 万';
+  if(sub)sub.textContent='修正值 '+pFmt(kk[1])+' 万';
  }else{
   kc.style.border='1px solid var(--warning)';
   val.textContent=pFmt(kk[0]==null?null:Math.round(kk[0]*(1+x/100)));
@@ -3960,10 +3960,10 @@ function initPFace(){
   if(ht){ht.textContent=(D.histMonths?D.histMonths.length:0)+' 个月历史 + '+(D.months?D.months.length:0)+' 个月预测（万元）';}
  var tr=D.track||{};
  var e1=document.getElementById('pKcBaseVal');if(e1)e1.textContent=pFmt(k12[0]);
- var s1=document.getElementById('pKcBaseSub');if(s1)s1.textContent='无偏 '+pFmt(k12[1])+' 万';
+  var s1=document.getElementById('pKcBaseSub');if(s1)s1.textContent='修正值 '+pFmt(k12[1])+' 万';
  var e2=document.getElementById('pKcBandVal');if(e2)e2.textContent=(k12[2]==null?'—':String(k12[2]));
  var e3=document.getElementById('pKcWapeVal');if(e3)e3.textContent=(tr.avgAbsErr==null?'—':tr.avgAbsErr+'%');
- var s3=document.getElementById('pKcWapeSub');if(s3)s3.textContent=(tr.dirN==null?'—':'近 '+tr.dirN+' 月平均 · 校正后 '+(tr.avgAbsErrUnb==null?'—':tr.avgAbsErrUnb+'%'));
+  var s3=document.getElementById('pKcWapeSub');if(s3)s3.textContent=(tr.dirN==null?'—':'近 '+tr.dirN+' 月平均 · 修正后 '+(tr.avgAbsErrUnb==null?'—':tr.avgAbsErrUnb+'%'));
  var e4=document.getElementById('pKcDirVal');if(e4)e4.textContent=(tr.dirN?Math.round(tr.dirHit/tr.dirN*100)+'%':'—');
  var s4=document.getElementById('pKcDirSub');if(s4)s4.textContent=(tr.dirHit==null?'—':'涨跌方向命中 '+tr.dirHit+'/'+tr.dirN);
  /* ---- 目标缺口（D.target 非空才显示） ---- */
@@ -3978,20 +3978,45 @@ function initPFace(){
    tbEl.style.display='';
   }
  }
- /* ---- 主图：80 月历史 + 12 月预测（置信带 stack + 截止线 + 春节带） ---- */
- _pHist=pMk('cPHist',{textStyle:baseOpt.textStyle,tooltip:baseOpt.tooltip,grid:baseOpt.grid,
-  legend:{data:['实际','基准预测','无偏口径'],top:4,left:8,itemGap:14,textStyle:{fontSize:11}},
-  dataZoom:[{type:'slider',start:68,end:100,height:16,bottom:6},{type:'inside'}],
-  xAxis:{type:'category',data:X,axisLabel:{color:SUB,interval:0,rotate:45,fontSize:10}},
-  yAxis:{type:'value',axisLabel:{color:SUB},splitLine:{lineStyle:{color:BDR}}},
-  series:[
-   {name:'_lo',type:'line',data:D.bandLo,stack:'band',lineStyle:{opacity:0},symbol:'none',silent:true},
-   {name:'八成区间',type:'line',data:D.bandRng,stack:'band',areaStyle:{color:'rgba(37,99,235,0.08)'},lineStyle:{opacity:0},symbol:'none',silent:true},
-   {name:'实际',type:'line',data:D.histVal.concat(pPadNull(D.months.length)),showSymbol:false,lineStyle:{width:2,color:C3},itemStyle:{color:C3}},
-   {name:'基准预测',type:'line',data:pPadNull(D.histMonths.length-1).concat([D.histVal[D.histVal.length-1]]).concat(D.base),lineStyle:{width:2,type:'dashed',color:C2},itemStyle:{color:C2},symbol:'circle',symbolSize:5,
-    markLine:{silent:true,symbol:'none',lineStyle:{color:C5,type:'dashed'},label:{formatter:'数据截止',color:SUB,fontSize:9,position:'insideEndTop'},data:[{xAxis:D.histMonths[D.histMonths.length-1]}]},
-     markArea:{silent:true,itemStyle:{color:'rgba(245,158,11,0.08)'},label:{show:true,position:'insideBottom',fontSize:9,color:'#B45309',formatter:'春节'},data:(D.cnyMarks||[]).map(function(m){return [{xAxis:m},{xAxis:m}]})}},
-   {name:'无偏口径',type:'line',data:pPadNull(D.histMonths.length-1).concat([(D.unbiased&&D.unbiased.length)?D.unbiased[0]:(D.histVal[D.histVal.length-1]||0)]).concat(D.unbiased),lineStyle:{width:1.5,type:'dotted',color:'#93C5FD'},itemStyle:{color:'#93C5FD'},symbol:'none'}]});
+  /* ---- 主图：80 月历史 + 12 月预测（置信带 stack + 截止线 + 春节带） ---- */
+  /* 2026-10-12 交互修复：自定义 tooltip——过去月显示实际值（近20月附"当时预测+偏差"），
+     未来月只显示预测值/修正值/可能范围；预测线加数值标签；术语白话化（预测值/修正值/可能范围）。 */
+  _pHist=pMk('cPHist',{textStyle:baseOpt.textStyle,
+   tooltip:(function(){var t={};for(var k in baseOpt.tooltip)t[k]=baseOpt.tooltip[k];
+    t.formatter=function(ps){
+     if(!ps||!ps.length)return '';
+     var i=ps[0].dataIndex,hLen=(D.histMonths||[]).length;
+     var s='<b>'+X[i]+'</b>';
+     if(i<hLen){
+      s+='<br/>实际：'+((D.histVal&&D.histVal[i]!=null)?pFmt(D.histVal[i])+' 万':'—');
+      var trk=D.track||{},ti=(trk.months||[]).indexOf(X[i]);
+      if(ti>=0){
+       s+='<br/>当时预测：'+((trk.pred&&trk.pred[ti]!=null)?pFmt(trk.pred[ti])+' 万':'—');
+       if(trk.errPct&&trk.errPct[ti]!=null)s+='（偏差 '+(trk.errPct[ti]>0?'+':'')+trk.errPct[ti]+'%）';
+      }
+     }else{
+      var fi=i-hLen;
+      s+='<br/>预测：'+((D.base&&D.base[fi]!=null)?pFmt(D.base[fi])+' 万':'—');
+      if(D.unbiased&&D.unbiased[fi]!=null)s+='<br/>修正：'+pFmt(D.unbiased[fi])+' 万';
+      var lo=D.bandLo?D.bandLo[i]:null,rg=D.bandRng?D.bandRng[i]:null;
+      if(lo!=null&&rg!=null)s+='<br/>可能范围：'+pFmt(lo)+' ~ '+pFmt(lo+rg)+' 万';
+     }
+     return s;
+    };return t;})(),
+   grid:baseOpt.grid,
+   legend:{data:['实际','预测值','修正值'],top:4,left:8,itemGap:14,textStyle:{fontSize:11}},
+   dataZoom:[{type:'slider',start:68,end:100,height:16,bottom:6},{type:'inside'}],
+   xAxis:{type:'category',data:X,axisLabel:{color:SUB,interval:0,rotate:45,fontSize:10}},
+   yAxis:{type:'value',axisLabel:{color:SUB},splitLine:{lineStyle:{color:BDR}}},
+   series:[
+    {name:'_lo',type:'line',data:D.bandLo,stack:'band',lineStyle:{opacity:0},symbol:'none',silent:true},
+    {name:'可能范围',type:'line',data:D.bandRng,stack:'band',areaStyle:{color:'rgba(37,99,235,0.08)'},lineStyle:{opacity:0},symbol:'none',silent:true},
+    {name:'实际',type:'line',data:D.histVal.concat(pPadNull(D.months.length)),showSymbol:false,lineStyle:{width:2,color:C3},itemStyle:{color:C3}},
+    {name:'预测值',type:'line',data:pPadNull(D.histMonths.length-1).concat([D.histVal[D.histVal.length-1]]).concat(D.base),lineStyle:{width:2,type:'dashed',color:C2},itemStyle:{color:C2},symbol:'circle',symbolSize:5,
+     label:{show:true,color:'#B45309',fontSize:10,fontFamily:"-apple-system,'Microsoft YaHei',sans-serif",formatter:function(v){return v.value==null?'':pFmt(v.value);}},
+     markLine:{silent:true,symbol:'none',lineStyle:{color:C5,type:'dashed'},label:{formatter:'数据截止',color:SUB,fontSize:9,position:'insideEndTop'},data:[{xAxis:D.histMonths[D.histMonths.length-1]}]},
+      markArea:{silent:true,itemStyle:{color:'rgba(245,158,11,0.08)'},label:{show:true,position:'insideBottom',fontSize:9,color:'#B45309',formatter:'春节'},data:(D.cnyMarks||[]).map(function(m){return [{xAxis:m},{xAxis:m}]})}},
+    {name:'修正值',type:'line',data:pPadNull(D.histMonths.length-1).concat([(D.unbiased&&D.unbiased.length)?D.unbiased[0]:(D.histVal[D.histVal.length-1]||0)]).concat(D.unbiased),lineStyle:{width:1.5,type:'dotted',color:'#93C5FD'},itemStyle:{color:'#93C5FD'},symbol:'none'}]});
  /* ---- 产品线多线图 ---- */
  var PALETTE=['#2563EB','#65A30D','#D97706','#9333EA','#16A34A','#DB2777'];
  var lineSeries=(D.linesTop||[]).map(function(l,i){
@@ -4005,22 +4030,22 @@ function initPFace(){
   xAxis:{type:'category',data:X,axisLabel:{color:SUB,interval:0,rotate:45,fontSize:9}},
   yAxis:{type:'value',axisLabel:{color:SUB},splitLine:{lineStyle:{color:BDR}}},
   series:lineSeries});
- /* ---- 分季柱图：柱=基准 · 点=无偏 · 帽线=八成区间 ---- */
+  /* ---- 分季柱图：柱=预测 · 点=修正 · 帽线=可能范围 ---- */
  var Q=D.quarters||[];
  if(Q.length){
   pMk('cPQuarter',{legend:{show:false},textStyle:baseOpt.textStyle,
    tooltip:{trigger:'axis',backgroundColor:'rgba(255,255,255,0.97)',borderColor:BDR,borderWidth:1,textStyle:{color:TXT,fontSize:12},extraCssText:'box-shadow:0 4px 12px rgba(15,23,42,0.08);border-radius:8px;',
-    formatter:function(ps){var d=Q[ps[0].dataIndex];if(!d)return '';var s='<b>'+d.q+'</b><br/>基准 '+pFmt(d.base)+' 万';s+='<br/>无偏 '+(d.unbiased==null?'—':pFmt(d.unbiased)+' 万');if(d.lo!=null&&d.hi!=null)s+='<br/>区间 '+pFmt(d.lo)+' ~ '+pFmt(d.hi)+' 万';return s;}},
+    formatter:function(ps){var d=Q[ps[0].dataIndex];if(!d)return '';var s='<b>'+d.q+'</b><br/>预测 '+pFmt(d.base)+' 万';s+='<br/>修正 '+(d.unbiased==null?'—':pFmt(d.unbiased)+' 万');if(d.lo!=null&&d.hi!=null)s+='<br/>可能范围 '+pFmt(d.lo)+' ~ '+pFmt(d.hi)+' 万';return s;}},
    grid:{left:56,right:20,top:30,bottom:36},
    xAxis:{type:'category',data:Q.map(function(d){return d.q;}),axisLabel:{color:SUB,interval:0}},
    yAxis:{type:'value',axisLabel:{color:SUB},splitLine:{lineStyle:{color:BDR}}},
    series:[
-    {name:'基准',type:'bar',data:Q.map(function(d){return d.base;}),barWidth:'42%',itemStyle:{color:'#2563EB',borderRadius:[4,4,0,0]}},
-    {name:'无偏',type:'scatter',data:Q.map(function(d){return d.unbiased;}),symbolSize:8,itemStyle:{color:C2}},
+     {name:'预测值',type:'bar',data:Q.map(function(d){return d.base;}),barWidth:'42%',itemStyle:{color:'#2563EB',borderRadius:[4,4,0,0]}},
+     {name:'修正值',type:'scatter',data:Q.map(function(d){return d.unbiased;}),symbolSize:8,itemStyle:{color:C2}},
     {name:'_lo帽',type:'scatter',data:Q.map(function(d){return d.lo;}),symbol:'rect',symbolSize:[16,2],itemStyle:{color:C5},silent:true},
     {name:'_hi帽',type:'scatter',data:Q.map(function(d){return d.hi;}),symbol:'rect',symbolSize:[16,2],itemStyle:{color:C5},silent:true}]});
  }
- /* ---- 分月表（月 / 基准 / 无偏 / 八成区间；春节行） ---- */
+  /* ---- 分月表（月 / 预测 / 修正 / 可能范围；春节行） ---- */
  var mb=document.getElementById('pMonthBody');
  if(mb){
   var cnyMarks=D.cnyMarks||[];
@@ -4050,11 +4075,11 @@ function initPFace(){
  if((TR.months||[]).length){
   var trM=TR.months;
   var trSub=document.getElementById('pTrackSub');
-  if(trSub)trSub.textContent='柱=实际 · 点=当时的预测 · 灰线=偏差% · 橙虚线=校正后偏差%';
+   if(trSub)trSub.textContent='柱=实际 · 点=当时的预测 · 灰线=偏差% · 橙虚线=修正后偏差%';
   pMk('cPTrack',{textStyle:baseOpt.textStyle,
    tooltip:{trigger:'axis',backgroundColor:'rgba(255,255,255,0.97)',borderColor:BDR,borderWidth:1,textStyle:{color:TXT,fontSize:12},extraCssText:'box-shadow:0 4px 12px rgba(15,23,42,0.08);border-radius:8px;',
-    formatter:function(ps){var i=ps[0].dataIndex;var s='<b>'+trM[i]+'</b>';s+='<br/>实际 '+(TR.act&&TR.act[i]!=null?pFmt(TR.act[i])+' 万':'—');s+='<br/>当时的预测 '+(TR.pred&&TR.pred[i]!=null?pFmt(TR.pred[i])+' 万':'—');s+='<br/>偏差 '+(TR.errPct&&TR.errPct[i]!=null?TR.errPct[i]+'%':'—');s+='<br/>校正后偏差 '+(TR.errPctUnb&&TR.errPctUnb[i]!=null?TR.errPctUnb[i]+'%':'—');return s;}},
-   legend:{data:['实际','当时的预测','偏差%','校正后偏差%'],top:2,left:'center',itemGap:14,textStyle:{fontSize:11}},
+    formatter:function(ps){var i=ps[0].dataIndex;var s='<b>'+trM[i]+'</b>';s+='<br/>实际 '+(TR.act&&TR.act[i]!=null?pFmt(TR.act[i])+' 万':'—');s+='<br/>当时的预测 '+(TR.pred&&TR.pred[i]!=null?pFmt(TR.pred[i])+' 万':'—');s+='<br/>偏差 '+(TR.errPct&&TR.errPct[i]!=null?TR.errPct[i]+'%':'—');s+='<br/>修正后偏差 '+(TR.errPctUnb&&TR.errPctUnb[i]!=null?TR.errPctUnb[i]+'%':'—');return s;}},
+   legend:{data:['实际','当时的预测','偏差%','修正后偏差%'],top:2,left:'center',itemGap:14,textStyle:{fontSize:11}},
    grid:{left:64,right:56,top:44,bottom:40},
    xAxis:{type:'category',data:trM,axisLabel:{color:SUB,interval:0,fontSize:10}},
    yAxis:[{type:'value',name:'万元',axisLabel:{color:SUB},splitLine:{lineStyle:{color:BDR}}},
@@ -4064,7 +4089,7 @@ function initPFace(){
     {name:'当时的预测',type:'scatter',data:TR.pred||[],symbol:'diamond',symbolSize:10,itemStyle:{color:C2}},
     {name:'偏差%',type:'line',yAxisIndex:1,data:TR.errPct||[],showSymbol:false,lineStyle:{width:1.8,color:'#64748B'},itemStyle:{color:'#64748B'},
      markLine:{silent:true,symbol:'none',lineStyle:{color:'#475569',type:'dashed',width:1.6},label:{formatter:'0%',color:'#475569',fontSize:9},data:[{yAxis:0}]}},
-    {name:'校正后偏差%',type:'line',yAxisIndex:1,data:TR.errPctUnb||[],showSymbol:false,lineStyle:{width:1.6,type:'dashed',color:C2},itemStyle:{color:C2}}]});
+         {name:'修正后偏差%',type:'line',yAxisIndex:1,data:TR.errPctUnb||[],showSymbol:false,lineStyle:{width:1.6,type:'dashed',color:C2},itemStyle:{color:C2}}]});
  }
  /* ---- 月度规律（季节指纹）：各月相对全年平均 ---- */
  var SE=D.seasonal||[];

@@ -1320,10 +1320,10 @@ def build_r_face_inner_html(month):
                         + _esc(parts["caliber"]) + '</div></div>')
 
     inner = (parts["kpi_bar"]
-             + '<div class="cb"><h3>' + _esc(_clean_title(parts.get("risk_title"), "一、当月风险摘要")) + '</h3><div class="note">初稿由系统按规则生成，经人工审定后展示。</div>'
+             + '<div class="cb"><h3>' + _esc(_clean_title(parts.get("risk_title"), "一、当月风险摘要")) + '</h3>'
              + parts["risk_table"] + '</div>\n'
              + parts.get("extras_top", "")
-             + '<div class="cb"><h3>' + _esc(_clean_title(parts.get("action_title"), "二、行动清单")) + '</h3><div class="note">状态：待处理 / 跟进中 / 已关闭。未关闭事项跨月自动结转。</div>'
+             + '<div class="cb"><h3>' + _esc(_clean_title(parts.get("action_title"), "二、行动清单")) + '</h3><div class="note">状态：待处理 / 跟进中 / 已关闭。</div>'
              + parts["action_table"] + '</div>\n'
              + parts.get("extras_bottom", "")
              + parts.get("notes_html", "")
