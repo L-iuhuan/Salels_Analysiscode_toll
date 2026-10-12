@@ -916,7 +916,7 @@ body{font-family:-apple-system,'Microsoft YaHei','Segoe UI',sans-serif;backgroun
 </div>
 
 <div class="cb" style="position:relative"><h3><i class="fa-solid fa-chart-line" style="color:var(--primary)"></i> <span id="pHistTitle">历史与预测（万元）</span>
-<span class="st">蓝实线=实际 · 橙虚线=预测 · 蓝点线=修正 · 浅蓝带=可能范围（八成把握）· 黄带=春节月 · 悬停看数值（过去月含当时预测）</span></h3>
+<span class="st">蓝实线=实际 · 橙虚线=预测 · 蓝点线=修正 · 浅蓝带=可能范围（八成把握）· 橙竖线=春节月 · 悬停看数值（过去月含当时预测）</span></h3>
 <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin:var(--space-inner) 0">
 <div class="btn-toggle-group" style="margin:0">
 <button class="btn-toggle active" data-win="fy" onclick="setPWin(this)">全年</button>
@@ -4023,8 +4023,11 @@ function initPFace(){
     {name:'实际',type:'line',data:D.histVal.concat(pPadNull(D.months.length)),showSymbol:false,lineStyle:{width:2,color:C3},itemStyle:{color:C3}},
     {name:'预测值',type:'line',data:pPadNull(D.histMonths.length-1).concat([D.histVal[D.histVal.length-1]]).concat(D.base),lineStyle:{width:2,type:'dashed',color:C2},itemStyle:{color:C2},symbol:'circle',symbolSize:5,
      label:{show:true,color:'#B45309',fontSize:10,fontFamily:"-apple-system,'Microsoft YaHei',sans-serif",formatter:function(v){return v.value==null?'':pFmt(v.value);}},
-     markLine:{silent:true,symbol:'none',lineStyle:{color:C5,type:'dashed'},label:{formatter:'数据截止',color:SUB,fontSize:9,position:'insideEndTop'},data:[{xAxis:D.histMonths[D.histMonths.length-1]}]},
-      markArea:{silent:true,itemStyle:{color:'rgba(245,158,11,0.08)'},label:{show:true,position:'insideBottom',fontSize:9,color:'#B45309',formatter:'春节'},data:(D.cnyMarks||[]).map(function(m){return [{xAxis:m},{xAxis:m}]})}},
+     /* 2026-10-12 修复：markArea 类目锚定在该 ECharts 版本错位（名锚定偏2格/coord取整半格偏），
+        markLine+数值xAxis实测落位Δ0精确——春节改竖线标记（与"数据截止"线同手法） */
+     markLine:{silent:true,symbol:'none',
+      data:[{xAxis:D.histMonths.length-1,lineStyle:{color:C5,type:'dashed'},label:{formatter:'数据截止',color:SUB,fontSize:9,position:'insideEndTop'}}]
+       .concat((D.cnyMarks||[]).map(function(m){var i=X.indexOf(m);return i<0?null:{xAxis:i,lineStyle:{color:'#D97706',type:'solid',width:2,opacity:0.85},label:{formatter:'春节',color:'#B45309',fontSize:9,position:'insideEndBottom'}};}).filter(function(v){return !!v;}))}},
     {name:'修正值',type:'line',data:pPadNull(D.histMonths.length-1).concat([(D.unbiased&&D.unbiased.length)?D.unbiased[0]:(D.histVal[D.histVal.length-1]||0)]).concat(D.unbiased),lineStyle:{width:1.5,type:'dotted',color:'#93C5FD'},itemStyle:{color:'#93C5FD'},symbol:'none'}]});
  /* ---- 产品线多线图 ---- */
  var PALETTE=['#2563EB','#65A30D','#D97706','#9333EA','#16A34A','#DB2777'];
