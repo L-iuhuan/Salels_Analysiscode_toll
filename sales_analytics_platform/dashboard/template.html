@@ -660,10 +660,162 @@ body{font-family:-apple-system,'Microsoft YaHei','Segoe UI',sans-serif;backgroun
  <div class="scroll" id="saList"></div>
  <div style="height:20px"></div>
  <div class="cb"><h3><i class="fa-solid fa-box" style="color:var(--primary)"></i> KA/AA产品型号变迁 · 近12月 vs 前12月 (单次销量≥6000颗)<span class="chart-guide">%%GUIDE_A_prodChange%%</span> <span style="font-size:10px;color:var(--text-tertiary);font-weight:400" id="prodChangeCount"></span></h3>
- <div id="prodChangeSummary"></div><div id="prodChange" style="max-height:340px;overflow-y:auto;margin-top:6px"></div>
+  <div id="prodChangeSummary"></div><div id="prodChange" style="max-height:340px;overflow-y:auto;margin-top:6px"></div>
+  </div>
+  </div>
+
+  <!-- ===== A面底部·型号销售 TOP20（2026-10-12 并入；当月收入前20固定集，silver 现算） ===== -->
+  <style>
+#sec-top20 table{border-collapse:separate;border-spacing:0}
+#sec-top20 th{background:#f8fafc;color:var(--text-secondary);font-weight:600;padding:9px 10px;border-bottom:2px solid var(--border);white-space:nowrap;cursor:pointer;user-select:none;text-align:right;overflow:visible}
+#sec-top20 th.l{text-align:left}
+#sec-top20 th:hover{color:var(--primary)}
+#sec-top20 th.on{color:var(--primary)}
+#sec-top20 td{padding:8px 10px;border-bottom:1px solid var(--border);white-space:nowrap;font-variant-numeric:tabular-nums;text-align:right;overflow:hidden;text-overflow:ellipsis}
+#sec-top20 td.l{text-align:left}
+#sec-top20 tbody tr:nth-child(even){background:#fafbfc}
+#sec-top20 tbody tr{cursor:pointer}
+#sec-top20 tbody tr:hover{background:#eff6ff}
+#sec-top20 tfoot td{padding:9px 10px;border-top:2px solid var(--border);font-weight:700;background:#f8fafc;white-space:nowrap}
+  </style>
+  <div class="cb" id="sec-top20"><h3><i class="fa-solid fa-ranking-star" style="color:var(--primary)"></i> 型号销售 TOP20<span style="font-size:10px;color:var(--text-tertiary);font-weight:400"> 当月收入前20（固定集·点表头排序·点行看明细） · 收入万元/销量万颗 · 环比vs上月 · 同比vs去年同月 · YTD=年初至最新月 · 近12月主要客户与明细图表同口径 · 合计行毛利率/环比/同比为20型号加权</span></h3>
+  <div class="tblwrap" style="overflow-x:auto"><table id="t20Tbl" style="table-layout:fixed;width:1430px;font-size:13px">
+  <colgroup><col style="width:36px"><col style="width:122px"><col style="width:176px"><col style="width:104px"><col style="width:104px"><col style="width:104px"><col style="width:96px"><col style="width:96px"><col style="width:96px"><col style="width:104px"><col style="width:122px"><col style="width:112px"><col style="width:174px"></colgroup>
+  <thead><tr>
+  <th>#</th><th class="l t20s" data-k="m">型号</th><th class="l t20s" data-k="cat">品类</th>
+  <th class="t20s" data-k="mrev">当月收入</th><th class="t20s" data-k="mqty">当月销量</th><th class="t20s" data-k="mmg">当月毛利率</th>
+  <th class="t20s" data-k="mom">收入环比</th><th class="t20s" data-k="yoy">收入同比</th>
+  <th class="t20s" data-k="yrev">YTD收入</th><th class="t20s" data-k="ymg">YTD毛利率</th><th class="t20s" data-k="ymgd">YTD毛利率同比</th>
+  <th class="t20s" data-k="lrev">近12月收入</th><th class="l t20s" data-k="lcust">近12月主要客户</th>
+  </tr></thead>
+  <tbody id="t20Body"></tbody>
+  <tfoot><tr id="t20Foot">
+  <td></td><td class="l" id="t20f_m">合计（20个型号）</td><td></td>
+  <td id="t20f_mrev"></td><td id="t20f_mqty"></td><td id="t20f_mmg"></td>
+  <td id="t20f_mom"></td><td id="t20f_yoy"></td>
+  <td id="t20f_yrev"></td><td id="t20f_ymg"></td><td id="t20f_ymgd"></td>
+  <td id="t20f_lrev"></td><td class="l">—</td>
+  </tr></tfoot>
+  </table></div>
+  </div>
+  <script>const A_TOP20=%%A_TOP20%%;</script>
+  <script>
+  /* A面TOP20：固定20集排序 + 行点击抽屉（TABS.drawer + TABS.chart，复用F面/主图模式） */
+  (function(){
+   function t20Esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;');}
+   function t20Num(v){return v==null?'—':Number(v).toLocaleString('zh-CN',{minimumFractionDigits:1,maximumFractionDigits:1});}
+   function t20Pct(v){return v==null?'—':(v>0?'+':'')+v.toFixed(1)+'%';}
+   function t20Cls(v){return v==null?'':(v>0?'up':(v<0?'dn':''));}
+   var t20Key='mrev',t20Asc=false;
+   function t20Render(){
+    var R=(window.A_TOP20&&A_TOP20.rows)||[];
+    if(!R.length){document.getElementById('t20Body').innerHTML='<tr><td colspan="13" style="text-align:left;color:var(--text-tertiary)">型号 TOP20 数据缺失（需完整跑批生成 silver 明文）</td></tr>';return;}
+    var pool=R.slice().sort(function(a,b){
+     if(t20Key==='m'||t20Key==='cat'||t20Key==='lcust')return String(a[t20Key]||'').localeCompare(String(b[t20Key]||''))*(t20Asc?1:-1);
+     var va=a[t20Key],vb=b[t20Key];
+     if(va==null&&vb==null)return 0;if(va==null)return 1;if(vb==null)return -1;
+     return (va-vb)*(t20Asc?1:-1);});
+    document.getElementById('t20Body').innerHTML=pool.map(function(r,i){
+     var lc=r.lcust?(r.lcust+(r.lshare!=null?' ('+r.lshare+'%)':'')):'—';
+     return '<tr data-m="'+t20Esc(r.m)+'"><td>'+(i+1)+'</td><td class="l" style="font-weight:600">'+t20Esc(r.m)+'</td><td class="l" title="'+t20Esc(r.cat)+'">'+t20Esc(r.cat)+'</td>'
+      +'<td><b>'+t20Num(r.mrev)+'</b></td><td>'+t20Num(r.mqty)+'</td>'
+      +'<td>'+(r.mmg==null?'—':r.mmg.toFixed(1)+'%')+'</td>'
+      +'<td class="'+t20Cls(r.mom)+'">'+t20Pct(r.mom)+'</td>'
+      +'<td class="'+t20Cls(r.yoy)+'">'+t20Pct(r.yoy)+'</td>'
+      +'<td>'+t20Num(r.yrev)+'</td>'
+      +'<td>'+(r.ymg==null?'—':r.ymg.toFixed(1)+'%')+'</td>'
+      +'<td class="'+t20Cls(r.ymgd)+'">'+(r.ymgd==null?'—':(r.ymgd>0?'+':'')+r.ymgd.toFixed(1))+'</td>'
+      +'<td>'+t20Num(r.lrev)+'</td>'
+      +'<td class="l" title="'+t20Esc(lc)+'">'+t20Esc(lc)+'</td></tr>';}).join('');
+    Array.prototype.forEach.call(document.querySelectorAll('#t20Body tr'),function(tr){
+     tr.addEventListener('click',function(){t20Detail(tr.getAttribute('data-m'));});});
+    Array.prototype.forEach.call(document.querySelectorAll('#sec-top20 th.t20s'),function(th){
+     var k=th.getAttribute('data-k'),t=th.textContent.replace(/ [▲▼]$/,'');
+     if(k===t20Key&&!['m','cat','lcust'].includes(k))t+=t20Asc?' ▲':' ▼';
+     th.textContent=t;th.className=(th.classList.contains('l')?'l ':'')+(k===t20Key?'on':'');});
+   }
+   function t20FillFoot(){
+    var F=(window.A_TOP20&&A_TOP20.foot)||null;if(!F)return;
+    var g=function(id,v){var e=document.getElementById(id);if(e)e.textContent=v;};
+    g('t20f_mrev',t20Num(F.mrev));g('t20f_mqty',t20Num(F.mqty));
+    g('t20f_mmg',F.mmg==null?'—':F.mmg.toFixed(1)+'%');
+    var e1=document.getElementById('t20f_mom');e1.textContent=t20Pct(F.mom);e1.className=t20Cls(F.mom);
+    var e2=document.getElementById('t20f_yoy');e2.textContent=t20Pct(F.yoy);e2.className=t20Cls(F.yoy);
+    g('t20f_yrev',t20Num(F.yrev));
+    g('t20f_ymg',F.ymg==null?'—':F.ymg.toFixed(1)+'%');
+    var e3=document.getElementById('t20f_ymgd');e3.textContent=F.ymgd==null?'—':(F.ymgd>0?'+':'')+F.ymgd.toFixed(1);e3.className=t20Cls(F.ymgd);
+    g('t20f_lrev',t20Num(F.lrev));
+   }
+   function t20Chip(k,v,d){return '<div class="kc"><div class="label">'+k+'</div><div class="value" style="font-size:16px">'+v+'</div>'+(d?'<div class="sub">'+d+'</div>':'')+'</div>';}
+   function t20Detail(m){
+    var R=(window.A_TOP20&&A_TOP20.rows)||[],D=(window.A_TOP20&&A_TOP20.detail)||{};
+    var r=R.find(function(x){return x.m===m;});var d=D[m];if(!r||!d)return;
+    var h='<div class="kpi-bar" style="grid-template-columns:repeat(4,1fr);margin:0 0 12px">'
+     +t20Chip('当月收入（万）',t20Num(r.mrev),'环比 '+t20Pct(r.mom))
+     +t20Chip('当月销量（万颗）',t20Num(r.mqty),'')
+     +t20Chip('当月毛利率',(r.mmg==null?'—':r.mmg.toFixed(1)+'%'),'')
+     +t20Chip('YTD收入（万）',t20Num(r.yrev),'同比 '+t20Pct(r.yrevYoy))
+     +t20Chip('YTD毛利率',(r.ymg==null?'—':r.ymg.toFixed(1)+'%'),'同比 '+(r.ymgd==null?'—':(r.ymgd>0?'+':'')+r.ymgd.toFixed(1)+' pp'))
+     +t20Chip('近12月收入（万）',t20Num(r.lrev),'')
+     +t20Chip('近12月主要客户',t20Esc(r.lcust)||'—',r.lshare!=null?'占近12月收入 '+r.lshare+'%':'')
+     +t20Chip('收入同比',t20Pct(r.yoy),'vs 去年同月')
+     +'</div>'
+     +'<h3 style="font-size:13px;color:var(--text-secondary);margin:0 0 6px">近12个月成本/毛利构成 &amp; 毛利率趋势（万元 / %）</h3>'
+     +'<div id="t20Bar" style="width:100%;height:300px"></div>'
+     +'<h3 style="font-size:13px;color:var(--text-secondary);margin:12px 0 6px">客户构成（近12月收入 · 万元 · TOP10）</h3>'
+     +'<div id="t20Cust" style="width:100%;height:300px"></div>';
+    TABS.drawer.open({title:'型号明细 · '+t20Esc(m)+(r.cat?' · '+t20Esc(r.cat):''),contentHTML:h,onOpen:function(){
+     var bar=document.getElementById('t20Bar');
+     if(bar){
+      var old=echarts.getInstanceByDom(bar);if(old)old.dispose();
+      var c=TABS.chart.create?TABS.chart.create(bar):echarts.init(bar);if(!c)return;
+      var rev=d.rev||[],pf=d.pf||[],mo=d.months||[];
+      var cost=rev.map(function(v,i){return Math.round((v-(pf[i]||0))*10)/10;});
+      var mgs=rev.map(function(v,i){return v>0?Math.round((pf[i]||0)/v*1000)/10:null;});
+      var mv=mgs.filter(function(v){return v!=null;});
+      var mgMin=mv.length?Math.min(0,Math.floor(Math.min.apply(null,mv))-2):0;
+      var mgMax=mv.length?Math.ceil(Math.max.apply(null,mv))+4:40;
+      c.setOption({barCategoryGap:'45%',
+       tooltip:{confine:true,trigger:'axis',axisPointer:{type:'shadow'},formatter:function(ps){
+        var h='<b>'+ps[0].axisValue+'</b><br/>';var i=ps[0].dataIndex;
+        h+='收入：'+(rev[i]!=null?rev[i].toFixed(1):'—')+' 万<br/>成本：'+(cost[i]!=null?cost[i].toFixed(1):'—')+' 万<br/>毛利：'+(pf[i]!=null?pf[i].toFixed(1):'—')+' 万<br/>毛利率：'+(mgs[i]!=null?mgs[i].toFixed(1)+'%':'—');
+        return h;}},
+       legend:{top:2,data:['成本','毛利','毛利率%'],textStyle:{fontSize:11}},
+       grid:{left:55,right:65,top:36,bottom:40,containLabel:true},
+       xAxis:{type:'category',data:mo,axisLabel:{fontSize:10,rotate:30,interval:0}},
+       yAxis:[{type:'value',name:'万元'},{type:'value',name:'%',min:mgMin,max:mgMax,axisLabel:{formatter:'{value}%'}}],
+       series:[
+        {name:'成本',type:'bar',stack:'t',data:cost,itemStyle:{color:'#60A5FA'}},
+        {name:'毛利',type:'bar',stack:'t',data:pf,itemStyle:{color:'#2563EB'},label:{show:true,position:'top',fontSize:10,fontWeight:'bold',formatter:function(p){var v=rev[p.dataIndex];return v&&v>0?Math.round(v):'';}}},
+        {name:'毛利率%',type:'line',yAxisIndex:1,data:mgs,connectNulls:true,lineStyle:{color:'#EF4444',width:3},symbol:'circle',symbolSize:7,itemStyle:{color:'#EF4444'},label:{show:true,fontSize:10,color:'#1E293B',backgroundColor:'rgba(255,255,255,0.85)',padding:[2,3],borderRadius:2,formatter:function(p){return p.value!=null?p.value.toFixed(1)+'%':'';}},labelLayout:{hideOverlap:true}}]});
+     }
+     var cu=document.getElementById('t20Cust');
+     if(cu){
+      var old2=echarts.getInstanceByDom(cu);if(old2)old2.dispose();
+      var c2=TABS.chart.create?TABS.chart.create(cu):echarts.init(c2||cu);if(!c2)return;
+      var ct=(d.custTot||[]).slice().reverse();
+      c2.setOption({tooltip:{confine:true,trigger:'axis',axisPointer:{type:'shadow'},formatter:function(ps){var x=ct[ps[0].dataIndex];return '<b>'+t20Esc(x.n)+'</b><br/>'+x.v.toLocaleString()+' 万（'+x.s+'%）';}},
+       grid:{left:110,right:96,top:8,bottom:24},
+       xAxis:{type:'value'},
+       yAxis:{type:'category',data:ct.map(function(x){return x.n;})},
+       series:[{type:'bar',data:ct.map(function(x){return x.v;}),barMaxWidth:18,itemStyle:{color:'#2563EB',borderRadius:[0,3,3,0]},
+        label:{show:true,position:'right',fontSize:10,formatter:function(p){var x=ct[p.dataIndex];return x.v.toLocaleString()+'（'+x.s+'%）';}}}]});
+     }
+    }});
+   }
+   function initTop20(){
+    Array.prototype.forEach.call(document.querySelectorAll('#sec-top20 th.t20s'),function(th){
+     th.addEventListener('click',function(){
+      var k=th.getAttribute('data-k');
+      if(k===t20Key)t20Asc=!t20Asc;else{t20Key=k;t20Asc=(k==='m'||k==='cat'||k==='lcust');}
+      t20Render();});});
+    t20FillFoot();t20Render();
+   }
+   if(document.readyState==='complete')setTimeout(initTop20,0);
+   else window.addEventListener('load',function(){setTimeout(initTop20,0);});
+  })();
+  </script>
  </div>
- </div>
-</div>
 
 <div class="tab-content" id="tabR">
 %%R_FACE_HTML%%

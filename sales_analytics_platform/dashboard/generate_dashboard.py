@@ -786,6 +786,132 @@ def _resolve_forecast_dir():
     return best
 
 
+def _build_a_top20():
+    """A面底部·型号销售TOP20（现算，不入 preagg 缓存——与预测面同款策略）：
+    读 silver 明文行，取当月（数据最新月）收入前 20 型号：12 指标 + 加权合计 +
+    明细（近12月收入/毛利序列 + 客户构成 TOP10，供抽屉图表消费）。
+    任何失败返回空壳（前端显示缺数提示），不阻断看板生成。"""
+    _empty = {"rows": [], "foot": None, "detail": {}}
+    try:
+        _sp = os.path.join(SILVER, "silver_cleaned_rows.parquet")
+        _is_pq = True
+        if not os.path.exists(_sp):
+            _sp = os.path.join(SILVER, "silver_cleaned_rows.csv")
+            _is_pq = False
+            if not os.path.exists(_sp):
+                print("  [A_TOP20] silver 明文缺失，返回空壳")
+                return _empty
+        _need = ["发货日期", "产品品种", "型号_产品品类", "金额", "利润", "数量", "客户编号"]
+        if _is_pq:
+            _df = pd.read_parquet(_sp, columns=_need)
+        else:
+            _df = pd.read_csv(_sp, encoding="utf-8-sig",
+                              usecols=lambda c: c in _need)
+        _df["ym"] = pd.to_datetime(_df["发货日期"], errors="coerce").dt.strftime("%Y-%m")
+        _df = _df[_df["ym"].notna()]
+        _df["_m"] = _df["产品品种"].fillna("").astype(str).str.strip()
+        _df = _df[_df["_m"] != ""]
+        for _c in ("金额", "利润", "数量"):
+            _df[_c] = pd.to_numeric(_df[_c], errors="coerce").fillna(0.0)
+
+        _cur_p = pd.Period(sorted(_df["ym"].unique())[-1], freq="M")
+        CUR, PREV, YOY = str(_cur_p), str(_cur_p - 1), str(_cur_p - 12)
+        YTD_S, L12_S = f"{_cur_p.year}-01", str(_cur_p - 11)
+        PYTD_S, PYTD_E = f"{_cur_p.year - 1}-01", f"{_cur_p.year - 1}-12"
+        YTD_E, L12_E = CUR, CUR
+        _months = [str(_cur_p - 11 + i) for i in range(12)]
+
+        def _agg(mask):
+            return _df[mask].groupby("_m").agg(rev=("金额", "sum"), profit=("利润", "sum"), qty=("数量", "sum"))
+
+        cur, prev, yoy = _agg(_df["ym"] == CUR), _agg(_df["ym"] == PREV), _agg(_df["ym"] == YOY)
+        ytd = _agg((_df["ym"] >= YTD_S) & (_df["ym"] <= YTD_E))
+        pytd = _agg((_df["ym"] >= PYTD_S) & (_df["ym"] <= PYTD_E))
+        l12 = _agg((_df["ym"] >= L12_S) & (_df["ym"] <= L12_E))
+        _cat = _df.groupby("_m")["型号_产品品类"].agg(
+            lambda s: s.mode().iat[0] if len(s.mode()) else "")
+        _lc = _df[(_df["ym"] >= L12_S) & (_df["ym"] <= L12_E)] \
+            .groupby(["_m", "客户编号"])["金额"].sum().reset_index()
+        _lc = _lc.sort_values("金额", ascending=False).drop_duplicates("_m").set_index("_m")
+
+        _names = cur.nlargest(20, "rev").index.tolist()
+        rows = []
+        for m in _names:
+            c = cur.loc[m]
+            p = prev.loc[m] if m in prev.index else None
+            y = yoy.loc[m] if m in yoy.index else None
+            t = ytd.loc[m]
+            pt = pytd.loc[m] if m in pytd.index else None
+            l = l12.loc[m] if m in l12.index else None
+            m_rev, m_qty, m_pf = float(c["rev"]), float(c["qty"]), float(c["profit"])
+            p_rev = float(p["rev"]) if p is not None else 0.0
+            y_rev = float(y["rev"]) if y is not None else 0.0
+            t_rev, t_pf = float(t["rev"]), float(t["profit"])
+            pt_rev = float(pt["rev"]) if pt is not None else 0.0
+            pt_pf = float(pt["profit"]) if pt is not None else 0.0
+            ymg = t_pf / t_rev * 100 if t_rev > 0 else None
+            pt_mg = pt_pf / pt_rev * 100 if pt_rev > 0 else None
+            l_rev = float(l["rev"]) if l is not None else 0.0
+            lcust, lshare = "", None
+            if m in _lc.index and l_rev > 0:
+                lcust = str(_lc.at[m, "客户编号"])
+                lshare = float(_lc.at[m, "金额"]) / l_rev * 100
+            rows.append({
+                "m": m, "cat": str(_cat.get(m, "")),
+                "mrev": round(m_rev / 1e4, 1), "mqty": round(m_qty / 1e4, 1),
+                "mmg": round(m_pf / m_rev * 100, 1) if m_rev > 0 else None,
+                "mom": round((m_rev - p_rev) / p_rev * 100, 1) if p_rev > 0 else None,
+                "yoy": round((m_rev - y_rev) / y_rev * 100, 1) if y_rev > 0 else None,
+                "yrev": round(t_rev / 1e4, 1),
+                "yrevYoy": round((t_rev - pt_rev) / pt_rev * 100, 1) if pt_rev > 0 else None,
+                "ymg": round(ymg, 1) if ymg is not None else None,
+                "ymgd": round(ymg - pt_mg, 1) if (ymg is not None and pt_mg is not None) else None,
+                "lrev": round(l_rev / 1e4, 1),
+                "lcust": lcust, "lshare": round(lshare) if lshare is not None else None,
+            })
+
+        _S = cur.loc[_names].sum()
+        _Sp = prev.reindex(_names).sum(skipna=True)
+        _Sy = yoy.reindex(_names).sum(skipna=True)
+        _St, _Spt = ytd.loc[_names].sum(), pytd.reindex(_names).sum(skipna=True)
+        foot = {
+            "mrev": round(float(_S["rev"]) / 1e4, 1),
+            "mqty": round(float(_S["qty"]) / 1e4, 1),
+            "mmg": round(float(_S["profit"]) / float(_S["rev"]) * 100, 1) if float(_S["rev"]) > 0 else None,
+            "mom": round((float(_S["rev"]) - float(_Sp["rev"])) / float(_Sp["rev"]) * 100, 1)
+                    if float(_Sp["rev"]) > 0 else None,
+            "yoy": round((float(_S["rev"]) - float(_Sy["rev"])) / float(_Sy["rev"]) * 100, 1)
+                    if float(_Sy["rev"]) > 0 else None,
+            "yrev": round(float(_St["rev"]) / 1e4, 1),
+            "ymg": round(float(_St["profit"]) / float(_St["rev"]) * 100, 1) if float(_St["rev"]) > 0 else None,
+            "ymgd": round((float(_St["profit"]) / float(_St["rev"])
+                           - float(_Spt["profit"]) / float(_Spt["rev"])) * 100, 1)
+                    if (float(_St["rev"]) > 0 and float(_Spt["rev"]) > 0) else None,
+            "lrev": round(float(l12.loc[_names]["rev"].sum()) / 1e4, 1),
+        }
+
+        detail = {}
+        for m in _names:
+            sub = _df[(_df["_m"] == m) & (_df["ym"] >= L12_S) & (_df["ym"] <= L12_E)]
+            pm = sub.groupby("ym").agg(rev=("金额", "sum"), pf=("利润", "sum"))
+            rev = [round(float(pm.at[mo, "rev"]) / 1e4, 1) if mo in pm.index else 0.0 for mo in _months]
+            pf = [round(float(pm.at[mo, "pf"]) / 1e4, 1) if mo in pm.index else 0.0 for mo in _months]
+            piv = sub.pivot_table(index="客户编号", columns="ym", values="金额",
+                                  aggfunc="sum", fill_value=0.0)
+            tot = piv.sum(axis=1).sort_values(ascending=False)
+            custTot = [{"n": str(cn), "v": round(float(tot[cn]) / 1e4, 1),
+                        "s": round(float(tot[cn]) / float(tot.sum()) * 100)}
+                       for cn in tot.head(10).index]
+            detail[m] = {"months": _months, "rev": rev, "pf": pf, "custTot": custTot}
+
+        print(f"  [A_TOP20] {len(rows)} 型号 · 数据月 {CUR} · 首位 {rows[0]['m'] if rows else '-'} "
+              f"{rows[0]['mrev'] if rows else 0}万")
+        return {"rows": rows, "foot": foot, "detail": detail, "month": CUR}
+    except Exception as _e:
+        print(f"  [A_TOP20] 构建失败（不阻断）: {type(_e).__name__}: {_e}")
+        return _empty
+
+
 def _build_p_face_data():
     """预测面（tabP）数据：读月度滚动预测交付 CSV + 展示元数据 JSON，组装 P_DATA。
     与 R 面同款"永远现算"策略：预测 CSV 由 run_chain 预测步骤（scripts/run_forecast.py）
@@ -993,6 +1119,8 @@ if _cache_hit and _cached_obj:
     # 预测面（tabP）：与 R 面同款"永远现算"——预测 CSV 由 run_chain 预测步骤先行更新，
     # 其变化不触发看板指纹，故不入 preagg 缓存，缓存命中路径同样现读注入。
     _replacements["%%FORECAST_DATA%%"] = json.dumps(_build_p_face_data(), ensure_ascii=False)
+    # A面TOP20：与预测面同款"永远现算"（silver 派生，不入缓存）
+    _replacements["%%A_TOP20%%"] = json.dumps(_build_a_top20(), ensure_ascii=False)
 
     _replacements.update(_identity_replacements())   # r24：数据身份徽标（缓存路径同款）
 
@@ -3583,6 +3711,8 @@ replacements = {
     "%%R_FACE_ERR%%": str(r_face_err),
     # ---- 预测面（tabP）：永远现算，不入 preagg 缓存（见写缓存处的排除清单） ----
     "%%FORECAST_DATA%%": json.dumps(_build_p_face_data(), ensure_ascii=False),
+    # ---- A面底部·型号销售TOP20：同预测面策略，silver 现算不入缓存 ----
+    "%%A_TOP20%%": json.dumps(_build_a_top20(), ensure_ascii=False),
     # ---- W4：面级口径条（A/B/C/D/E，R 面已有自己的口径节）----
     "%%FACE_META_A%%": _build_face_meta_html("A", _FACE_META_CACHE.get("A", {})),
     "%%FACE_META_B%%": _build_face_meta_html("B", _FACE_META_CACHE.get("B", {})),
@@ -3665,12 +3795,13 @@ if not _NO_CACHE and _fp is not None and _fp_cur is not None:
         _cache_payload = {
             "data_block": data_block,
             # 缓存除 DATA_BLOCK / C_DATA_JSON / 毛利率轴（现算）/ R面HTML+R_FACE_ERR（现算，审定 md 毫秒级解析）
-            # / FORECAST_DATA（现算，预测 CSV 随跑批先行更新、不触发指纹）外的全部占位符值
+            # / FORECAST_DATA（现算，预测 CSV 随跑批先行更新、不触发指纹）
+            # / A_TOP20（现算，silver 派生，同 FORECAST_DATA 策略）外的全部占位符值
             "replacements": {k: v for k, v in replacements.items()
                              if k not in ("%%DATA_BLOCK%%", "%%C_DATA_JSON%%",
                                           "%%MARGIN_AXIS_MIN%%", "%%MARGIN_AXIS_MAX%%",
                                           "%%R_FACE_HTML%%", "%%R_FACE_ERR%%",
-                                          "%%FORECAST_DATA%%")},
+                                          "%%FORECAST_DATA%%", "%%A_TOP20%%")},
             # ASP 轴边界源自 fingerprinted 的 rex 数据，缓存原始浮点值
             "asp_axis": _asp_axis_cache,
         }
