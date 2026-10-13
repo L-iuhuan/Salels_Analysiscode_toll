@@ -679,8 +679,8 @@ body{font-family:-apple-system,'Microsoft YaHei','Segoe UI',sans-serif;backgroun
 #sec-top20 tfoot td{padding:9px 10px;border-top:2px solid var(--border);font-weight:700;background:#f8fafc;white-space:nowrap}
   </style>
   <div class="cb" id="sec-top20"><h3><i class="fa-solid fa-ranking-star" style="color:var(--primary)"></i> 型号销售 TOP20<span style="font-size:10px;color:var(--text-tertiary);font-weight:400"> 当月收入前20（固定集·点表头排序·点行看明细） · 收入万元/销量万颗 · 环比vs上月 · 同比vs去年同月 · YTD=年初至最新月 · 近12月主要客户与明细图表同口径 · 合计行毛利率/环比/同比为20型号加权</span></h3>
-  <div class="tblwrap" style="overflow-x:auto"><table id="t20Tbl" style="table-layout:fixed;width:1430px;font-size:13px">
-  <colgroup><col style="width:36px"><col style="width:122px"><col style="width:176px"><col style="width:104px"><col style="width:104px"><col style="width:104px"><col style="width:96px"><col style="width:96px"><col style="width:96px"><col style="width:104px"><col style="width:122px"><col style="width:112px"><col style="width:174px"></colgroup>
+  <div class="tblwrap" style="overflow-x:auto"><table id="t20Tbl" style="table-layout:fixed;width:100%;font-size:13px">
+  <colgroup><col style="width:2.5%"><col style="width:8%"><col style="width:11.5%"><col style="width:7%"><col style="width:7%"><col style="width:7.5%"><col style="width:6.5%"><col style="width:6.5%"><col style="width:6.5%"><col style="width:7.5%"><col style="width:9%"><col style="width:8%"><col style="width:12%"></colgroup>
   <thead><tr>
   <th>#</th><th class="l t20s" data-k="m">型号</th><th class="l t20s" data-k="cat">品类</th>
   <th class="t20s" data-k="mrev">当月收入</th><th class="t20s" data-k="mqty">当月销量</th><th class="t20s" data-k="mmg">当月毛利率</th>
@@ -707,8 +707,11 @@ body{font-family:-apple-system,'Microsoft YaHei','Segoe UI',sans-serif;backgroun
    function t20Pct(v){return v==null?'—':(v>0?'+':'')+v.toFixed(1)+'%';}
    function t20Cls(v){return v==null?'':(v>0?'up':(v<0?'dn':''));}
    var t20Key='mrev',t20Asc=false;
+   /* 2026-10-13 修复：const A_TOP20 是脚本级词法绑定、不挂 window（浏览器 window.A_TOP20=undefined 致空表），
+      改 typeof 安全取裸绑定；跨 script 可见 */
+   var T20D=(typeof A_TOP20!=='undefined')?A_TOP20:null;
    function t20Render(){
-    var R=(window.A_TOP20&&A_TOP20.rows)||[];
+    var R=(T20D&&T20D.rows)||[];
     if(!R.length){document.getElementById('t20Body').innerHTML='<tr><td colspan="13" style="text-align:left;color:var(--text-tertiary)">型号 TOP20 数据缺失（需完整跑批生成 silver 明文）</td></tr>';return;}
     var pool=R.slice().sort(function(a,b){
      if(t20Key==='m'||t20Key==='cat'||t20Key==='lcust')return String(a[t20Key]||'').localeCompare(String(b[t20Key]||''))*(t20Asc?1:-1);
@@ -735,7 +738,7 @@ body{font-family:-apple-system,'Microsoft YaHei','Segoe UI',sans-serif;backgroun
      th.textContent=t;th.className=(th.classList.contains('l')?'l ':'')+(k===t20Key?'on':'');});
    }
    function t20FillFoot(){
-    var F=(window.A_TOP20&&A_TOP20.foot)||null;if(!F)return;
+    var F=(T20D&&T20D.foot)||null;if(!F)return;
     var g=function(id,v){var e=document.getElementById(id);if(e)e.textContent=v;};
     g('t20f_mrev',t20Num(F.mrev));g('t20f_mqty',t20Num(F.mqty));
     g('t20f_mmg',F.mmg==null?'—':F.mmg.toFixed(1)+'%');
@@ -748,7 +751,7 @@ body{font-family:-apple-system,'Microsoft YaHei','Segoe UI',sans-serif;backgroun
    }
    function t20Chip(k,v,d){return '<div class="kc"><div class="label">'+k+'</div><div class="value" style="font-size:16px">'+v+'</div>'+(d?'<div class="sub">'+d+'</div>':'')+'</div>';}
    function t20Detail(m){
-    var R=(window.A_TOP20&&A_TOP20.rows)||[],D=(window.A_TOP20&&A_TOP20.detail)||{};
+    var R=(T20D&&T20D.rows)||[],D=(T20D&&T20D.detail)||{};
     var r=R.find(function(x){return x.m===m;});var d=D[m];if(!r||!d)return;
     var h='<div class="kpi-bar" style="grid-template-columns:repeat(4,1fr);margin:0 0 12px">'
      +t20Chip('当月收入（万）',t20Num(r.mrev),'环比 '+t20Pct(r.mom))
