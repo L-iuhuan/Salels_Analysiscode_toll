@@ -767,7 +767,9 @@ body{font-family:-apple-system,'Microsoft YaHei','Segoe UI',sans-serif;backgroun
      +'<div id="t20Bar" style="width:100%;height:300px"></div>'
      +'<h3 style="font-size:13px;color:var(--text-secondary);margin:12px 0 6px">客户构成（近12月收入 · 万元 · TOP10）</h3>'
      +'<div id="t20Cust" style="width:100%;height:300px"></div>';
-    TABS.drawer.open({title:'型号明细 · '+t20Esc(m)+(r.cat?' · '+t20Esc(r.cat):''),contentHTML:h,onOpen:function(){
+    /* 2026-10-13 抽屉加宽：默认560px装不下8卡+双图，按视口自适应放大至约一倍（上限1120，窄屏收缩不低于660） */
+    var _t20w = Math.max(660, Math.min(1120, Math.round(window.innerWidth * 0.86)));
+    TABS.drawer.open({title:'型号明细 · '+t20Esc(m)+(r.cat?' · '+t20Esc(r.cat):''),contentHTML:h,width:_t20w,onOpen:function(){
      var bar=document.getElementById('t20Bar');
      if(bar){
       var old=echarts.getInstanceByDom(bar);if(old)old.dispose();
