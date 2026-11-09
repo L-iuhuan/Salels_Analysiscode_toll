@@ -63,6 +63,17 @@ def build_sales_profile(portrait_df: pd.DataFrame, silver: dict = None) -> pd.Da
 
     result = pd.DataFrame(results)
 
+    # [2026-11-06 阻断修复] 业务负责人全缺失（如源列改名/整体缺列）时 owners 为空 →
+    # 零列空 DataFrame，下方 result["量级"] 直接 KeyError 崩溃（2026-10 数据实测：实际业务员列
+    # 改名销售员后全链断裂在此）。返回带完整 schema 的空表，下游 gold 写盘/看板读取安全降级。
+    if result.empty:
+        return pd.DataFrame(columns=[
+            "业务负责人", "客户总数", "总营收", "KA_AA客户数", "量级",
+            "绝对贡献力", "客户维系力", "品类拓展力", "定价博弈力", "新客开拓力",
+            "客户激活力", "客户升级力", "产品结构优化力", "组合抗风险力",
+            "综合能力分", "能力等级", "亚组",
+        ])
+
     # ── 分层评比: 量级→客户数亚组, 同结构比较 ──
     result["能力等级"] = "C级"
     result["亚组"] = ""
