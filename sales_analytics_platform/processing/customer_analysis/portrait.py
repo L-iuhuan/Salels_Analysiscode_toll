@@ -28,7 +28,7 @@ if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
 from shared.data_cleaning import read_excel_auto
-from config.settings import CUSTOMER_THRESHOLDS, CUSTOMER_COL_MAP, METRIC_CAPS, CHANNEL_DERIVE, DEPT_REGION_MAP, CUSTOMER_ANALYSIS_WINDOW
+from config.settings import CUSTOMER_THRESHOLDS, CUSTOMER_COL_MAP, METRIC_CAPS, DEPT_REGION_MAP, CUSTOMER_ANALYSIS_WINDOW
 from customer_analysis.dimensions import (
     calc_purchase_interval,
     calc_churn_warning,
@@ -87,78 +87,41 @@ def _compute_batch_metrics(cust_monthly, cust_prod, prod_monthly, latest_month, 
 # ============================================================
 
 def _derive_channel(cid, raw_data):
-    """从交易数据推导渠道类型。
+    """逐客户渠道取值（与 _vec_channel_derive 同语义，保留供 test/validation_suite.py 外部引用）。
 
-    支持两种模式：
-      1. source_col模式：直接从指定列取值并映射（如"销售模式" → 经销→代理、直销→直供）
-      2. 旧模式：buyer_col/end_cust_col匹配计数
+    [A批 2026-11-06] 渠道维度直用"销售模式"原值（经销/直销），不再做 代理/直供 派生映射。
+    缺列/无交易 → "未知"。
     """
-    if raw_data is None:
+    if raw_data is None or "销售模式" not in raw_data.columns:
         return "未知"
-    cd = CHANNEL_DERIVE
-
-    # 模式1：source_col + mapping（如"销售模式"列）
-    source_col = cd.get("source_col")
-    if source_col and source_col in raw_data.columns:
-        mapping = cd.get("mapping", {})
-        row_match = raw_data[raw_data["客户编号"] == cid]
-        if len(row_match) > 0:
-            val = row_match[source_col].iloc[0]
-            return mapping.get(str(val), cd.get("default", "未知"))
-        return cd.get("default", "未知")
-
-    # 模式2：旧版 buyer_col / end_cust_col 匹配计数
-    buyer_col = cd.get("buyer_col", "代理商/直供名称")
-    end_col = cd.get("end_cust_col", "实际终端客户")
-
-    buyer_mask = raw_data[buyer_col] == cid if buyer_col in raw_data.columns else pd.Series(False, index=raw_data.index)
-    buyer_count = buyer_mask.sum()
-
-    if end_col in raw_data.columns:
-        end_mask = raw_data[end_col] == cid
-        end_count = end_mask.sum()
-    else:
-        end_count = 0
-
-    if buyer_count == 0 and end_count == 0:
-        return cd.get("default", "未知")
-    return "直供" if end_count >= buyer_count else "代理"
+    row_match = raw_data[raw_data["客户编号"] == cid]
+    if len(row_match) == 0:
+        return "未知"
+    val = row_match["销售模式"].iloc[0]
+    return str(val) if pd.notna(val) else "未知"
 
 
 def _vec_channel_derive(raw_data, cid_idx):
-    """向量化渠道推导：一次调用等价于对所有客户执行 _derive_channel(cid, raw_data)。"""
-    default = CHANNEL_DERIVE.get("default", "未知")
-    if raw_data is None:
+    """[A批 2026-11-06] 渠道维度直用"销售模式"原值：每客户取交易首行的销售模式（经销/直销）。
+
+    用户拍板删除 CHANNEL_DERIVE（经销→代理/直销→直供的派生映射）——源表本就有"销售模式"列，
+    silver/客户全景不再产出派生"渠道类型"，全链渠道维度统一为"销售模式"原值。
+    缺列/无交易 → "未知"。
+    """
+    default = "未知"
+    if raw_data is None or "销售模式" not in raw_data.columns:
         return pd.Series(default, index=cid_idx, dtype=object)
-
-    source_col = CHANNEL_DERIVE.get("source_col")
-    if source_col and source_col in raw_data.columns:
-        mapping = CHANNEL_DERIVE.get("mapping", {})
-        # 每客户取首行 source_col 值，再按 mapping 映射（与 _derive_channel 的 iloc[0] 一致）
-        first_vals = raw_data.groupby("客户编号")[source_col].first()
-        ch = first_vals.map(lambda v: mapping.get(str(v), default))
-        return ch.reindex(cid_idx).fillna(default).astype(object)
-
-    # 旧模式：buyer_col / end_cust_col 匹配计数
-    buyer_col = CHANNEL_DERIVE.get("buyer_col", "代理商/直供名称")
-    end_col = CHANNEL_DERIVE.get("end_cust_col", "实际终端客户")
-    buyer_count = (raw_data[buyer_col].value_counts()
-                   if buyer_col in raw_data.columns else pd.Series(dtype=int))
-    end_count = (raw_data[end_col].value_counts()
-                 if end_col in raw_data.columns else pd.Series(dtype=int))
-    bc = buyer_count.reindex(cid_idx).fillna(0)
-    ec = end_count.reindex(cid_idx).fillna(0)
-    ch = np.where((bc == 0) & (ec == 0), default,
-                  np.where(ec >= bc, "直供", "代理"))
-    return pd.Series(ch, index=cid_idx, dtype=object)
+    first_vals = raw_data.groupby("客户编号")["销售模式"].first()
+    ch = first_vals.reindex(cid_idx).fillna(default).astype(object)
+    return ch
 
 
 def _vec_base_info(cid_idx, cust_info, raw_data, attr_region=None, attr_owner=None):
     """向量化基本信息：等价于对每个客户执行 _dim_base_info()。
 
-    渠道类型降级（从高到低）:
-      1. cust_info中的"渠道类型"列（已从"销售模式"映射）
-      2. 交易数据推导（向量化 _vec_channel_derive）
+    渠道取值（[A批] 直用销售模式原值）:
+      1. cust_info中的"销售模式"列
+      2. 交易数据首行销售模式（向量化 _vec_channel_derive）
       3. 默认"未知"
 
     attr_region / attr_owner: 由 calc_customer_portrait 预计算的客户->区域/负责人 Series
@@ -166,7 +129,7 @@ def _vec_base_info(cid_idx, cust_info, raw_data, attr_region=None, attr_owner=No
     """
     base = pd.DataFrame(index=cid_idx)
     derived = _vec_channel_derive(raw_data, cid_idx)
-    base["渠道类型"] = derived
+    base["销售模式"] = derived
 
     # 客户信息表：每客户取首行（与 _dim_base_info 的 iloc[0] 一致）
     ci = cust_info
@@ -176,14 +139,6 @@ def _vec_base_info(cid_idx, cust_info, raw_data, attr_region=None, attr_owner=No
         ci = pd.DataFrame(index=cid_idx)
     ci_indexed = ci.reindex(cid_idx)
     in_ci = cid_idx.isin(ci.index)
-
-    # 渠道类型：cust_info 中有效值优先，否则用交易推导值
-    if "渠道类型" in ci.columns:
-        ch = ci_indexed["渠道类型"]
-        # 与 `if channel and channel != "未知"` 一致：None/空串/"未知"→推导；
-        # NaN 在 Python 中为 truthy，原逻辑采用 NaN（此处亦保留该语义）
-        use = (ch != "") & (ch != "未知") & (ch.notna() | (ch.astype(str) == "nan"))
-        base["渠道类型"] = np.where(use, ch, derived)
 
     # 其他基础字段（列缺失→默认值；列存在但值为空→保留空值，与原 .get 一致）
     for col, default in [("客户等级", "未知"), ("客户类别", "未分类"),
@@ -195,7 +150,7 @@ def _vec_base_info(cid_idx, cust_info, raw_data, attr_region=None, attr_owner=No
             base[col] = default
 
     # 客户不在客户信息表时的回退：
-    #   attr_map 非空（原始数据含 销售部门/实际业务员）→ 用 attr 值，且 客户等级/客户类别 置空(NaN)
+    #   attr_map 非空（原始数据含 销售部门/销售员）→ 用 attr 值，且 客户等级/客户类别 置空(NaN)
     #   attr_map 为空 → 保持默认"未知/未分类"
     not_ci = ~in_ci
     if (attr_region is not None) or (attr_owner is not None):
@@ -589,7 +544,7 @@ def calc_customer_portrait(silver: dict, source_path: str, latest_month,
     cust_prod = silver["customer_x_product"].copy()
     prod_monthly = silver["product_monthly"].copy()
 
-    cat_col = CUSTOMER_COL_MAP.get("品类列", "产品一级分类")
+    cat_col = CUSTOMER_COL_MAP.get("品类列", "型号_产品线（新）")  # [A批] 默认回退随权威列更新
     cat_sub_col = CUSTOMER_COL_MAP.get("品类细分列", "型号_产品品类")
     # ★ Phase 0 fix: 产品线数从"型号_产品品类"聚合（"产品一级分类"恒=12无区分度）
     cat_detail_col = cat_sub_col if cat_sub_col in cust_prod.columns else cat_col
@@ -613,8 +568,8 @@ def calc_customer_portrait(silver: dict, source_path: str, latest_month,
         if "销售部门" in raw_data.columns:
             _dept = raw_data.groupby("客户编号")["销售部门"].first()
             attr_region = _dept.map(lambda d: DEPT_REGION_MAP.get(str(d).strip(), "未知")).reindex(cid_idx).fillna("未知")
-        if "实际业务员" in raw_data.columns:
-            attr_owner = raw_data.groupby("客户编号")["实际业务员"].first().reindex(cid_idx).fillna("未知")
+        if "销售员" in raw_data.columns:
+            attr_owner = raw_data.groupby("客户编号")["销售员"].first().reindex(cid_idx).fillna("未知")
 
     # ---- 批量计算 ----
     metrics = _compute_batch_metrics(cust_monthly, cust_prod, prod_monthly, latest_month, cat_sub_col)

@@ -102,7 +102,7 @@ def generate_gold_tables(
     df["近12月毛利"] = df.get("近12月毛利", 0)
     df = score_rfm_pi(
         df,
-        channel_col="渠道类型" if "渠道类型" in df.columns else None,
+        channel_col="销售模式" if "销售模式" in df.columns else None,  # [A批] 渠道维度=销售模式原值
         weights_by_channel=RFM_PI_WEIGHTS,
     )
 
@@ -115,8 +115,8 @@ def generate_gold_tables(
     cust_monthly = silver.get("customer_monthly")
     if cust_monthly is not None and len(cust_monthly) > 0:
         channel_map = (
-            dict(zip(df["客户编号"], df["渠道类型"]))
-            if "渠道类型" in df.columns else None
+            dict(zip(df["客户编号"], df["销售模式"]))
+            if "销售模式" in df.columns else None
         )
         if stage_classifier is not None:
             journey_df = stage_classifier.classify(
@@ -293,7 +293,7 @@ def generate_gold_tables(
     group_result = run_group_aggregation(
         df,
         cust_x_prod=silver.get("customer_x_product"),
-        cat_col=CUSTOMER_COL_MAP.get("品类列", "产品一级分类"),
+        cat_col=CUSTOMER_COL_MAP.get("品类列", "型号_产品线（新）"),  # [A批] 默认回退随权威列更新
     )
     df = group_result["customer_df"]
     group_df = group_result["group_df"]
@@ -317,7 +317,7 @@ def generate_gold_tables(
     df["利润等级"] = df["利润率情况"]
     if "策略名称" not in df.columns and "策略详细建议" in df.columns:
         df["策略名称"] = ""
-    _order = ["客户名称","业务负责人","渠道类型","客户层级","活跃状态","综合价值层级","双轴分类",
+    _order = ["客户名称","业务负责人","销售模式","客户层级","活跃状态","综合价值层级","双轴分类",
               "增长潜力","风险评级","客户生命周期","利润率情况","主要SKU阶段","利润贡献等级",
               "近12月收入","前12月收入","收入增长率","YoY同比增速","连续增长月数","连续下滑月数",
               "近12月毛利","近12月毛利率","毛利率跌幅%","估算真实利润","估算真实利润率",

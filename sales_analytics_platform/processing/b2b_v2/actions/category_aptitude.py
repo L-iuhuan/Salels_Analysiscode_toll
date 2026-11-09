@@ -30,7 +30,7 @@ def build_category_aptitude(portrait_df, silver=None):
 
     # Determine product line column
     line_col = None
-    for c in ["型号_产品线（新）", "产品一级分类"]:
+    for c in ["型号_产品线（新）"]:  # [A批] 产品线唯一权威列
         if c in cxp.columns: line_col = c; break
     if not line_col:
         return pd.DataFrame()

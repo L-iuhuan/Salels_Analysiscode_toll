@@ -106,15 +106,24 @@ class TestCheckCategoryValues:
 # ============================================================
 
 class TestValidateRaw:
-    def test_valid_raw(self):
-        df = pd.DataFrame({
-            "客户编号": ["C001"],
-            "产品品种": ["P001"],
-            "数量": [10],
-            "金额": [1000.0],
+    """V1 raw 校验（2026-10-10 3c654fe 起：required 为 ERP 原始列名；负金额合法）。
+
+    [A批 2026-11-06] 修既有测试债：本组用例此前喂清洗后规范名帧，3c654fe 改为原始名后
+    恒 FAIL 未同步——现对齐现行语义。
+    """
+    @staticmethod
+    def _raw_df(revenue=1000.0):
+        return pd.DataFrame({
+            "终端客户简称": ["C001"],
             "发货日期": pd.to_datetime(["2025-01-15"]),
+            "RMB 未税金额小计": [revenue],
+            "发货数量": [10],
+            "型号_产品线（新）": ["通用电源管理"],
+            "利润": [300.0],
         })
-        result = v.validate_raw(df)
+
+    def test_valid_raw(self):
+        result = v.validate_raw(self._raw_df())
         assert result["valid"] is True
         assert result["issues"] == []
 
@@ -125,16 +134,10 @@ class TestValidateRaw:
         assert len(result["issues"]) >= 1
 
     def test_negative_revenue(self):
-        df = pd.DataFrame({
-            "客户编号": ["C001"],
-            "产品品种": ["P001"],
-            "数量": [10],
-            "金额": [-100.0],
-            "发货日期": pd.to_datetime(["2025-01-15"]),
-        })
-        result = v.validate_raw(df)
-        assert result["valid"] is False
-        assert any("below" in i for i in result["issues"])
+        """负金额（退货冲红行）在 raw 层合法——3c654fe 移除 lo=0 检查，负值告警由 silver 层承担。"""
+        result = v.validate_raw(self._raw_df(revenue=-100.0))
+        assert result["valid"] is True
+        assert result["issues"] == []
 
     def test_empty_df(self):
         df = pd.DataFrame()
