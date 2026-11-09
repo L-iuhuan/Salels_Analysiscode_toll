@@ -2369,19 +2369,28 @@ for s in d_sales_list:
     }
 
 # 团队画像总结
-_team_top1 = sorted(d_sales_list, key=lambda x: -x["ytd_rev"])[0]["name"]
-_team_top_mg = sorted(d_sales_list, key=lambda x: -x["ytd_mg"])[0]
-_team_most_custs = sorted(d_sales_list, key=lambda x: -x["cust_count"])[0]
-D_TEAM_PROFILE = {
-    "headcount": len(d_sales_list),
-    "total_rev": round(d_total_rev, 0),
-    "total_profit": round(d_total_profit, 0),
-    "avg_score": d_avg_score,
-    "a_count": d_a_level_count,
-    "top_rev_name": _team_top1,
-    "top_mg_name": _team_top_mg["name"], "top_mg_val": _team_top_mg["ytd_mg"],
-    "most_custs_name": _team_most_custs["name"], "most_custs_val": _team_most_custs["cust_count"],
-}
+# [2026-11-06 阻断守卫] 销售员列缺失/全无效时 d_sales_list 为空（2026-10 数据实测：实际业务员改名
+# 销售后 D面 0 人），下方 sorted(...)[0] 越界崩溃。空列表时产出占位团队画像，看板其余面不受影响。
+if d_sales_list:
+    _team_top1 = sorted(d_sales_list, key=lambda x: -x["ytd_rev"])[0]["name"]
+    _team_top_mg = sorted(d_sales_list, key=lambda x: -x["ytd_mg"])[0]
+    _team_most_custs = sorted(d_sales_list, key=lambda x: -x["cust_count"])[0]
+    D_TEAM_PROFILE = {
+        "headcount": len(d_sales_list),
+        "total_rev": round(d_total_rev, 0),
+        "total_profit": round(d_total_profit, 0),
+        "avg_score": d_avg_score,
+        "a_count": d_a_level_count,
+        "top_rev_name": _team_top1,
+        "top_mg_name": _team_top_mg["name"], "top_mg_val": _team_top_mg["ytd_mg"],
+        "most_custs_name": _team_most_custs["name"], "most_custs_val": _team_most_custs["cust_count"],
+    }
+else:
+    D_TEAM_PROFILE = {
+        "headcount": 0, "total_rev": 0, "total_profit": 0, "avg_score": 0, "a_count": 0,
+        "top_rev_name": "—", "top_mg_name": "—", "top_mg_val": 0,
+        "most_custs_name": "—", "most_custs_val": 0,
+    }
 print(f"  能力画像: {len(d_sales_list)}人 · 团队总结已生成")
 
 # 6m. 瀑布图数据（团队9力均值，供前端对比）
