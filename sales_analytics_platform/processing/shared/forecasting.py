@@ -50,11 +50,23 @@ def calc_monthly_holiday_ratios(year_months):
             continue
         total_days = pd.Timestamp(year, month, 1).days_in_month
         workdays = 0
+        # [2026-11-06 阻断修复] chinese_calendar 数据仅覆盖已公布假日安排的年份（当前 [2004,2026]）。
+        # 数据月 2026-10 起预测窗口跨入 2027 → is_workday 抛 NotImplementedError 全链崩溃（实测锚点跑）。
+        # 语义：未公布假日安排的未来年份按"无节假日调整"处理（比率 1.0），与未安装 chinese_calendar
+        # 的既有回退（L39-40 返回 1.0）一致；逐年公布的假日数据升级包后自动恢复真实比率。
+        calendar_available = True
         for day in range(1, total_days + 1):
             dt = pd.Timestamp(year, month, day)
-            if chinese_calendar.is_workday(dt):
-                workdays += 1
-        ratio = workdays / 22.0
+            try:
+                if chinese_calendar.is_workday(dt):
+                    workdays += 1
+            except NotImplementedError:
+                calendar_available = False
+                break
+        if not calendar_available:
+            ratio = 1.0
+        else:
+            ratio = workdays / 22.0
         _WORKDAY_RATIO_CACHE[key] = ratio
         ratios[pm] = ratio
     return ratios
