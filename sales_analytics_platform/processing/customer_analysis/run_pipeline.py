@@ -104,7 +104,7 @@ def run(
                           f"({os.path.basename(os.path.dirname(_pq_path))}/{os.path.basename(_pq_path)})")
                 else:
                     raw_temp = read_excel_auto(source_path, sheet_name=DATA_SHEET_NAME)
-                _keep_cols = ["销售模式", "终端客户名称_客户类别", "实际业务员"]
+                _keep_cols = ["销售模式", "终端客户名称_客户类别", "销售员"]
                 raw_data = raw_temp[[c for c in _keep_cols if c in raw_temp.columns]].copy()
                 # 映射客户编号（终端客户简称 → 客户编号）
                 if "终端客户简称" in raw_temp.columns:
@@ -141,7 +141,7 @@ def run(
         latest_month = silver["product_monthly"]["_月"].max()
         # 保留原始数据用于客户属性回退映射
         if raw_data is None:
-            _keep_cols = ["销售模式", "终端客户名称_客户类别", "实际业务员"]
+            _keep_cols = ["销售模式", "终端客户名称_客户类别", "销售员"]
             raw_data = raw_temp[[c for c in _keep_cols if c in raw_temp.columns]].copy()
         if raw_data is not None:
             # 映射客户编号（终端客户简称）
@@ -166,24 +166,14 @@ def run(
 
     customer_df = calc_customer_portrait(silver, source_path, latest_month, raw_data, cust_info_df=cust_info_data)
 
-    # 补充客户属性：cust_info_data中的渠道类型/客户等级/客户类别合并到画像
+    # 补充客户属性：cust_info_data中的客户等级/客户类别合并到画像
+    # [A批] 渠道维度直用"销售模式"原值（portrait 内取首值），原渠道类型合并块删除
     if cust_info_data is not None and len(cust_info_data) > 0:
         for col in ["客户类别", "客户等级"]:
             if col in cust_info_data.columns and col not in customer_df.columns:
                 customer_df = customer_df.merge(
                     cust_info_data[["客户编号", col]], on="客户编号", how="left"
                 )
-        # 渠道类型以cust_info为准（来自销售模式映射），覆盖portrait中可能默认的"未知"
-        if "渠道类型" in cust_info_data.columns:
-            cust_channel = cust_info_data.set_index("客户编号")["渠道类型"]
-            mask = customer_df["渠道类型"].isna() | (customer_df["渠道类型"] == "未知")
-            matched = customer_df.loc[mask, "客户编号"].isin(cust_channel.index)
-            customer_df.loc[mask & customer_df["客户编号"].isin(cust_channel.index), "渠道类型"] = (
-                customer_df.loc[mask & customer_df["客户编号"].isin(cust_channel.index), "客户编号"].map(cust_channel)
-            )
-            n_fixed = mask.sum() - ((customer_df["渠道类型"].isna() | (customer_df["渠道类型"] == "未知")).sum())
-            if n_fixed > 0:
-                print(f"  渠道类型(销售模式): {n_fixed} 客户")
 
     _t2 = time.time()
     print(f"  [时间] 客户全景画像: {_t2 - _t1:.1f}s ({len(customer_df)}个客户)")

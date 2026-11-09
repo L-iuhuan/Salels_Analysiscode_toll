@@ -54,7 +54,7 @@ def generate_cross_sell(
     # Build product→category mapping for category-matching bonus
     cat_col = None
     for c in cxp.columns:
-        if c in ("产品一级分类", "产品线", "产品系列", "品类", "category", "产品二级分类"):
+        if c in ("型号_产品线（新）", "产品系列", "品类", "category", "产品二级分类"):  # [A批] 移除已删除的产品一级分类，补权威线列
             cat_col = c
             break
     prod_category = {}

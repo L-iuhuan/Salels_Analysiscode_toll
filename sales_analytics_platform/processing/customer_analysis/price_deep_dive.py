@@ -3,7 +3,7 @@
 
 4张价格分析表：
   1. 跨客户价格差异 — 同产品不同客户的定价离散度
-  2. 渠道价格对比 — 代理 vs 直供价差
+  2. 渠道价格对比 — 经销 vs 直销价差（[A批] 渠道维度=销售模式原值）
   3. 业务员定价偏离 — 各销售负责人的定价倾向
   4. 市场细分价格 — 按客户层级/区域/产品线聚合
 """
@@ -63,17 +63,17 @@ def calc_cross_customer_price_variation(
         min_customers = PRICE_ANALYSIS_MIN_CUSTOMERS
     # 计算每客户-产品-月的均价，然后每个客户取中位数均价
     cp = cust_prod.copy()
-    cat_col = CUSTOMER_COL_MAP.get("品类列", "产品一级分类")
+    cat_col = CUSTOMER_COL_MAP.get("品类列", "型号_产品线（新）")  # [A批] 品类/产品线权威列
 
     cp["均价"] = cp["rev_sum"] / cp["qty_sum"].replace(0, float("nan"))
 
     # 每客户-产品聚合（跨月取中位价）
     agg_dict = {"均价中位数": ("均价", "median")}
     if cat_col in cp.columns:
-        agg_dict["产品一级分类"] = (cat_col, "first")
+        agg_dict["产品线"] = (cat_col, "first")
     cust_prod_price = cp.groupby(["客户编号", "产品品种"]).agg(**agg_dict).reset_index()
-    if cat_col not in cp.columns or cust_prod_price["产品一级分类"].isna().all():
-        cust_prod_price["产品一级分类"] = "未知"
+    if cat_col not in cp.columns or cust_prod_price["产品线"].isna().all():
+        cust_prod_price["产品线"] = "未知"
 
     # 跨客户聚合
     grouped = cust_prod_price.groupby("产品品种")
@@ -110,11 +110,11 @@ def calc_cross_customer_price_variation(
         else:
             level = _pdt.get("默认等级", "低")
 
-        cat_val = grp["产品一级分类"].iloc[0] if "产品一级分类" in grp.columns else "未知"
+        cat_val = grp["产品线"].iloc[0] if "产品线" in grp.columns else "未知"
 
         rows.append({
             "产品名称": prod,
-            "产品一级分类": cat_val,
+            "产品线": cat_val,
             "客户数": n_cust,
             "平均价格": round(mean_p, 2),
             "中位数价格": round(median_p, 2),
@@ -155,35 +155,37 @@ def calc_channel_price_comparison(
     portrait_df: pd.DataFrame,
     min_customers: int = None,
 ) -> pd.DataFrame:
-    """渠道价格差异：代理 vs 直供 同产品均价对比。
+    """渠道价格差异：经销 vs 直销 同产品均价对比。
+
+    [A批 2026-11-06] 渠道维度直用"销售模式"原值（经销/直销），原 代理/直供 派生口径删除。
 
     参数:
         cust_prod: customer_x_product DataFrame
-        portrait_df: 客户全景 DataFrame（含渠道类型）
+        portrait_df: 客户全景 DataFrame（含销售模式）
         min_customers: 最少客户数
 
     返回:
-        DataFrame: 每产品一行，含代理/直供均价及价差
+        DataFrame: 每产品一行，含经销/直销均价及价差
     """
     if min_customers is None:
         min_customers = PRICE_ANALYSIS_MIN_CUSTOMERS
     cp = cust_prod.copy()
     cp["均价"] = cp["rev_sum"] / cp["qty_sum"].replace(0, float("nan"))
 
-    # 获取渠道类型
-    channel_map = portrait_df[["客户编号", "渠道类型"]].drop_duplicates()
+    # 获取销售模式（渠道维度）
+    channel_map = portrait_df[["客户编号", "销售模式"]].drop_duplicates()
     cp = cp.merge(channel_map, on="客户编号", how="left")
 
     # 每客户-产品聚合（跨月中位价）
-    cust_prod_median = cp.groupby(["客户编号", "产品品种", "渠道类型"]).agg(
+    cust_prod_median = cp.groupby(["客户编号", "产品品种", "销售模式"]).agg(
         均价中位数=("均价", "median"),
     ).reset_index()
 
-    # 按渠道分组聚合
+    # 按销售模式分组聚合
     rows = []
     for prod, grp in cust_prod_median.groupby("产品品种"):
-        agent = grp[grp["渠道类型"] == "代理"]["均价中位数"].dropna()
-        direct = grp[grp["渠道类型"] == "直供"]["均价中位数"].dropna()
+        agent = grp[grp["销售模式"] == "经销"]["均价中位数"].dropna()
+        direct = grp[grp["销售模式"] == "直销"]["均价中位数"].dropna()
 
         n_agent = len(agent)
         n_direct = len(direct)
@@ -204,17 +206,17 @@ def calc_channel_price_comparison(
 
         rows.append({
             "产品品种": prod,
-            "代理均价": round(agent_mean, 2) if pd.notna(agent_mean) else None,
-            "直供均价": round(direct_mean, 2) if pd.notna(direct_mean) else None,
-            "代理-直供价差%": round(spread, 1) if pd.notna(spread) else None,
-            "代理客户数": n_agent,
-            "直供客户数": n_direct,
+            "经销均价": round(agent_mean, 2) if pd.notna(agent_mean) else None,
+            "直销均价": round(direct_mean, 2) if pd.notna(direct_mean) else None,
+            "经销-直销价差%": round(spread, 1) if pd.notna(spread) else None,
+            "经销客户数": n_agent,
+            "直销客户数": n_direct,
             "总客户数": n_agent + n_direct,
         })
 
     result = pd.DataFrame(rows)
     if len(result) > 0:
-        result = result.sort_values("代理-直供价差%", ascending=False, na_position="last", kind='stable')
+        result = result.sort_values("经销-直销价差%", ascending=False, na_position="last", kind='stable')
 
     return result
 
@@ -280,7 +282,7 @@ def calc_sales_owner_price_deviation(
         _agg_dict["策略名称"] = ("策略名称", "first")
     if "帕累托利润分级" in cp.columns:
         _agg_dict["帕累托分级"] = ("帕累托利润分级", "first")
-    _line_col = next((c for c in ["型号_产品线（新）", "产品一级分类"] if c in cp.columns), None)
+    _line_col = next((c for c in ["型号_产品线（新）"] if c in cp.columns), None)  # [A批] 产品线唯一权威列
     if _line_col:
         _agg_dict["产品线"] = (_line_col, "first")
     cust_median = cp.groupby(["客户编号", "产品品种"]).agg(**_agg_dict).reset_index()
@@ -390,7 +392,7 @@ def calc_segment_price_analysis(
         DataFrame: 每细分维度一行
     """
     cp = cust_prod.copy()
-    cat_col = CUSTOMER_COL_MAP.get("品类列", "产品一级分类")
+    cat_col = CUSTOMER_COL_MAP.get("品类列", "型号_产品线（新）")  # [A批] 品类/产品线权威列
     cp["均价"] = cp["rev_sum"] / cp["qty_sum"].replace(0, float("nan"))
 
     # 整体均价基准
@@ -473,18 +475,18 @@ def calc_pricing_fairness(cust_prod, portrait_df=None):
     cp_agg["毛利率%"] = np.where(cp_agg["交易总额"] > 0,
         cp_agg["交易总利润"] / cp_agg["交易总额"] * 100, 0)
 
-    # v4.16: 先合并渠道类型，用同渠道基准避免代理/直供混比
-    if portrait_df is not None and "渠道类型" in portrait_df.columns:
+    # v4.16: 先合并销售模式，用同渠道基准避免经销/直销混比（[A批] 渠道维度=销售模式原值）
+    if portrait_df is not None and "销售模式" in portrait_df.columns:
         cust_col = "客户编号" if "客户编号" in portrait_df.columns else "客户名称"
-        ch_map = portrait_df[[cust_col, "渠道类型"]].drop_duplicates()
+        ch_map = portrait_df[[cust_col, "销售模式"]].drop_duplicates()
         ch_map = ch_map.rename(columns={cust_col: "客户编号"})
         cp_agg = cp_agg.merge(ch_map, on="客户编号", how="left")
-        cp_agg["渠道类型"] = cp_agg["渠道类型"].fillna("未知")
+        cp_agg["销售模式"] = cp_agg["销售模式"].fillna("未知")
     else:
-        cp_agg["渠道类型"] = "全部"
+        cp_agg["销售模式"] = "全部"
 
-    # 每产品×渠道: 单价分位 + 对比基准客户
-    prod_stats = cp_agg.groupby(["产品品种", "渠道类型"], observed=True).agg(
+    # 每产品×销售模式: 单价分位 + 对比基准客户
+    prod_stats = cp_agg.groupby(["产品品种", "销售模式"], observed=True).agg(
         产品总销售额=("交易总额", "sum"),
         产品P15单价=("单价", lambda x: x.quantile(0.15)),
         产品P25单价=("单价", lambda x: x.quantile(0.25)),
@@ -499,7 +501,7 @@ def calc_pricing_fairness(cust_prod, portrait_df=None):
         lambda i: cp_agg.loc[i, "客户编号"] if i in cp_agg.index else ""
     )
 
-    result = cp_agg.merge(prod_stats, on=["产品品种", "渠道类型"], how="inner")
+    result = cp_agg.merge(prod_stats, on=["产品品种", "销售模式"], how="inner")
 
     # 采购集中度
     cust_total = cp_agg.groupby("客户编号")["交易总额"].sum().to_dict()
@@ -558,7 +560,7 @@ def calc_pricing_fairness(cust_prod, portrait_df=None):
         pareto = row.get("帕累托利润分级", "D级")
         # 同产品P50价和高价客户作为基准
         parts = [
-            f"同渠道({row.get('渠道类型','全部')})该产品共{int(row['产品客户数'])}个客户",
+            f"同渠道({row.get('销售模式','全部')})该产品共{int(row['产品客户数'])}个客户",
             f"市场中位价¥{row['产品P50单价']:.4f}",
             f"该客户价¥{row['单价']:.4f}(偏离{row['价格偏离P50%']:.0f}%)",
             f"最高价客户「{row['最高价客户']}」¥{row['最高单价']:.4f}",
@@ -575,7 +577,7 @@ def calc_pricing_fairness(cust_prod, portrait_df=None):
     anomaly_df["归因分析"] = anomaly_df.apply(_build_attribution, axis=1)
 
     # 输出列(中文化)
-    out_cols = ["客户编号", "产品品种", "渠道类型", "单价", "毛利率%", "产品P15单价",
+    out_cols = ["客户编号", "产品品种", "销售模式", "单价", "毛利率%", "产品P15单价",
                 "产品P50单价", "价格偏离P50%", "体量分", "采购集中度百分位",
                 "战略合作分", "定价合理性分", "异常低价标记", "归因分析"]
     for c in ["客户层级", "帕累托利润分级", "业务负责人", "最高价客户", "最高单价", "产品客户数"]:

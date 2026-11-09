@@ -34,7 +34,7 @@ import re
 import pandas as pd
 import numpy as np
 
-from config.settings import ERP_COL_MAP, DATA_SHEET_NAME, PKG_ROOT
+from config.settings import ERP_COL_MAP, ERP_DROP_COLS, DATA_SHEET_NAME, PKG_ROOT
 # r17 身份键：快照匹配与 COM 注入共用 excel_com 的全量/头部哈希（弃 mtime 作身份键）
 from shared.excel_com import sha256_full as _sha256_full, sha256_head as _sha256_head
 
@@ -311,6 +311,19 @@ def rename_erp_columns(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
+def apply_source_drops(df: pd.DataFrame, drop_cols: list = None) -> pd.DataFrame:
+    """[A批 2026-11-06] 按 ERP_DROP_COLS 剔除已被唯一权威列替代的旧口径源列。
+
+    rename 之后调用：产品线（→型号_产品线（新）权威）、产品品类（新）（→型号_产品品类权威）
+    等旧列以原名透传进 silver 只会造成"假列"。剔除是幂等的（不存在即跳过）。
+    """
+    cols = drop_cols if drop_cols is not None else ERP_DROP_COLS
+    drop = [c for c in cols if c in df.columns]
+    if drop:
+        df = df.drop(columns=drop)
+    return df
+
+
 def winsorize_margins(
     df: pd.DataFrame,
     profit_col: str = "利润",
@@ -375,27 +388,27 @@ def build_cust_info(raw_df: pd.DataFrame,
                     cust_col: str = "客户编号",
                     cat_col_raw: str = "终端客户名称_客户类别",
                     cat_col: str = "客户类别",
-                    channel_col: str = "销售模式",
-                    sales_col: str = "实际业务员",
-                    channel_map: dict = None,
+                    sales_col: str = "销售员",
                     grade_map: dict = None) -> pd.DataFrame:
-    """统一从行级数据构建客户信息 DataFrame（渠道/类别/等级/业务负责人）。
+    """统一从行级数据构建客户信息 DataFrame（类别/等级/业务负责人）。
 
     批次①（T2/P0-1）：run_all.py 新鲜路径与 run_pipeline.py 缓存重载路径
     都通过本函数构建 cust_info，保证两条路径的客户属性标签一致。
+
+    [A批 2026-11-06] 用户拍板：
+      - 销售员：源列 2026-10 起定名"销售员"（原"实际业务员"），不做旧名回退；
+      - 渠道类型：不再从"销售模式"派生（代理/直供映射删除），全链渠道维度直接用"销售模式"原值。
 
     口径（与生产链式路径一致，基线锁定）：
       - 客户编号 fillna("未知客户")（空客户编号统一归并）
       - 客户类别列名归一：缓存路径用原始列名"终端客户名称_客户类别"，
         新鲜路径用重命名后"客户类别" → 统一为重命名后口径
-      - 渠道类型：销售模式映射（经销→代理，直销→直供），缺失填"未知"
       - 客户等级：客户类别映射（KA/AA→A，KM→B，MM→C），缺失填"未知"
-      - 业务负责人：实际业务员首值
+      - 业务负责人：销售员首值
 
     参数:
         raw_df: 行级数据（可含原始列名或已重命名列名）
-        cust_col / cat_col_raw / cat_col / channel_col / sales_col: 相关列名
-        channel_map: 销售模式→渠道映射（默认 经销→代理/直销→直供）
+        cust_col / cat_col_raw / cat_col / sales_col: 相关列名
         grade_map: 客户类别→客户等级映射（默认 KA/AA→A/KM→B/MM→C）
 
     返回:
@@ -408,12 +421,6 @@ def build_cust_info(raw_df: pd.DataFrame,
         df = df.rename(columns={cat_col_raw: cat_col})
 
     cust_records = {}
-    # 渠道类型：从"销售模式"列映射（经销→代理，直销→直供）
-    if channel_col in df.columns:
-        cm = channel_map or {"经销": "代理", "直销": "直供"}
-        cust_records["渠道类型"] = (
-            df.groupby(cust_col)[channel_col].first().map(cm).fillna("未知")
-        )
     # 客户类别 + 客户等级（由客户类别推导：KA/AA→A, KM→B, MM→C）
     if cat_col in df.columns:
         cust_records["客户类别"] = df.groupby(cust_col)[cat_col].first()
@@ -421,7 +428,7 @@ def build_cust_info(raw_df: pd.DataFrame,
         cust_records["客户等级"] = cust_records["客户类别"].map(
             lambda x: next((v for k, v in gm.items() if pd.notna(x) and k in str(x)), "未知")
         )
-    # 实际业务员 → 业务负责人
+    # 销售员 → 业务负责人
     if sales_col in df.columns:
         cust_records["业务负责人"] = df.groupby(cust_col)[sales_col].first()
 
@@ -706,6 +713,7 @@ def build_silver_layer(
     # ---- 2. 读取 & ERP 列重命名 ----
     raw = read_excel_auto(source_path, sheet_name=DATA_SHEET_NAME)
     raw = rename_erp_columns(raw)
+    raw = apply_source_drops(raw)   # [A批] 剔除已被权威列替代的旧口径源列（产品线/产品品类（新））
     print(f"  原始行数: {len(raw)}")
 
     # ---- 3. 日期窗口过滤（客户管道专用） ----
@@ -735,14 +743,15 @@ def build_silver_layer(
         cust_info = read_excel_auto(source_path, sheet_name="客户信息表")
         info_cols = [
             c for c in
-            ["客户编号", "渠道类型", "客户等级", "所属区域", "业务负责人"]
+            ["客户编号", "客户等级", "所属区域", "业务负责人"]
             if c in cust_info.columns
         ]
         raw = raw.merge(cust_info[info_cols], on=cust_col, how="left")
         print(f"  已合并客户信息 ({len(cust_info)} 条)")
     except (ValueError, FileNotFoundError, KeyError):
         # 客户信息表缺失时填入默认值
-        for col in ["渠道类型", "客户等级", "所属区域", "业务负责人"]:
+        # [A批] 渠道维度直用"销售模式"原值，不再派生/填充"渠道类型"
+        for col in ["客户等级", "所属区域", "业务负责人"]:
             raw[col] = "未知"
 
     # ---- 7. 双通道月度聚合 ----

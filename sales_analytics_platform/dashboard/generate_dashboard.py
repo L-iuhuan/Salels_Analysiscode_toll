@@ -1185,17 +1185,17 @@ if _FROM_EXCEL:
     if DATA_SHEET_RESOLVED != DATA_SHEET_NAME:
         print(f"  [sheet] DATA_SHEET_NAME='{DATA_SHEET_NAME}' 未命中，探测回退→ '{DATA_SHEET_RESOLVED}'")
     raw_all_cols = list(pd.read_excel(excel_path, sheet_name=DATA_SHEET_RESOLVED, nrows=0, engine="calamine").columns)
-    # 找到产品列（含"产品线"或"产品品种"关键字）
+    # 找到产品列（[A批] 产品维度=型号_产品线（新）权威列；缺失回退含"产品线"/"品种"关键字的列）
     prod_cols_avail = [c for c in raw_all_cols if "产品" in str(c) or "型号" in str(c)]
-    # 优先选"产品线"列，其次"产品品种"
-    prod_col = next((c for c in prod_cols_avail if "产品线" in str(c)),
-                next((c for c in prod_cols_avail if "品种" in str(c)), None))
-    # 语义列解析：品类 / 产品线（新） / 是否新品 / 实际业务员（优先级在 settings.DASHBOARD_COL_PRIORITY）
+    prod_col = ("型号_产品线（新）" if "型号_产品线（新）" in raw_all_cols else
+                next((c for c in prod_cols_avail if "产品线" in str(c)),
+                next((c for c in prod_cols_avail if "品种" in str(c)), None)))
+    # 语义列解析：品类 / 产品线（新） / 是否新品 / 销售员（优先级在 settings.DASHBOARD_COL_PRIORITY）
     _cfg_cands = DASHBOARD_COL_PRIORITY or {}
-    cat_col = resolve_dashboard_col(raw_all_cols, "品类", _cfg_cands.get("category", ["产品品类（新）", "产品品类", "品类"]))
+    cat_col = resolve_dashboard_col(raw_all_cols, "品类", _cfg_cands.get("category", ["型号_产品品类", "产品品类", "品类"]))
     pline_new_col = resolve_dashboard_col(raw_all_cols, "产品线（新）", _cfg_cands.get("product_line_new", ["型号_产品线（新）", "产品线（新）", "产品线"]))
     newprod_col = resolve_dashboard_col(raw_all_cols, "是否新品", _cfg_cands.get("is_new", ["是否新品", "新品标记"]))
-    sales_col_raw = resolve_dashboard_col(raw_all_cols, "实际业务员", _cfg_cands.get("sales", ["实际业务员", "业务员", "销售员"]))
+    sales_col_raw = resolve_dashboard_col(raw_all_cols, "销售员", _cfg_cands.get("sales", ["销售员"]))
     # 存货名称列（用于A面产品型号变迁）
     item_col = next((c for c in raw_all_cols if "存货名称" in str(c)), None)
     keep_cols = ["发货日期","RMB 未税金额小计","利润","发货数量","终端客户名称_客户类别","终端客户简称","客户订单号","发货地址"]
@@ -1226,19 +1226,22 @@ if _FROM_EXCEL:
     rex["_ym"] = rex["_d"].dt.strftime("%Y-%m")
 else:
     # ── Silver 底座（默认）：读 silver_cleaned_rows，列名已是 ERP_COL_MAP 归一后的标准名 ──
+    # [A批 2026-11-06] 用户拍板字段映射清理：
+    #   销售员直用源列名（原"实际业务员"2026-10 起改名）；品类唯一权威列=型号_产品品类；
+    #   产品线唯一权威列=型号_产品线（新）("_prod"产品维度随权威线列)；渠道维度=销售模式原值。
     _keep = ["发货日期","金额","利润","数量","客户类别","客户编号","客户订单号",
-             "产品一级分类","产品品类","产品品种","型号_产品线（新）","新品标记","实际业务员",
-             "销售模式","代理商/直供名称","客户","发货地址"]  # 后三列：代理商视图（按经销模式）数据段用，缺失时该视图优雅置空；发货地址：A面地域分布用
+             "型号_产品线（新）","型号_产品品类","产品品种","新品标记","销售员",
+             "销售模式","代理商/直供名称","客户","发货地址"]  # 销售模式三列：B面按销售模式视图用，缺失时该视图优雅置空；发货地址：A面地域分布用
     _keep = [c for c in _keep if c in pd.read_csv(os.path.join(SILVER, "silver_cleaned_rows.csv"), nrows=0, encoding="utf-8-sig").columns]
     rex = _load_silver_rows(os.path.join(SILVER, "silver_cleaned_rows.csv"), _keep)
     # 语义列变量（与 --from-excel 路径同名，供下游 D面6a/E面7c 等使用）
-    prod_col = "产品一级分类" if "产品一级分类" in rex.columns else None
-    cat_col = "产品品类" if "产品品类" in rex.columns else None
+    prod_col = "型号_产品线（新）" if "型号_产品线（新）" in rex.columns else None
+    cat_col = "型号_产品品类" if "型号_产品品类" in rex.columns else None
     cat_new_col = cat_col
     item_col = "产品品种" if "产品品种" in rex.columns else None
     pline_new_col = "型号_产品线（新）" if "型号_产品线（新）" in rex.columns else None
     newprod_col = "新品标记" if "新品标记" in rex.columns else None
-    sales_col_raw = "实际业务员" if "实际业务员" in rex.columns else None
+    sales_col_raw = "销售员" if "销售员" in rex.columns else None
     print(f"  产品列: {repr(prod_col)}  品类列: {repr(cat_col)}")
     rex["_d"] = pd.to_datetime(rex["发货日期"], errors="coerce")
     rex["_rev"] = pd.to_numeric(rex["金额"], errors="coerce").fillna(0)
@@ -1248,10 +1251,10 @@ else:
     # 将"未知客户"映射回 "nan"（Step 0 已证：仅 1799 行空客户被 fillna，无真实客户叫"未知客户"）
     rex["_cust"] = rex["客户编号"].astype(str).str.strip().str.replace("未知客户", "nan")
     rex["_tier"] = rex["客户类别"].astype(str)
-    rex["_prod"] = rex["产品一级分类"].astype(str) if "产品一级分类" in rex.columns else pd.Series("未知", index=rex.index)
-    rex["_cat"] = rex["产品品类"].astype(str).str.strip() if "产品品类" in rex.columns else pd.Series("未知", index=rex.index)
+    rex["_prod"] = rex["型号_产品线（新）"].astype(str).str.strip() if "型号_产品线（新）" in rex.columns else pd.Series("未知", index=rex.index)
+    rex["_cat"] = rex["型号_产品品类"].astype(str).str.strip() if "型号_产品品类" in rex.columns else pd.Series("未知", index=rex.index)
     rex["_item"] = rex["产品品种"].astype(str).str.strip() if "产品品种" in rex.columns else pd.Series("未知", index=rex.index)
-    rex["_cat_new"] = rex["产品品类"].astype(str).str.strip() if "产品品类" in rex.columns else pd.Series("", index=rex.index)
+    rex["_cat_new"] = rex["型号_产品品类"].astype(str).str.strip() if "型号_产品品类" in rex.columns else pd.Series("", index=rex.index)
     rex["_is_new"] = rex["新品标记"].astype(str).str.contains("是") if "新品标记" in rex.columns else pd.Series(False, index=rex.index)
     rex["_ym"] = rex["_d"].dt.strftime("%Y-%m")
 
@@ -1943,7 +1946,7 @@ for _,row in all_sorted.iterrows():
         "r":fin.get("ytd_rev",0),"p":fin.get("ytd_profit",0),
         "g":round(j(row.get("收入增长率",0))*100,1),"y":round(j(row.get("YoY同比增速",0))*100,1),
         "t":str(row.get("客户层级","")),"rk":str(row.get("风险评级","")),"lc":str(row.get("客户生命周期","")),
-        "ac":str(row.get("活跃状态","")),"o":str(row.get("业务负责人","")),"ch":str(row.get("渠道类型","")),
+        "ac":str(row.get("活跃状态","")),"o":str(row.get("业务负责人","")),"ch":str(row.get("销售模式","")),
         "mg":round(j(row.get("近12月毛利率",0)),1),"md":j(row.get("毛利率跌幅%",0)),
         "asp":round(j(row.get("ASP_加权",0)),2),"ad":round(j(row.get("ASP_跌幅%",0)),2),
         "lp":round(j(row.get("低价品种收入占比",0))*100,2),"hp":round(j(row.get("高价品种收入占比",0))*100,2),
@@ -2059,11 +2062,10 @@ for name, grp in sc_agg.groupby("_sales"):
             })
 
 # 擅长产品线（从"产品线"列聚合，每人Top2）
-# 批次④a 集成修复：silver 的"产品线"已归一为"产品一级分类"，而"型号_产品线（新）"是另一维度（E面）；
-# 原先 `"产品线" in str(c)` 子串匹配在 silver 下会误命中"型号_产品线（新）"。改为精确名优先（产品一级分类/产品线），
-# 保持 --from-excel（"产品线"列）与 silver（"产品一级分类"列）语义一致。
+# [A批 2026-11-06] 产品线唯一权威列=型号_产品线（新）（原 silver"产品一级分类"随源列删除废弃；
+# --from-excel 旧文件的"产品线"列作回退，语义一致：旧11线/新18线口径差异属预期口径切换）
 prod_line_col = None
-for _cand in ["产品一级分类", "产品线"]:
+for _cand in ["型号_产品线（新）", "产品线"]:
     for _c in rex.columns:
         if _cand == str(_c):
             prod_line_col = _c

@@ -264,7 +264,7 @@ class GoldExporter:
         profile = gold["客户全景"]
         key_cols = [
             c for c in [
-                "客户编号", "客户等级", "渠道类型", "风险等级", "机会等级",
+                "客户编号", "客户等级", "销售模式", "风险等级", "机会等级",
                 "客户生命周期", "采购中断预警", "强依赖标记", "行动建议",
             ] if c in profile.columns
         ]

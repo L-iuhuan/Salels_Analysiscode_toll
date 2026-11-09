@@ -197,7 +197,7 @@ def stage_silver(source_path: str, snapshot_path: str = None,
 
     from shared.data_cleaning import (
         filter_negative_qty, winsorize_margins, monthly_aggregate_double_pass,
-        rename_erp_columns, validate_required_columns, read_excel_auto,
+        rename_erp_columns, apply_source_drops, validate_required_columns, read_excel_auto,
         build_cust_info, write_silver_csv_parquet,
     )
     from data_pipeline.validator import SimpleValidator
@@ -233,6 +233,7 @@ def stage_silver(source_path: str, snapshot_path: str = None,
     _validator.validate_raw(raw)  # V1: 源数据验证
 
     raw = rename_erp_columns(raw)
+    raw = apply_source_drops(raw)   # [A批] 剔除已被权威列替代的旧口径源列（产品线/产品品类（新））
     print(f"  原始行数: {len(raw)}")
 
     # ── 从raw提取客户属性（客户信息表不存在时，统一用 build_cust_info() 从ERP列构建）──
@@ -258,17 +259,17 @@ def stage_silver(source_path: str, snapshot_path: str = None,
             raise ValueError("快照 manifest 判定源无客户信息表，跳过探测直接构建")
         else:
             cust_info = read_excel_auto(source_path, sheet_name="客户信息表")
-        raw = raw.merge(cust_info[["客户编号", "渠道类型", "客户等级", "所属区域"]], on="客户编号", how="left")
+        # [A批] 渠道维度直用"销售模式"原值，客户信息表的派生列"渠道类型"不再合并
+        raw = raw.merge(cust_info[["客户编号", "客户等级", "所属区域"]], on="客户编号", how="left")
     except (ValueError, FileNotFoundError, KeyError, RuntimeError):
         # 客户信息表不存在 → 统一用 build_cust_info() 从ERP数据列构建 cust_info
         # （批次① T2/P0-1：与缓存路径共用同一构建函数，保证两条路径客户属性一致；
         #   含客户编号 fillna("未知客户") 与 客户类别列名归一）
         cust_info = build_cust_info(raw)
-        # 保留 raw 上的默认渠道/等级列（silver_cleaned_rows 列口径，基线锁定）
-        raw["渠道类型"] = "未知"
+        # 保留 raw 上的默认等级列（silver_cleaned_rows 列口径，基线锁定）
         raw["客户等级"] = "未知"
         if cust_info is not None:
-            print(f"  从ERP列构建客户信息: {len(cust_info)} 条（渠道+类别+等级）")
+            print(f"  从ERP列构建客户信息: {len(cust_info)} 条（类别+等级）")
         else:
             print("  从ERP列构建客户信息: 无可用客户属性列")
 
@@ -285,9 +286,11 @@ def stage_silver(source_path: str, snapshot_path: str = None,
     silver = monthly_aggregate_double_pass(raw)
     _validator.validate_silver(silver)
 
-    # 产品线列传递：将产品一级分类 + 型号_产品品类 带入 customer_x_product（用于品类分析）
+    # 产品线列传递：将 型号_产品品类 + 型号_产品线（新） 带入 customer_x_product（用于品类分析）
+    # [A批] 用户拍板：产品线唯一权威列=型号_产品线（新）、品类唯一权威列=型号_产品品类；
+    # 原 产品一级分类/产品品类 传递列随源列删除一并移除
     prod_col = COL_MAP.get("product_name", "产品品种")
-    for cat_col in ["产品一级分类", "型号_产品品类", "型号_产品线（新）", "产品品类"]:
+    for cat_col in ["型号_产品品类", "型号_产品线（新）"]:
         if cat_col in raw.columns:
             prod_to_line = raw[[prod_col, cat_col]].drop_duplicates()
             silver["customer_x_product"] = silver["customer_x_product"].merge(

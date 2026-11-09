@@ -89,7 +89,7 @@ def build_customer_product_profiles(
     # idxmax 在客户收入<=0 时返回排序后第一个 0.0 类别；空客户组同样得到第一个类别。
     cat_col = None
     for c in cxp.columns:
-        if c in ("产品一级分类", "型号_产品品类"):
+        if c in ("型号_产品线（新）", "型号_产品品类"):  # [A批] 权威线列/品类列
             cat_col = c
             break
     dominant = pd.Series(dtype=object)

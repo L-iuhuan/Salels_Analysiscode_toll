@@ -114,7 +114,7 @@ def identify_group(
 def calc_group_aggregation(
     df: pd.DataFrame,
     cust_x_prod: pd.DataFrame = None,
-    cat_col: str = "产品一级分类",
+    cat_col: str = "型号_产品线（新）",  # [A批] 产品线唯一权威列（原默认"产品一级分类"随源列删除废弃）
 ) -> pd.DataFrame:
     """计算集团级聚合指标。
 
@@ -216,7 +216,7 @@ def calc_group_aggregation(
 def run_group_aggregation(
     customer_df: pd.DataFrame,
     cust_x_prod: pd.DataFrame = None,
-    cat_col: str = "产品一级分类",
+    cat_col: str = "型号_产品线（新）",  # [A批] 产品线唯一权威列（原默认"产品一级分类"随源列删除废弃）
 ) -> dict:
     """执行集团聚合全流程。
 
